@@ -4,7 +4,7 @@ import de.jpx3.intave.block.fluid.Fluid;
 import de.jpx3.intave.check.movement.physics.MoveMetric;
 import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.check.movement.physics.Simulation;
-import de.jpx3.intave.player.collider.complex.ColliderResult;
+import de.jpx3.intave.player.collider.complex.SimulationResult;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.Position;
@@ -219,8 +219,8 @@ public final class UnmodifiableSimulationEnvironmentView implements SimulationEn
 	}
 
 	@Override
-	public float friction() {
-		return delegate.friction();
+	public float friction(boolean sprinting) {
+		return delegate.friction(sprinting);
 	}
 
 	@Override
@@ -254,6 +254,11 @@ public final class UnmodifiableSimulationEnvironmentView implements SimulationEn
 	}
 
 	@Override
+	public float jumpMovementFactor() {
+		return delegate.jumpMovementFactor();
+	}
+
+	@Override
 	public boolean isSneaking() {
 		return delegate.isSneaking();
 	}
@@ -261,6 +266,16 @@ public final class UnmodifiableSimulationEnvironmentView implements SimulationEn
 	@Override
 	public boolean isSprinting() {
 		return delegate.isSprinting();
+	}
+
+	@Override
+	public boolean hasSprintSpeed() {
+		return delegate.hasSprintSpeed();
+	}
+
+	@Override
+	public boolean sprintingAllowed() {
+		return delegate.sprintingAllowed();
 	}
 
 	@Override
@@ -299,6 +314,11 @@ public final class UnmodifiableSimulationEnvironmentView implements SimulationEn
 	}
 
 	@Override
+	public void setLastOnGround(boolean lastOnGround) {
+		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
+	}
+
+	@Override
 	public boolean collidedHorizontally() {
 		return delegate.collidedHorizontally();
 	}
@@ -314,6 +334,16 @@ public final class UnmodifiableSimulationEnvironmentView implements SimulationEn
 	}
 
 	@Override
+	public void clearSupportingBlock() {
+		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
+	}
+
+	@Override
+	public void compileSpecialBlocks() {
+		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
+	}
+
+	@Override
 	public boolean collidedWithBoat() {
 		return delegate.collidedWithBoat();
 	}
@@ -321,6 +351,11 @@ public final class UnmodifiableSimulationEnvironmentView implements SimulationEn
 	@Override
 	public double frictionPosSubtraction() {
 		return delegate.frictionPosSubtraction();
+	}
+
+	@Override
+	public float frictionMultiplier() {
+		return delegate.frictionMultiplier();
 	}
 
 	@Override
@@ -364,6 +399,11 @@ public final class UnmodifiableSimulationEnvironmentView implements SimulationEn
 	}
 
 	@Override
+	public void addFallDistance(double fallDistance) {
+		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
+	}
+
+	@Override
 	public boolean isInVehicle() {
 		return delegate.isInVehicle();
 	}
@@ -384,12 +424,12 @@ public final class UnmodifiableSimulationEnvironmentView implements SimulationEn
 	}
 
 	@Override
-	public void setBeforeMoveColliderResult(ColliderResult result) {
+	public void setBeforeMoveColliderResult(SimulationResult result) {
 		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
 	}
 
 	@Override
-	public ColliderResult beforeMoveColliderResult() {
+	public SimulationResult beforeMoveColliderResult() {
 		return delegate.beforeMoveColliderResult();
 	}
 
@@ -411,6 +451,16 @@ public final class UnmodifiableSimulationEnvironmentView implements SimulationEn
 	@Override
 	public void inactiveTick(MoveMetric metric) {
 		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
+	}
+
+	@Override
+	public int reduceTicks() {
+		return delegate.reduceTicks();
+	}
+
+	@Override
+	public boolean denyJump() {
+		return delegate.denyJump();
 	}
 
 	@Override
@@ -465,6 +515,11 @@ public final class UnmodifiableSimulationEnvironmentView implements SimulationEn
 
 	@Override
 	public void tickComplete(boolean hasMovement, boolean hasRotation) {
+		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
+	}
+
+	@Override
+	public SimulationEnvironment mutableView() {
 		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
 	}
 

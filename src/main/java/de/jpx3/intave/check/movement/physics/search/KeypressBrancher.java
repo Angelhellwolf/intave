@@ -1,0 +1,137 @@
+package de.jpx3.intave.check.movement.physics.search;
+
+import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
+import de.jpx3.intave.math.Hypot;
+import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.meta.InventoryMetadata;
+import de.jpx3.intave.user.meta.MovementMetadata;
+
+import java.util.Set;
+
+final class KeypressBrancher extends MovementSearchBrancher {
+  private static final int[][] KEYS_USAGE_ORDERED = {
+    {1, 0},
+    {0, 0},
+    {1, -1},
+    {1, 1},
+    {0, -1},
+    {0, 1},
+    {-1, -1},
+    {-1, 0},
+    {-1, 1}
+  };
+
+  @Override
+  public Set<MovementSearchConfig> branch(MovementSearchInput input, MovementSearchConfig config) {
+    User user = input.user();
+    MovementMetadata movement = user.meta().movement();
+
+    // Elytra is key-independent
+    if (!input.simulator().affectedByMovementKeys()) {
+      return single(config);
+    }
+
+    // For 1.9-1.20 vehicles send their keys
+    if (movement.legacyVehicleKeyInput) {
+      return single(config.withKeypress(
+        movement.legacyVehicleForwardKey,
+        movement.legacyVehicleStrafeKey
+      ));
+    }
+
+    Set<MovementSearchConfig> result = ordered();
+
+    // predict the keys
+    int predictedDirection = predictedDirection(input, config);
+    if (predictedDirection >= 0) {
+      int predictedForward = forwardKeyFrom(predictedDirection);
+      int predictedStrafe = strafeKeyFrom(predictedDirection);
+      if (isValidPress(input, config, predictedForward, predictedStrafe)) {
+        result.add(config.withKeypress(predictedForward, predictedStrafe));
+      }
+    }
+
+    // use last keys
+    int lastKeyForward = movement.lastKeyForward;
+    int lastKeyStrafe = movement.lastKeyStrafe;
+    if (isValidPress(input, config, lastKeyForward, lastKeyStrafe)) {
+      result.add(config.withKeypress(lastKeyForward, lastKeyStrafe));
+    }
+
+    // brute force keys
+    for (int[] keyPair : KEYS_USAGE_ORDERED) {
+      int keyForward = keyPair[0];
+      int keyStrafe = keyPair[1];
+      if (isValidPress(input, config, keyForward, keyStrafe)) {
+        result.add(config.withKeypress(keyForward, keyStrafe));
+      }
+    }
+
+    // we always have the option to "not press" keys
+    if (result.isEmpty()) {
+      result.add(config.withKeypress(0, 0));
+    }
+    return result;
+  }
+
+  private int predictedDirection(
+    MovementSearchInput input, MovementSearchConfig config
+  ) {
+    SimulationEnvironment environment = input.environment();
+    double lastMotionX = environment.baseMotionX();
+    double lastMotionZ = environment.baseMotionZ();
+    if (config.isJumping() && config.isSprinting()) {
+      lastMotionX -= environment.yawSine() * 0.2f;
+      lastMotionZ += environment.yawCosine() * 0.2f;
+    }
+    double differenceX = environment.motionX() - lastMotionX;
+    double differenceZ = environment.motionZ() - lastMotionZ;
+    return directionFrom(differenceX, differenceZ, environment.rotationYaw());
+  }
+
+  private boolean isValidPress(
+    MovementSearchInput input,
+    MovementSearchConfig parentConfig,
+    int forward, int strafe
+  ) {
+    InventoryMetadata inventoryData = input.user().meta().inventory();
+    if (inventoryData.inventoryOpen() && Math.abs(forward) + Math.abs(strafe) > 0) {
+      return false;
+    }
+    if (parentConfig.moveConfig().isSprinting() && forward != 1) {
+      return false;
+    }
+    return true;
+  }
+
+  private static int directionFrom(double differenceX, double differenceZ, float yaw) {
+    if (Hypot.fast(differenceX, differenceZ) > 0.001) {
+      double direction;
+      direction = Math.toDegrees(Math.atan2(differenceZ, differenceX)) - 90d;
+      direction -= yaw;
+      direction %= 360d;
+      if (direction < 0)
+        direction += 360;
+      direction = Math.abs(direction);
+      direction /= 45d;
+      int rounded = (int) Math.round(direction);
+      if (Math.abs(rounded - direction) > 0.1) {
+        // we shouldn't put faith in that prediction
+        return -1;
+      }
+      return rounded;
+    }
+    return -1;
+  }
+
+  private static final int[] forwardKeys = {1, 1, 0, -1, -1, -1, 0, 1, 1};
+  private static final int[] strafeKeys = {0, -1, -1, -1, 0, 1, 1, 1, 0};
+
+  private static int forwardKeyFrom(int direction) {
+    return direction == -1 ? 0 : forwardKeys[direction];
+  }
+
+  private static int strafeKeyFrom(int direction) {
+    return direction == -1 ? 0 : strafeKeys[direction];
+  }
+}

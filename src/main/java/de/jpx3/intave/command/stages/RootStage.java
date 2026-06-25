@@ -352,23 +352,6 @@ public final class RootStage extends CommandStage {
   }
 
   @SubCommand(
-    selectors = "iter",
-    usage = "",
-    description = "",
-    permission = "sibyl"
-  )
-  public void outputIterative(User user) {
-    Player player = user.player();
-    player.sendMessage("");
-    player.sendMessage("Iterative Study");
-    player.sendMessage("Average runs: " + formatDouble(IterativeStudy.average(), 2));
-    IterativeStudy.ITERATORS.forEach((s, iterator) -> {
-      player.sendMessage(s + " -> " + iterator.totalRuns() + " with " + (iterator.successRate() * 100d) + "% sucess");
-    });
-    player.sendMessage("");
-  }
-
-  @SubCommand(
     selectors = "bbaf",
     usage = "",
     description = "",

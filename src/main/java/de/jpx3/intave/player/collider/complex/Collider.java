@@ -5,7 +5,7 @@ import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.user.User;
 
 public interface Collider {
-  ColliderResult collide(
+  SimulationResult collide(
     User user,
     SimulationEnvironment environment,
     Motion motion,

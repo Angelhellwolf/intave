@@ -1,7 +1,7 @@
 package de.jpx3.intave.check.movement.physics;
 
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
-import de.jpx3.intave.player.collider.complex.ColliderResult;
+import de.jpx3.intave.player.collider.complex.SimulationResult;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.user.User;
@@ -10,27 +10,31 @@ import de.jpx3.intave.user.UserLocal;
 import static de.jpx3.intave.math.MathHelper.distanceOf;
 
 public final class Simulation {
-  private static final Simulation INVALID_SIMULATION = new Simulation(MovementConfiguration.blank(), ColliderResult.invalid());
+  private static final Simulation INVALID_SIMULATION = new Simulation(MovementConfiguration.blank(), SimulationResult.invalid());
   private static final UserLocal<Simulation> SIMULATION_OBJ_CACHE = UserLocal.withInitial(Simulation::new);
 
   private MovementConfiguration configuration;
-  private ColliderResult colliderResult;
+  private SimulationResult simulationResult;
   private String details = "";
 
+  private final boolean mustBeCopied;
+
 	private Simulation() {
+    this.mustBeCopied = true;
   }
 
   private Simulation(
     MovementConfiguration configuration,
-    ColliderResult colliderResult
+    SimulationResult simulationResult
   ) {
     this.configuration = configuration;
-    this.colliderResult = colliderResult;
+    this.simulationResult = simulationResult;
+    this.mustBeCopied = false;
   }
 
-  public void flush(MovementConfiguration configuration, ColliderResult colliderResult) {
+  public void flush(MovementConfiguration configuration, SimulationResult simulationResult) {
     this.configuration = configuration;
-    this.colliderResult = colliderResult;
+    this.simulationResult = simulationResult;
     this.details = "";
   }
 
@@ -38,12 +42,22 @@ public final class Simulation {
     return configuration.isSprinting();
   }
 
-  public double accuracy(Motion motionVector) {
+  public double motionDifference(Motion motionVector) {
+    if (this == INVALID_SIMULATION) {
+      return 100_000.d;
+    }
     return distanceOf(motion(), motionVector);
   }
 
+  public double positionDifference(Position lastPosition, Position sentPosition) {
+    if (this == INVALID_SIMULATION) {
+      return 100_000.d;
+    }
+    return distanceOf(lastPosition.add(motion()), sentPosition);
+  }
+
   public Motion motion() {
-    return colliderResult.motion();
+    return simulationResult.motion();
   }
 
   public void append(String details) {
@@ -60,25 +74,69 @@ public final class Simulation {
   ) {
     Position lastPosition = environment.lastPosition();
     Position newPosition = lastPosition.add(motion());
-	  return lastPosition.distance(newPosition) < limit;
+    double distance = lastPosition.distance(newPosition);
+    return distance < limit;
   }
 
-  public ColliderResult collider() {
-    return colliderResult;
+  public SimulationResult result() {
+    return simulationResult;
   }
 
-  @Deprecated
   public MovementConfiguration configuration() {
     return configuration;
   }
 
   public Simulation reusableCopy() {
-    return new Simulation(configuration, colliderResult);
+    Simulation copy = new Simulation(configuration, simulationResult);
+    copy.details = details;
+    return copy;
   }
 
-  static Simulation of(User user, MovementConfiguration configuration, ColliderResult colliderResult) {
+  public Simulation select(Simulation other, Motion sentMotion) {
+    if (this == INVALID_SIMULATION) {
+      return other.reusableCopy();
+    }
+    if (other == INVALID_SIMULATION) {
+      return this.reusableCopy();
+    }
+    double thisDistance = motionDifference(sentMotion);
+    double otherDistance = other.motionDifference(sentMotion);
+    Simulation selectedSimulation = thisDistance < otherDistance ? this : other;
+    if (selectedSimulation.mustBeCopied) {
+      selectedSimulation = selectedSimulation.reusableCopy();
+    }
+    return selectedSimulation;
+  }
+
+  public Simulation select(Simulation other, Position sentPosition, Position lastPosition) {
+    if (this == INVALID_SIMULATION) {
+      return other.reusableCopy();
+    }
+    if (other == INVALID_SIMULATION) {
+      return this.reusableCopy();
+    }
+    double thisDistance = positionDifference(lastPosition, sentPosition);
+    double otherDistance = other.positionDifference(lastPosition, sentPosition);
+    Simulation selectedSimulation = thisDistance < otherDistance ? this : other;
+    if (selectedSimulation.mustBeCopied) {
+      selectedSimulation = selectedSimulation.reusableCopy();
+    }
+    return selectedSimulation;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (!(obj instanceof Simulation)) {
+      return false;
+    }
+    Simulation other = (Simulation) obj;
+    return configuration.equals(other.configuration) &&
+      simulationResult.equals(other.simulationResult);
+  }
+
+  static Simulation of(User user, MovementConfiguration configuration, SimulationResult simulationResult) {
     Simulation simulation = SIMULATION_OBJ_CACHE.get(user);
-    simulation.flush(configuration, colliderResult);
+    simulation.flush(configuration, simulationResult);
     return simulation;
   }
 

@@ -11,7 +11,7 @@ import static de.jpx3.intave.share.Direction.Axis.*;
 
 public final class v14Collider implements Collider {
   @Override
-  public ColliderResult collide(
+  public SimulationResult collide(
     User user,
     SimulationEnvironment environment,
     Motion motion,
@@ -47,7 +47,7 @@ public final class v14Collider implements Collider {
     boolean moveResetX = initialX != motion.motionX;
     boolean moveResetZ = initialZ != motion.motionZ;
 
-    return new ColliderResult(
+    return new SimulationResult(
       Motion.copyFrom(motion),
       null,
       onGround,

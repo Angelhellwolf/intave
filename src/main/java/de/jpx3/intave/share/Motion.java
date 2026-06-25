@@ -191,6 +191,12 @@ public final class Motion {
 			Double.compare(other.motionZ, motionZ) == 0;
 	}
 
+	public boolean almostIdentical(Motion motion) {
+		return Math.abs(motionX - motion.motionX) < 1E-5 &&
+			Math.abs(motionY - motion.motionY) < 1E-5 &&
+			Math.abs(motionZ - motion.motionZ) < 1E-5;
+	}
+
 	@Override
 	public int hashCode() {
 		int result = Double.hashCode(motionX);

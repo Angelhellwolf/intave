@@ -4,12 +4,12 @@ import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.collision.Collision;
 import de.jpx3.intave.block.physics.BlockProperties;
 import de.jpx3.intave.block.variant.BlockVariant;
+import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.player.ItemProperties;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Direction;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.EffectMetadata;
-import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -30,22 +30,25 @@ public final class MovementCharacteristics {
     return jumpUpwardsMotion;
   }
 
-  public static float resolveFriction(User user, boolean sprinting, double positionX, double positionY, double positionZ) {
-    MovementMetadata movementData = user.meta().movement();
+  public static float resolveFriction(
+    User user, SimulationEnvironment environment,
+    boolean sprinting,
+    double positionX, double positionY, double positionZ
+  ) {
     World world = user.player().getWorld();
     float speed;
-    if (movementData.lastOnGround) {
+    if (environment.lastOnGround()) {
       float slipperiness = currentSlipperiness(
         user,
         world,
         positionX,
-        positionY - movementData.frictionPosSubtraction(),
+        positionY - environment.frictionPosSubtraction(),
         positionZ
       );
-      float var4 = movementData.frictionMultiplier() / (slipperiness * slipperiness * slipperiness);
-      speed = movementData.aiMoveSpeed(sprinting) * var4;
+      float var4 = environment.frictionMultiplier() / (slipperiness * slipperiness * slipperiness);
+      speed = environment.aiMoveSpeed(sprinting) * var4;
     } else {
-      speed = movementData.jumpMovementFactor();
+      speed = environment.jumpMovementFactor();
     }
     return speed;
   }
@@ -67,8 +70,16 @@ public final class MovementCharacteristics {
     User user, BoundingBox entityBoundingBox,
     double x, double y, double z
   ) {
+    return isOffsetPositionInLiquid(user, user.meta().movement(), entityBoundingBox, x, y, z);
+  }
+
+  public static boolean isOffsetPositionInLiquid(
+    User user, SimulationEnvironment environment,
+    BoundingBox entityBoundingBox,
+    double x, double y, double z
+  ) {
     BoundingBox boundingBox = entityBoundingBox.offset(x, y, z);
-    return Collision.nonePresent(user, user.meta().movement(), boundingBox) && !rasterizedLiquidPresentEnforcement(user, boundingBox);
+    return Collision.nonePresent(user, environment, boundingBox) && !rasterizedLiquidPresentEnforcement(user, boundingBox);
   }
 
   public static boolean onClimbable(User user, double positionX, double positionY, double positionZ) {

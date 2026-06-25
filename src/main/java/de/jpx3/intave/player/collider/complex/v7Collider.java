@@ -10,7 +10,7 @@ import de.jpx3.intave.user.User;
 
 final class v7Collider implements Collider {
   @Override
-  public ColliderResult collide(User user, SimulationEnvironment environment, Motion motion, double positionX, double positionY, double positionZ, boolean inWeb) {
+  public SimulationResult collide(User user, SimulationEnvironment environment, Motion motion, double positionX, double positionY, double positionZ, boolean inWeb) {
 //    MovementMetadata movement = user.meta().movement();
 
     // ?
@@ -96,7 +96,7 @@ final class v7Collider implements Collider {
     motion.motionX = newPositionX - positionX;
     motion.motionY = newPositionY - positionY;
     motion.motionZ = newPositionZ - positionZ;
-    return new ColliderResult(
+    return new SimulationResult(
       Motion.copyFrom(motion), null, onGround,
       collidedHorizontally, collidedVertically, moveResetX, moveResetZ,
       step, false, stepHeight

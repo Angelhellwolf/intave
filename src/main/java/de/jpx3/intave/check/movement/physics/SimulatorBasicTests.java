@@ -148,7 +148,7 @@ public final class SimulatorBasicTests extends IntegrationTests {
         configuration
       );
 
-      double accuracy = simulation.accuracy(motion);
+      double accuracy = simulation.motionDifference(motion);
       if (accuracy > 0.001 && environment.positionY() > 3) {
         System.out.println("#" + i + " (" + lastMotion + " -> " + simulation.motion() + ", but expected " + motion + ")");
         fail("Simulation accuracy deviation: " + accuracy);

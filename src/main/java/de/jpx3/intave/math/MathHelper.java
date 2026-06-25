@@ -1,6 +1,7 @@
 package de.jpx3.intave.math;
 
 import de.jpx3.intave.share.Motion;
+import de.jpx3.intave.share.Position;
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
 
@@ -124,6 +125,12 @@ public final class MathHelper {
       motionVectorA.motionX, motionVectorA.motionY, motionVectorA.motionZ,
       motionVectorB.motionX, motionVectorB.motionY, motionVectorB.motionZ
     );
+  }
+
+  public static double distanceOf(
+    Position posA, Position posB
+  ) {
+    return posA.distance(posB);
   }
 
   public static double distanceOf(

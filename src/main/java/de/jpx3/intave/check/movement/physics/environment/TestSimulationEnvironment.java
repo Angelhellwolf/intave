@@ -4,7 +4,7 @@ import de.jpx3.intave.block.fluid.Fluid;
 import de.jpx3.intave.check.movement.physics.MoveMetric;
 import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.check.movement.physics.Simulation;
-import de.jpx3.intave.player.collider.complex.ColliderResult;
+import de.jpx3.intave.player.collider.complex.SimulationResult;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.Position;
@@ -352,7 +352,7 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
   }
 
   @Override
-  public float friction() {
+  public float friction(boolean sprinting) {
     return friction;
   }
 
@@ -387,6 +387,11 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
   }
 
   @Override
+  public float jumpMovementFactor() {
+    return 0.02F;
+  }
+
+  @Override
   public boolean isSneaking() {
     return sneaking;
   }
@@ -394,6 +399,16 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
   @Override
   public boolean isSprinting() {
     return sprinting;
+  }
+
+  @Override
+  public boolean hasSprintSpeed() {
+    return sprinting;
+  }
+
+  @Override
+  public boolean sprintingAllowed() {
+    return true;
   }
 
   @Override
@@ -447,8 +462,23 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
   }
 
   @Override
+  public void clearSupportingBlock() {
+
+  }
+
+  @Override
+  public void compileSpecialBlocks() {
+
+  }
+
+  @Override
   public double frictionPosSubtraction() {
     return frictionPosSubtraction;
+  }
+
+  @Override
+  public float frictionMultiplier() {
+    return 0;
   }
 
   @Override
@@ -492,6 +522,11 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
   }
 
   @Override
+  public void addFallDistance(double fallDistance) {
+    this.fallDistance += fallDistance;
+  }
+
+  @Override
   public boolean isInVehicle() {
     return false;
   }
@@ -512,12 +547,12 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
   }
 
   @Override
-  public void setBeforeMoveColliderResult(ColliderResult result) {
+  public void setBeforeMoveColliderResult(SimulationResult result) {
 
   }
 
   @Override
-  public ColliderResult beforeMoveColliderResult() {
+  public SimulationResult beforeMoveColliderResult() {
     return null;
   }
 
@@ -531,6 +566,16 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
   public void inactiveTick(MoveMetric metric) {
     activeTracker.put(metric, 0);
     pastTracker.put(metric, ticksPast(metric) + 1);
+  }
+
+  @Override
+  public int reduceTicks() {
+    return 0;
+  }
+
+  @Override
+  public boolean denyJump() {
+    return false;
   }
 
   @Override

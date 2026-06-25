@@ -42,7 +42,7 @@ import de.jpx3.intave.module.violation.ViolationContext;
 import de.jpx3.intave.packet.PacketSender;
 import de.jpx3.intave.player.FaultKicks;
 import de.jpx3.intave.player.collider.Colliders;
-import de.jpx3.intave.player.collider.complex.ColliderResult;
+import de.jpx3.intave.player.collider.complex.SimulationResult;
 import de.jpx3.intave.player.collider.simple.SimpleColliderResult;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
@@ -81,7 +81,7 @@ public final class Physics extends Check {
 
   private final IntavePlugin plugin;
   private final CheckViolationLevelDecrementer decrementer;
-  private final SimulationProcessor simulationProcessor;
+  private final SimulationSearch simulationSearch;
   private final SimulationEvaluator simulationEvaluator;
   private final boolean highToleranceMode;
   private final boolean resetItemUsage;
@@ -121,7 +121,8 @@ public final class Physics extends Check {
     }
 
     boolean detectNoSlowdown = settings.boolBy("enforce-item-slowdown", true);
-    this.simulationProcessor = new PredictiveSimulationProcessor(resetItemUsage, detectNoSlowdown);
+//    this.simulationSearch = new SimpleSimulationSearch(resetItemUsage, detectNoSlowdown);
+    this.simulationSearch = new TwoTickSimulationSearch(resetItemUsage, detectNoSlowdown);
     this.simulationEvaluator = new SimulationEvaluator();
     setDefaultMitigationStrategy(MitigationStrategy.CAREFUL);
   }
@@ -143,7 +144,7 @@ public final class Physics extends Check {
     // simulation
     Simulation simulation;
     try {
-      simulation = simulationProcessor.simulate(user, simulator);
+      simulation = simulationSearch.simulate(user, simulator);
     } catch (IllegalStateException exception) {
       user.kick("Exception while simulating movement");
       exception.printStackTrace();
@@ -316,7 +317,7 @@ public final class Physics extends Check {
     AbilityMetadata abilityData = meta.abilities();
     BlockCache blockStateAccess = user.blockCache();
 
-    ColliderResult expectedMovement = simulation.collider();
+    SimulationResult expectedMovement = simulation.result();
     Motion context = expectedMovement.motion();
 
     int keyForward = movementData.keyForward;
@@ -464,12 +465,15 @@ public final class Physics extends Check {
     }
     if (distance > 0.001) {
       movementData.suspiciousMovement = true;
-      Simulation otherSimulation;
+
+      Simulator simulator = selectSimulator(user);
+      Motion motion = movementData.mutableBaseMotionCopy();
+      MovementConfiguration config = MovementConfiguration.blank();
       if (IntaveControl.SETBACK_WITH_PRESSED_KEYS) {
-        otherSimulation = simulationProcessor.simulateWithKeyPress(user, selectSimulator(user), movementData.keyForward, movementData.keyStrafe, false);
-      } else {
-        otherSimulation = simulationProcessor.simulateWithoutKeyPress(user, selectSimulator(user));
+        config = config.withKeypress(movementData.lastKeyForward, movementData.lastKeyStrafe);
       }
+      Simulation otherSimulation = simulator.simulateTick(user, motion, user.meta().movement().unmodifiable(), config);
+
       Motion setbackMotion = otherSimulation.motion();
       /*
        * This will patch the hit-player-sneaking-on-a-block-edge bug (https://youtu.be/ONGnOwhQyac)
@@ -865,7 +869,7 @@ public final class Physics extends Check {
 
 //      debug += " x:" + formatDouble(movementData.motionX(), 4) + " z:" + formatDouble(movementData.motionZ(), 4);
       if (!simulation.details().isEmpty()) {
-        debug += ChatColor.ITALIC + " " + simulation.details() + chatColor;
+        debug += ChatColor.AQUA + " " + ChatColor.ITALIC + " " + simulation.details() + chatColor;
       }
       if (simulation.resultsInFlyingPacket(movementData, 0.03)) {
         debug += " nwbf";
@@ -968,7 +972,7 @@ public final class Physics extends Check {
 //          debug += " yexp:" + formatDouble(predictedY, 4) + "@" + decimalPlacesOf(movementData.verifiedPositionY(), 4);
 //        }
 
-      Map<String, Double> serverDebugData = simulation.collider().debugData();
+      Map<String, Double> serverDebugData = simulation.result().debugData();
       Map<String, Double> clientDebugData = movementData.clientMovementDebugValues;
       if (!serverDebugData.isEmpty()) {
         debug += ChatColor.ITALIC + " " + serverDebugData.entrySet().stream().map(entry -> {

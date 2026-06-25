@@ -20,7 +20,6 @@ public abstract class Simulator {
       user, motion, metadata
     );
     metadata.setBaseMotion(motion);
-    metadata.refreshFriction(false);
     Simulation simulation = simulateTick(
       user, motion.copy(), metadata.unmodifiable(), config
     );

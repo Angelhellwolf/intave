@@ -27,7 +27,7 @@ import de.jpx3.intave.player.Effects;
 import de.jpx3.intave.player.ItemProperties;
 import de.jpx3.intave.player.attribute.Attribute;
 import de.jpx3.intave.player.attribute.AttributeModifier;
-import de.jpx3.intave.player.collider.complex.ColliderResult;
+import de.jpx3.intave.player.collider.complex.SimulationResult;
 import de.jpx3.intave.share.*;
 import de.jpx3.intave.share.Rotation;
 import de.jpx3.intave.user.MessageChannel;
@@ -162,12 +162,11 @@ public final class MovementMetadata implements SimulationEnvironment {
   // States if an external entity push onto the player is estimated
   public boolean pushedByEntity;
   // Key inputs sent by the client
-  public boolean externalKeyApply = false;
-  public int clientForwardKey = 0;
-  public int clientStrafeKey = 0;
+  public boolean legacyVehicleKeyInput = false;
+  public int legacyVehicleForwardKey = 0;
+  public int legacyVehicleStrafeKey = 0;
   public boolean clientPressedJump = false;
   public boolean forceCorrectReduce = false;
-  public double invalidReduceVL = 0;
   public double lastRespawnX, lastRespawnY, lastRespawnZ;
   public boolean allowRespawnLeniency = false;
   private boolean hasJumpFactor;
@@ -182,7 +181,7 @@ public final class MovementMetadata implements SimulationEnvironment {
 	private Material frictionMaterial = Material.AIR, previousFrictionMaterial = Material.AIR;
   private Material collideMaterial = Material.AIR, previousCollideMaterial = Material.AIR;
 
-  private ColliderResult beforeMoveCollider = null;
+  private SimulationResult beforeMoveCollider = null;
 
   private volatile BoundingBox boundingBox = BoundingBox.fromBounds(0, 0, 0, 0, 0, 0);
   private boolean boundingBoxSetup = false;
@@ -364,6 +363,12 @@ public final class MovementMetadata implements SimulationEnvironment {
     }
   }
 
+  @Override
+  public void clearSupportingBlock() {
+    mainSupportingBlockPos = null;
+  }
+
+  @Override
   public void compileSpecialBlocks() {
     previousCollideMaterial = collideMaterial;
     collideMaterial = compileCollideBlock();
@@ -732,12 +737,12 @@ public final class MovementMetadata implements SimulationEnvironment {
   }
 
   @Override
-  public void setBeforeMoveColliderResult(ColliderResult result) {
+  public void setBeforeMoveColliderResult(SimulationResult result) {
     this.beforeMoveCollider = result;
   }
 
   @Override
-  public ColliderResult beforeMoveColliderResult() {
+  public SimulationResult beforeMoveColliderResult() {
     return beforeMoveCollider;
   }
 
@@ -792,10 +797,6 @@ public final class MovementMetadata implements SimulationEnvironment {
     }
   }
 
-  public void refreshFriction(boolean sprinting) {
-    friction = resolveFriction(user, sprinting, verifiedLastPositionX, verifiedLastPositionY, verifiedLastPositionZ);
-  }
-
   public boolean blockOnPositionSoulSpeedAffected() {
     return BlockProperties.of(frictionMaterial()).soulSpeedAffected();
   }
@@ -808,6 +809,11 @@ public final class MovementMetadata implements SimulationEnvironment {
   @Override
   public void resetFallDistance() {
     artificialFallDistance = 0;
+  }
+
+  @Override
+  public void addFallDistance(double fallDistance) {
+    artificialFallDistance += (float) fallDistance;
   }
 
   private void updateEntityActionStates() {
@@ -860,6 +866,11 @@ public final class MovementMetadata implements SimulationEnvironment {
   }
 
   @Override
+  public void setLastOnGround(boolean lastOnGround) {
+    this.lastOnGround = lastOnGround;
+  }
+
+  @Override
   public boolean collidedHorizontally() {
     return collidedHorizontally;
   }
@@ -878,6 +889,8 @@ public final class MovementMetadata implements SimulationEnvironment {
     }
   }
 
+  @Deprecated
+  @Override
   public boolean denyJump() {
     InventoryMetadata inventoryData = user.meta().inventory();
     if (inventoryData.inventoryOpen()) {
@@ -950,6 +963,11 @@ public final class MovementMetadata implements SimulationEnvironment {
   }
 
   @Override
+  public int reduceTicks() {
+    return reduceTicks;
+  }
+
+  @Override
   public void resetPhysicsPacketRelinkFlyVL() {
     physicsPacketRelinkFlyVL = 0;
   }
@@ -1000,12 +1018,18 @@ public final class MovementMetadata implements SimulationEnvironment {
 
   @Override
   public void assumeOccurred(Simulation simulation) {
-    ColliderResult collider = simulation.collider();
+    SimulationResult collider = simulation.result();
     onGround = collider.onGround();
     collidedHorizontally = collider.collidedHorizontally();
     collidedVertically = collider.collidedVertically();
     physicsResetMotionX = collider.resetMotionX();
     physicsResetMotionZ = collider.resetMotionZ();
+
+    MovementConfiguration configuration = simulation.configuration();
+    keyForward = configuration.forward();
+    keyStrafe = configuration.strafe();
+    physicsJumped = configuration.isJumping();
+
     boolean step = collider.step();
 	  stepHeightThisMove = step ? collider.stepHeightThisMove() : 0;
     if (step) {
@@ -1027,7 +1051,7 @@ public final class MovementMetadata implements SimulationEnvironment {
     step = false;
     reduceTicks = 0;
     invalidMovement = false;
-    externalKeyApply = false;
+    legacyVehicleKeyInput = false;
     suspiciousMovement = false;
     ignoredAttackReduce = false;
     isTeleportConfirmationPacket = false;
@@ -1256,6 +1280,11 @@ public final class MovementMetadata implements SimulationEnvironment {
   }
 
   @Override
+  public boolean hasSprintSpeed() {
+    return hasSprintSpeed;
+  }
+
+  @Override
   public boolean inWater() {
     return inWater;
   }
@@ -1283,9 +1312,8 @@ public final class MovementMetadata implements SimulationEnvironment {
 
   @Deprecated
   // Override on vehicle movement
-  public void setJumpMovementFactor(float jumpMovementFactor, boolean sprinting) {
+  public void setJumpMovementFactor(float jumpMovementFactor) {
     this.jumpMovementFactor = jumpMovementFactor;
-    refreshFriction(sprinting);
   }
 
   public Simulator simulator() {
@@ -1368,8 +1396,8 @@ public final class MovementMetadata implements SimulationEnvironment {
     return sprintingAllowed;
   }
 
-  public float friction() {
-    return friction;
+  public float friction(boolean sprinting) {
+    return resolveFriction(user, this, sprinting, verifiedLastPositionX, verifiedLastPositionY, verifiedLastPositionZ);
   }
 
   @Override

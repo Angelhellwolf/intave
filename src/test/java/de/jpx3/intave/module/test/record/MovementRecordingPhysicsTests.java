@@ -64,6 +64,7 @@ final class MovementRecordingPhysicsTests {
 		String resourcePath,
 		MovementRecording recording
 	) {
+		System.out.println("Playback of " + resourcePath);
 		List<MoveFrame> frames = recording.frames();
 		int firstPositionFrame = firstPositionFrame(frames);
 		if (firstPositionFrame < 0) {
@@ -86,7 +87,7 @@ final class MovementRecordingPhysicsTests {
 		MovementMetadata metadata = user.meta().movement();
 		seedInitialMovementState(user, metadata, initialPosition, initialRotation);
 
-		SimulationProcessor processor = new PredictiveSimulationProcessor(false, false);
+		SimulationSearch processor = new TwoTickSimulationSearch(false, false);
 		Simulator simulator = Simulators.PLAYER;
 
 		for (int tick = firstPositionFrame + 1; tick < frames.size(); tick++) {
@@ -113,6 +114,10 @@ final class MovementRecordingPhysicsTests {
 				location.getYaw(), location.getPitch(),
 				hasMovement, hasRotation
 			);
+			if (!hasMovement && !hasRotation) {
+				finishTick(user, simulator, metadata, false, false);
+				continue;
+			}
 			metadata.setSimulator(simulator);
 			metadata.stepHeight = simulator.stepHeight();
 
@@ -121,15 +126,13 @@ final class MovementRecordingPhysicsTests {
 			metadata.setBaseMotion(baseMotion);
 
 			Simulation simulation = processor.simulate(user, simulator);
-			double accuracy = simulation.accuracy(metadata.motion());
+			double accuracy = simulation.motionDifference(metadata.motion());
 			System.out.println(formatDouble(accuracy, 4) + " " + simulation.motion() + " " + simulation.configuration() + (!simulation.details().isEmpty() ? " [" + simulation.details() + "]" : ""));
 
-			if (tick > 10) {
-				assertTrue(
-					accuracy < DIVERGED_MOTION_DISTANCE,
-					resourcePath + " tick " + tick + " diverged while replaying movement; distance was " + accuracy
-				);
-			}
+			assertTrue(
+				accuracy < DIVERGED_MOTION_DISTANCE,
+				resourcePath + " tick " + tick + " replayed movement inaccurately; distance was " + accuracy
+			);
 			metadata.assumeOccurred(simulation);
 			finishTick(user, simulator, metadata, hasMovement, hasRotation);
 		}
@@ -201,7 +204,6 @@ final class MovementRecordingPhysicsTests {
 			0.0D, -0.01D, 0.0D
 		).onGround();
 		metadata.lastOnGround = metadata.onGround;
-		metadata.refreshFriction(false);
 	}
 
 	private static void finishTick(
@@ -252,7 +254,7 @@ final class MovementRecordingPhysicsTests {
 		metadata.lastKeyForward = metadata.keyForward;
 		metadata.lastSprinting = metadata.sprinting;
 		metadata.lastSneaking = metadata.sneaking;
-		metadata.externalKeyApply = false;
+		metadata.legacyVehicleKeyInput = false;
 		metadata.lastOnGround = metadata.onGround;
 		metadata.setVerifiedLastPosition(metadata.position(), "recording replay");
 	}

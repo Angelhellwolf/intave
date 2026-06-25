@@ -5,7 +5,7 @@ import de.jpx3.intave.block.fluid.Fluid;
 import de.jpx3.intave.check.movement.physics.MoveMetric;
 import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.check.movement.physics.Simulation;
-import de.jpx3.intave.player.collider.complex.ColliderResult;
+import de.jpx3.intave.player.collider.complex.SimulationResult;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.Position;
@@ -108,7 +108,7 @@ public interface SimulationEnvironment {
   float rotationPitch();
 
   float aiMoveSpeed(boolean sprinting);
-  float friction();
+  float friction(boolean sprinting);
   double stepHeight();
   double resetMotion();
 
@@ -118,9 +118,12 @@ public interface SimulationEnvironment {
   double gravity();
 
   float blockSpeedFactor();
+  float jumpMovementFactor();
 
   boolean isSneaking();
   boolean isSprinting();
+  boolean hasSprintSpeed();
+  boolean sprintingAllowed();
   boolean inWater();
   void setInWater(boolean inWater);
   boolean inLava();
@@ -129,13 +132,17 @@ public interface SimulationEnvironment {
   boolean onGround();
 
   boolean lastOnGround();
+  void setLastOnGround(boolean lastOnGround);
   boolean collidedHorizontally();
   boolean collidedVertically();
 
   void checkSupportingBlock(Motion motion);
+  void clearSupportingBlock();
+  void compileSpecialBlocks();
 
   boolean collidedWithBoat();
   double frictionPosSubtraction();
+  float frictionMultiplier();
   boolean receivedFlyingPacketIn(int ticks);
 
   Material collideMaterial();
@@ -146,6 +153,7 @@ public interface SimulationEnvironment {
 
   double fallDistance();
   void resetFallDistance();
+  void addFallDistance(double fallDistance);
 
   boolean isInVehicle();
   void dismountRidingEntity(String boatSetback);
@@ -153,8 +161,8 @@ public interface SimulationEnvironment {
   void setPushedByEntity(boolean pushedByEntity);
   boolean pushedByEntity();
 
-  void setBeforeMoveColliderResult(ColliderResult result);
-  ColliderResult beforeMoveColliderResult();
+  void setBeforeMoveColliderResult(SimulationResult result);
+  SimulationResult beforeMoveColliderResult();
 
   int ticks(MoveMetric metric);
   int ticksPast(MoveMetric metric);
@@ -184,6 +192,12 @@ public interface SimulationEnvironment {
     }
   }
 
+  @Deprecated
+  int reduceTicks();
+
+  @Deprecated
+  boolean denyJump();
+
   void resetPhysicsPacketRelinkFlyVL();
 
   void updateEyesInWater();
@@ -202,5 +216,13 @@ public interface SimulationEnvironment {
 
   default SimulationEnvironment unmodifiable() {
     return UnmodifiableSimulationEnvironmentView.of(this);
+  }
+
+  default SimulationEnvironment mutableView() {
+    return MutableSimulationEnvironmentView.of(this);
+  }
+
+  default void commitTo(SimulationEnvironment other) {
+    throw new UnsupportedOperationException("commitTo is not supported for this SimulationEnvironment");
   }
 }

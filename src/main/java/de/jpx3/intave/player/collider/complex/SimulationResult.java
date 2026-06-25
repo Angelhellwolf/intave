@@ -8,9 +8,10 @@ import de.jpx3.intave.share.Motion;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
-public final class ColliderResult {
-  private static final ColliderResult INVALID_SIMULATION = new ColliderResult(
+public final class SimulationResult {
+  private static final SimulationResult INVALID_SIMULATION = new SimulationResult(
     new Motion(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE), null, false, false, false, false, false, false, false, 0);
 
   private final Motion motion;
@@ -23,7 +24,7 @@ public final class ColliderResult {
 
   private final Map<String, Double> debugData = IntaveControl.ENABLE_MOVEMENT_DEBUGGER_COLLECTOR ? new HashMap<>() : Collections.emptyMap();
 
-  public ColliderResult(
+  public SimulationResult(
     Motion motion,
     Motion intermittentResult,
     boolean onGround,
@@ -109,11 +110,88 @@ public final class ColliderResult {
     return debugData;
   }
 
-  public static ColliderResult invalid() {
+  @Override
+  public int hashCode() {
+    int result = motion.hashCode();
+    result = 31 * result + (intermittentResult != null ? intermittentResult.hashCode() : 0);
+    result = 31 * result + (onGround ? 1 : 0);
+    result = 31 * result + (collidedHorizontally ? 1 : 0);
+    result = 31 * result + (collidedVertically ? 1 : 0);
+    result = 31 * result + (resetMotionX ? 1 : 0);
+    result = 31 * result + (resetMotionZ ? 1 : 0);
+    result = 31 * result + (step ? 1 : 0);
+    result = 31 * result + (edgeSneak ? 1 : 0);
+    long temp = Double.doubleToLongBits(yStepHeight);
+    result = 31 * result + (int) (temp ^ (temp >>> 32));
+    return result;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) return true;
+    if (obj == null || getClass() != obj.getClass()) return false;
+
+    SimulationResult that = (SimulationResult) obj;
+
+    if (onGround != that.onGround) return false;
+    if (collidedHorizontally != that.collidedHorizontally) return false;
+    if (collidedVertically != that.collidedVertically) return false;
+    if (resetMotionX != that.resetMotionX) return false;
+    if (resetMotionZ != that.resetMotionZ) return false;
+    if (step != that.step) return false;
+    if (edgeSneak != that.edgeSneak) return false;
+    if (Double.compare(that.yStepHeight, yStepHeight) != 0) return false;
+    if (!motion.equals(that.motion)) return false;
+    return Objects.equals(intermittentResult, that.intermittentResult);
+  }
+
+  public boolean almostIdenticalTo(
+    SimulationResult other
+  ) {
+    if (other == null) {
+      return false;
+    }
+    if (this == other) {
+      return true;
+    }
+    if (onGround != other.onGround) {
+      return false;
+    }
+    if (collidedHorizontally != other.collidedHorizontally) {
+      return false;
+    }
+    if (collidedVertically != other.collidedVertically) {
+      return false;
+    }
+    if (resetMotionX != other.resetMotionX) {
+      return false;
+    }
+    if (resetMotionZ != other.resetMotionZ) {
+      return false;
+    }
+    if (step != other.step) {
+      return false;
+    }
+    if (edgeSneak != other.edgeSneak) {
+      return false;
+    }
+    if (!motion.almostIdentical(other.motion)) {
+      return false;
+    }
+    if (!Objects.equals(intermittentResult, other.intermittentResult)) {
+      return false;
+    }
+    if (Math.abs(yStepHeight - other.yStepHeight) > 1e-6) {
+      return false;
+    }
+    return true;
+  }
+
+  public static SimulationResult invalid() {
     return INVALID_SIMULATION;
   }
 
-  public static ColliderResult untouched(Motion motion) {
-    return new ColliderResult(motion, null,false, false, false, false, false, false, false, 0);
+  public static SimulationResult untouched(Motion motion) {
+    return new SimulationResult(motion, null,false, false, false, false, false, false, false, 0);
   }
 }

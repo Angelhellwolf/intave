@@ -3,7 +3,7 @@ package de.jpx3.intave.check.movement.physics;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.diagnostic.timings.Timings;
 import de.jpx3.intave.player.collider.Colliders;
-import de.jpx3.intave.player.collider.complex.ColliderResult;
+import de.jpx3.intave.player.collider.complex.SimulationResult;
 import de.jpx3.intave.player.collider.simple.SimpleColliderResult;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.user.User;
@@ -22,6 +22,7 @@ final class ElytraSimulator extends BaseSimulator {
     SimulationEnvironment environment,
     MovementConfiguration configuration
   ) {
+    Timings.CHECK_PHYSICS_SIMULATOR.start();
     Timings.CHECK_PHYSICS_SIMULATOR_ELYTRA.start();
     float rotationPitch = environment.rotationPitch();
     Vector lookVector = environment.lookVector();
@@ -65,12 +66,13 @@ final class ElytraSimulator extends BaseSimulator {
 
     tryRelinkFlyingPosition(user, motion, environment);
 
-    ColliderResult collisionResult = Colliders.collision(
+    SimulationResult collisionResult = Colliders.collision(
       user, environment, motion, environment.inWeb(),
       positionX, positionY, positionZ
     );
-    notePossibleFlyingPacket(user, collisionResult);
+    notePossibleFlyingPacket(user, environment, collisionResult);
     Timings.CHECK_PHYSICS_SIMULATOR_ELYTRA.stop();
+    Timings.CHECK_PHYSICS_SIMULATOR.stop();
     return Simulation.of(user, configuration, collisionResult);
   }
 

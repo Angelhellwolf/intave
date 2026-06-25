@@ -11,7 +11,7 @@ import static de.jpx3.intave.share.Direction.Axis.*;
 
 public final class v8Collider implements Collider {
   @Override
-  public ColliderResult collide(
+  public SimulationResult collide(
     User user, SimulationEnvironment environment, Motion motion,
     double positionX, double positionY, double positionZ, boolean inWeb
   ) {
@@ -143,7 +143,7 @@ public final class v8Collider implements Collider {
     motion.motionX = newPositionX - positionX;
     motion.motionY = newPositionY - positionY;
     motion.motionZ = newPositionZ - positionZ;
-    return new ColliderResult(
+    return new SimulationResult(
       Motion.copyFrom(motion), null,
       onGround, collidedHorizontally, collidedVertically,
       moveResetX, moveResetZ, step, edgeSneak, stepHeight

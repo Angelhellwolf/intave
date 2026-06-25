@@ -14,12 +14,11 @@ import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.player.Effects;
 import de.jpx3.intave.player.Enchantments;
 import de.jpx3.intave.player.collider.Colliders;
-import de.jpx3.intave.player.collider.complex.ColliderResult;
+import de.jpx3.intave.player.collider.complex.SimulationResult;
 import de.jpx3.intave.player.collider.simple.SimpleColliderResult;
 import de.jpx3.intave.share.*;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.MetadataBundle;
-import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
 import de.jpx3.intave.user.meta.ViolationMetadata;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
@@ -109,6 +108,7 @@ class BaseSimulator extends Simulator {
     SimulationEnvironment environment,
     MovementConfiguration configuration
   ) {
+    Timings.CHECK_PHYSICS_SIMULATOR.start();
     Timings.CHECK_PHYSICS_SIMULATOR_BASE.start();
     // guessed movement configuration
     float forward = configuration.forward() * 0.98f;
@@ -192,9 +192,9 @@ class BaseSimulator extends Simulator {
         motion.motionY += 0.04F;
       } else if (environment.lastOnGround()) {
         motion.motionY = user.protocolVersion() >= 768 ?
-          Math.max(environment.jumpMotion(), meta.movement().baseMotionY) :
+          Math.max(environment.jumpMotion(), environment.baseMotionY()) :
           environment.jumpMotion();
-        if (/*movementData.sprintingAllowed()*/ sprinting) {
+        if (sprinting) {
           motion.motionX -= yawSine * 0.2F;
           motion.motionZ += yawCosine * 0.2F;
         }
@@ -213,16 +213,17 @@ class BaseSimulator extends Simulator {
     } else if (inLava) {
       performLavaSimulationOfState(motion, forward, strafe, yawSine, yawCosine);
     } else {
-      performDefaultMoveSimulationOfState(user, motion, environment, forward, strafe, yawSine, yawCosine);
+      performDefaultMoveSimulationOfState(user, motion, environment, forward, strafe, yawSine, yawCosine, sprinting);
     }
     if (!inWater && !elytraFlying && !inLava) {
-      tryRelinkFlyingPosition(user, motion, environment);
+//      tryRelinkFlyingPosition(user, motion, environment);
     }
     Timings.CHECK_PHYSICS_SIMULATOR_BASE_COLLIDER.start();
-    ColliderResult collisionResult = Colliders.collision(user, environment, motion, environment.inWeb(), positionX, positionY, positionZ);
+    SimulationResult collisionResult = Colliders.collision(user, environment, motion, environment.inWeb(), positionX, positionY, positionZ);
     Timings.CHECK_PHYSICS_SIMULATOR_BASE_COLLIDER.stop();
-    notePossibleFlyingPacket(user, collisionResult);
+//    notePossibleFlyingPacket(user, environment, collisionResult);
     Timings.CHECK_PHYSICS_SIMULATOR_BASE.stop();
+    Timings.CHECK_PHYSICS_SIMULATOR.stop();
     return Simulation.of(user, configuration, collisionResult);
   }
 
@@ -264,12 +265,11 @@ class BaseSimulator extends Simulator {
     User user,
     Motion context,
     SimulationEnvironment environment,
-    float moveForward,
-    float moveStrafe,
-    float yawSine,
-    float yawCosine
+    float moveForward, float moveStrafe,
+    float yawSine, float yawCosine,
+    boolean sprinting
   ) {
-    performRelativeMoveSimulationOfState(context, environment.friction(), yawSine, yawCosine, moveForward, moveStrafe);
+    performRelativeMoveSimulationOfState(context, environment.friction(sprinting), yawSine, yawCosine, moveForward, moveStrafe);
 
     boolean onLadder = MovementCharacteristics.onClimbable(
       user,
@@ -319,9 +319,9 @@ class BaseSimulator extends Simulator {
   }
 
   private void tryRelinkFlyingPosition(
-    User user, Motion context, SimulationEnvironment environment) {
+    User user, Motion context, SimulationEnvironment environment
+  ) {
     Player player = user.player();
-    MovementMetadata movementData = user.meta().movement();
 
     double positionX = environment.verifiedLastPositionX();
     double positionY = environment.verifiedLastPositionY();
@@ -362,11 +362,11 @@ class BaseSimulator extends Simulator {
         break;
       } else if (jump
         && flyingPacket(user, diffX * 0.05, 0.0, diffZ * 0.05)
-        && !movementData.denyJump()
+        && !environment.denyJump()
       ) {
         context.motionY = jumpUpwardsMotion;
-        movementData.artificialFallDistance = 0f;
-        movementData.physicsPacketRelinkFlyVL = 0;
+        environment.resetFallDistance();
+        environment.resetPhysicsPacketRelinkFlyVL();
         break;
       } else if (environment.motionY() < 0) {
         double nextPredictedX = interpolateX * slipperiness;
@@ -411,7 +411,7 @@ class BaseSimulator extends Simulator {
       }
     }
     if (interpolations != 0) {
-      movementData.activeTick(FLYING_PACKET_ACCURATE);
+      environment.activeTick(FLYING_PACKET_ACCURATE);
     }
   }
 
@@ -435,11 +435,10 @@ class BaseSimulator extends Simulator {
     motion.motionZ = colliderResult.motionZ();
   }
 
-  void notePossibleFlyingPacket(User user, ColliderResult collisionResult) {
-    SimulationEnvironment movementData = user.meta().movement();
+  void notePossibleFlyingPacket(User user, SimulationEnvironment environment, SimulationResult collisionResult) {
     Motion context = collisionResult.motion();
     if (flyingPacket(user, context.motionX, context.motionY, context.motionZ)) {
-      movementData.activeTick(FLYING_PACKET_ACCURATE);
+      environment.activeTick(FLYING_PACKET_ACCURATE);
     }
   }
 
@@ -496,17 +495,16 @@ class BaseSimulator extends Simulator {
     }
 
     // Update supporting block if on-ground
-    MovementMetadata movementData = user.meta().movement();
     if (user.meta().protocol().trailsAndTailsUpdate()) {
-      if (movementData.onGround) {
-        movementData.checkSupportingBlock(motion);
+      if (environment.onGround()) {
+        environment.checkSupportingBlock(motion);
       } else {
-        movementData.mainSupportingBlockPos = null;
+        environment.clearSupportingBlock();
       }
-      movementData.compileSpecialBlocks();
+      environment.compileSpecialBlocks();
     }
 
-    updateFallStateAfter(user, motion.motionY, environment.onGround());
+    updateFallStateAfter(user, environment, motion.motionY, environment.onGround());
     simulateMovementOfCollidedBlocksAfter(user, environment, motion, boundingBox);
 
     if (inWater) {
@@ -527,17 +525,19 @@ class BaseSimulator extends Simulator {
     }
   }
 
-  private void updateFallStateAfter(User user, double motionY, boolean onGround) {
-    MovementMetadata movementData = user.meta().movement();
-    if (!movementData.inWater) {
-      Motion baseMotion = movementData.mutableBaseMotionCopy();
-      updateAquatics(user, baseMotion, movementData);
-      movementData.setBaseMotion(baseMotion);
+  private void updateFallStateAfter(
+    User user, SimulationEnvironment environment,
+    double motionY, boolean onGround
+  ) {
+    if (!environment.inWater()) {
+      Motion baseMotion = environment.mutableBaseMotionCopy();
+      updateAquatics(user, baseMotion, environment);
+      environment.setBaseMotion(baseMotion);
     }
     if (onGround) {
-      movementData.artificialFallDistance = 0;
+      environment.resetFallDistance();
     } else if (motionY < 0.0D) {
-      movementData.artificialFallDistance += (float) -motionY;
+      environment.addFallDistance(-motionY);
     }
   }
 
@@ -591,7 +591,6 @@ class BaseSimulator extends Simulator {
 
     // Block collisions
 
-//    movementData.aquaticUpdateInLava = false;
     environment.aquaticUpdateLavaReset();
 
 //    if (!user.meta().protocol().newBlockEntityIntersectionLogic()) {
@@ -638,12 +637,12 @@ class BaseSimulator extends Simulator {
     Position to = environment.position();
     Motion move = from.motionTo(to);
 
-    ColliderResult colliderResult = environment.beforeMoveColliderResult();
-    if (colliderResult == null) {
+    SimulationResult simulationResult = environment.beforeMoveColliderResult();
+    if (simulationResult == null) {
       return;
     }
 
-    Motion crazyMotion = colliderResult.intermittentResult();
+    Motion crazyMotion = simulationResult.intermittentResult();
 
     LongSet visitedBlocks = new LongOpenHashSet();
 
@@ -737,6 +736,7 @@ class BaseSimulator extends Simulator {
     boolean offsetPositionInLiquid =
       MovementCharacteristics.isOffsetPositionInLiquid(
         user,
+        environment,
         boundingBox,
         context.motionX,
         context.motionY + 0.6f - positionY + environment.verifiedLastPositionY(),
@@ -767,8 +767,7 @@ class BaseSimulator extends Simulator {
 
   private void performGlobalEntityPush(User user, SimulationEnvironment environment, Motion context, BoundingBox boundingBox) {
     Collection<Entity> entities = user.meta().connection().tracedEntities(); // .values();
-    MovementMetadata movementData = user.meta().movement();
-    movementData.pushedByEntity = false;
+    environment.setPushedByEntity(false);
     for (Entity entity : entities) {
       if (
         !entity.tracingEnabled() ||
@@ -784,7 +783,6 @@ class BaseSimulator extends Simulator {
   }
 
   private void applyEntityPush(SimulationEnvironment environment, Motion motionVector, Entity entity) {
-//    MovementMetadata movementData = user.meta().movement();
     double xDistance = environment.positionX() - entity.position.posX;
     double zDistance = environment.positionZ() - entity.position.posZ;
     double biggerDistance = ClientMath.abs_max(xDistance, zDistance);

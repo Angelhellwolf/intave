@@ -764,9 +764,9 @@ public final class MovementDispatcher extends Module {
         return;
       }
       Boolean jumping = packet.getBooleans().read(0);
-      movementData.externalKeyApply = true;
-      movementData.clientStrafeKey = strafeKey;
-      movementData.clientForwardKey = forwardKey;
+      movementData.legacyVehicleKeyInput = true;
+      movementData.legacyVehicleStrafeKey = strafeKey;
+      movementData.legacyVehicleForwardKey = forwardKey;
       movementData.clientPressedJump = jumping;
     }
   }

@@ -59,7 +59,7 @@ public final class Colliders {
     return UNIVERSAL_SIMPLE_COLLIDER;
   }
 
-  public static ColliderResult collision(
+  public static SimulationResult collision(
     User user, SimulationEnvironment environment,
     Motion motion, boolean inWeb,
     double positionX, double positionY, double positionZ

@@ -10,7 +10,7 @@ import de.jpx3.intave.diagnostic.timings.Timings;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.math.SinusCache;
 import de.jpx3.intave.player.collider.Colliders;
-import de.jpx3.intave.player.collider.complex.ColliderResult;
+import de.jpx3.intave.player.collider.complex.SimulationResult;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.ClientMath;
 import de.jpx3.intave.share.Motion;
@@ -33,6 +33,7 @@ public final class BoatSimulator extends BaseSimulator {
     SimulationEnvironment environment,
     MovementConfiguration configuration
   ) {
+    Timings.CHECK_PHYSICS_SIMULATOR.start();
     Timings.CHECK_PHYSICS_SIMULATOR_BOAT.start();
     MovementMetadata movement = user.meta().movement();
 
@@ -41,11 +42,12 @@ public final class BoatSimulator extends BaseSimulator {
     movement.boatGlide = boatGlide(user);
     updateMotion(user, motion);
     controlBoat(user, motion);
-    ColliderResult collision = Colliders.collision(
+    SimulationResult collision = Colliders.collision(
       user, environment, motion, movement.inWeb, movement.verifiedLastPositionX, movement.verifiedLastPositionY, movement.verifiedLastPositionZ
     );
 
     Timings.CHECK_PHYSICS_SIMULATOR_BOAT.stop();
+    Timings.CHECK_PHYSICS_SIMULATOR.stop();
     return Simulation.of(user, configuration, collision);
   }
 
@@ -173,8 +175,8 @@ public final class BoatSimulator extends BaseSimulator {
 
   private void controlBoat(User user, Motion context) {
     MovementMetadata movement = user.meta().movement();
-    int forwardInput = movement.clientForwardKey;
-    int strafeInput = movement.clientStrafeKey;
+    int forwardInput = movement.legacyVehicleForwardKey;
+    int strafeInput = movement.legacyVehicleStrafeKey;
 
     boolean forwardInputDown = forwardInput == 1;
     boolean backInputDown = forwardInput == -1;
