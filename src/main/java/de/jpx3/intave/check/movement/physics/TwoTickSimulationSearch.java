@@ -181,10 +181,14 @@ public final class TwoTickSimulationSearch implements SimulationSearch {
 		BiConsumer<C, Simulation> accumulator = collector.accumulator();
 
 		for (MovementSearchConfig config : configs) {
-			SimulationEnvironment simulationEnvironment = environment.mutableView();
+			SimulationEnvironment myEnv = environment;
+			if (config.rotation() != null) {
+				myEnv = myEnv.mutableView();
+				myEnv.setRotation(config.rotation());
+			}
 			Simulation simulation = simulator.simulateTick(
-				user, simulationEnvironment.mutableBaseMotionCopy(),
-				simulationEnvironment, config.moveConfig()
+				user, myEnv.mutableBaseMotionCopy(),
+				myEnv.unmodifiable(), config.moveConfig()
 			);
 			accumulator.accept(container, simulation);
 			if (earlyStop.test(simulation)) {

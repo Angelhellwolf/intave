@@ -7,6 +7,8 @@ import de.jpx3.intave.share.Position;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserLocal;
 
+import java.util.Objects;
+
 import static de.jpx3.intave.math.MathHelper.distanceOf;
 
 public final class Simulation {
@@ -16,6 +18,8 @@ public final class Simulation {
   private MovementConfiguration configuration;
   private SimulationResult simulationResult;
   private String details = "";
+
+  private int assumedTick;
 
   private final boolean mustBeCopied;
 
@@ -132,6 +136,11 @@ public final class Simulation {
     Simulation other = (Simulation) obj;
     return configuration.equals(other.configuration) &&
       simulationResult.equals(other.simulationResult);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(configuration, simulationResult);
   }
 
   static Simulation of(User user, MovementConfiguration configuration, SimulationResult simulationResult) {

@@ -10,7 +10,6 @@ import de.jpx3.intave.access.check.MitigationStrategy;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.adapter.MinecraftVersion;
 import de.jpx3.intave.adapter.MinecraftVersions;
-import de.jpx3.intave.analytics.GlobalStatisticsRecorder;
 import de.jpx3.intave.annotate.DispatchTarget;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.cache.BlockCache;
@@ -803,7 +802,6 @@ public final class Physics extends Check {
       movementData.artificialFallDistance *= 0.5F;
     }
 
-    GlobalStatisticsRecorder recorder = plugin.analytics().recorderOf(GlobalStatisticsRecorder.class);
 //    recorder.recordMovement();
 //    recorder.recordBlockMoved(Hypot.fast(movementData.motionX(), movementData.motionZ()));
 
@@ -835,6 +833,9 @@ public final class Physics extends Check {
       if (fly) {
         debug += ChatColor.STRIKETHROUGH;
       }
+      boolean moved = movementData.lastPosition().distance(movementData.position()) > 0.001;
+      boolean rotated = movementData.lastRotation().distanceTo(movementData.rotation()) > 0.001;
+      debug += (moved ? "M" : "-") + (rotated ? "R" : "-") + " | ";
       debug += /*"(" +*/ key /*+ ")"*/;
       if (fly) {
         debug += chatColor;

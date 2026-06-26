@@ -200,6 +200,12 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
   }
 
   @Override
+  public void setRotation(float newRotationYaw, float newRotationPitch) {
+    yaw = newRotationYaw;
+    pitch = newRotationPitch;
+  }
+
+  @Override
   public double positionX() {
     return positionX;
   }
@@ -249,6 +255,16 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
   @Override
   public double lastPositionZ() {
     return lastPositionZ;
+  }
+
+  @Override
+  public float lastRotationYaw() {
+    return yaw;
+  }
+
+  @Override
+  public float lastRotationPitch() {
+    return pitch;
   }
 
   @Override
@@ -374,6 +390,11 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
   @Override
   public void setJumpMotion(double jumpMotion) {
     this.jumpHeight = jumpMotion;
+  }
+
+  @Override
+  public boolean hasJumpedInTick() {
+    return false;
   }
 
   @Override

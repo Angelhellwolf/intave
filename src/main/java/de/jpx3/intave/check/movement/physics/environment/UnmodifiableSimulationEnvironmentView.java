@@ -44,6 +44,11 @@ public final class UnmodifiableSimulationEnvironmentView implements SimulationEn
 	}
 
 	@Override
+	public void setRotation(float newRotationYaw, float newRotationPitch) {
+		throw new UnsupportedOperationException("This environment view is unmodifiable");
+	}
+
+	@Override
 	public Position position() {
 		return delegate.position();
 	}
@@ -106,6 +111,16 @@ public final class UnmodifiableSimulationEnvironmentView implements SimulationEn
 	@Override
 	public double lastPositionZ() {
 		return delegate.lastPositionZ();
+	}
+
+	@Override
+	public float lastRotationYaw() {
+		return delegate.lastRotationYaw();
+	}
+
+	@Override
+	public float lastRotationPitch() {
+		return delegate.lastRotationPitch();
 	}
 
 	@Override
@@ -241,6 +256,11 @@ public final class UnmodifiableSimulationEnvironmentView implements SimulationEn
 	@Override
 	public void setJumpMotion(double jumpMotion) {
 		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
+	}
+
+	@Override
+	public boolean hasJumpedInTick() {
+		return delegate.hasJumpedInTick();
 	}
 
 	@Override

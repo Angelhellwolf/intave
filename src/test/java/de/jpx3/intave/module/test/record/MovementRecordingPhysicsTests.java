@@ -51,16 +51,19 @@ final class MovementRecordingPhysicsTests {
 		assertFalse(recordingPaths.isEmpty(), "No movement recordings were found");
 
 		for (Path recordingPath : recordingPaths) {
-			String resourcePath = resourcePathOf(recordingPath);
-			MovementRecording recording = MovementRecording.loadFrom(
-				Resources.resourceFromJarOrTestBuild(resourcePath)
-			);
-			preparePhysicsTestRuntime(recording);
-			processRecording(resourcePath, recording);
+			processRecordingResource(resourcePathOf(recordingPath));
 		}
 	}
 
-	private static void processRecording(
+	static void processRecordingResource(String resourcePath) throws IOException {
+		MovementRecording recording = MovementRecording.loadFrom(
+			Resources.resourceFromJarOrTestBuild(resourcePath)
+		);
+		preparePhysicsTestRuntime(recording);
+		processRecording(resourcePath, recording);
+	}
+
+	static void processRecording(
 		String resourcePath,
 		MovementRecording recording
 	) {
@@ -225,36 +228,10 @@ final class MovementRecordingPhysicsTests {
 			);
 		}
 
-		metadata.tick(ELYTRA_FLYING, metadata.elytraFlying);
-		metadata.tick(IN_WEB, metadata.inWeb());
-		metadata.tick(SNEAKING, metadata.isSneaking());
-		metadata.tick(SPRINTING, metadata.isSprinting());
-		metadata.tick(IN_WATER, metadata.inWater());
-		metadata.inactiveTick(
-			BLOCK_PLACEMENT,
-			VELOCITY,
-			RECEIVED_VELOCITY_PACKET,
-			STEP,
-			EDGE_SNEAKING,
-			SPRINT_CHANGE,
-			LONG_TELEPORT,
-			FIREWORK_ROCKETS,
-			VEHICLE_ATTACHMENT,
-			VEHICLE_DETACHMENT
-		);
-		if (hasMovement || hasRotation) {
-			metadata.inactiveTick(EXTERNAL_VELOCITY);
-		}
+		metadata.tickComplete(hasMovement, hasRotation);
 
-		metadata.reduceTicks = 0;
-		metadata.ignoredAttackReduce = false;
-		metadata.physicsUnpredictableVelocityExpected = false;
-		metadata.step = false;
 		metadata.lastKeyStrafe = metadata.keyStrafe;
 		metadata.lastKeyForward = metadata.keyForward;
-		metadata.lastSprinting = metadata.sprinting;
-		metadata.lastSneaking = metadata.sneaking;
-		metadata.legacyVehicleKeyInput = false;
 		metadata.lastOnGround = metadata.onGround;
 		metadata.setVerifiedLastPosition(metadata.position(), "recording replay");
 	}
@@ -316,8 +293,11 @@ final class MovementRecordingPhysicsTests {
 		return location;
 	}
 
-	private static List<Path> findMovementRecordings() throws IOException {
-		Path recordingRoot = Paths.get("src", "test", "resources", "physics_test_runs");
+	static List<Path> findMovementRecordings() throws IOException {
+		return findMovementRecordings(Paths.get("src", "test", "resources", "physics_test_runs"));
+	}
+
+	static List<Path> findMovementRecordings(Path recordingRoot) throws IOException {
 		try (Stream<Path> paths = Files.walk(recordingRoot)) {
 			return paths
 				.filter(Files::isRegularFile)
@@ -327,7 +307,7 @@ final class MovementRecordingPhysicsTests {
 		}
 	}
 
-	private static String resourcePathOf(Path recordingPath) {
+	static String resourcePathOf(Path recordingPath) {
 		Path resourcesRoot = Paths.get("src", "test", "resources");
 		return resourcesRoot.relativize(recordingPath).toString().replace('\\', '/');
 	}

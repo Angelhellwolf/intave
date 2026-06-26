@@ -11,16 +11,7 @@ public final class MovementSearchBranchers {
 
   public static List<SearchBrancher<MovementSearchInput, MovementSearchConfig>> normal() {
     return Arrays.asList(
-      new SprintingBrancher(),
-      new UseItemBrancher(),
-      new AttackReduceBrancher(),
-      new JumpBrancher(),
-      new KeypressBrancher()
-    );
-  }
-
-  public static List<SearchBrancher<MovementSearchInput, MovementSearchConfig>> flyingPrevRotAnticip() {
-    return Arrays.asList(
+      new RotationBrancher(),
       new SprintingBrancher(),
       new UseItemBrancher(),
       new AttackReduceBrancher(),

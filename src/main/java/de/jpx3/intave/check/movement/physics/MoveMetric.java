@@ -1,6 +1,7 @@
 package de.jpx3.intave.check.movement.physics;
 
 public enum MoveMetric {
+	ALIVE,
 	ATTACK_REDUCE,
 	BLOCK_PLACEMENT,
 	EDGE_SNEAKING,

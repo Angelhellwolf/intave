@@ -40,6 +40,14 @@ public interface SimulationEnvironment {
     );
   }
 
+  void setRotation(float newRotationYaw, float newRotationPitch);
+
+  default void setRotation(@Nullable Rotation newRotation) {
+    if (newRotation != null) {
+      setRotation(newRotation.yaw(), newRotation.pitch());
+    }
+  }
+
   default Position position() {
     return new Position(positionX(), positionY(), positionZ());
   }
@@ -62,6 +70,12 @@ public interface SimulationEnvironment {
   double lastPositionX();
   double lastPositionY();
   double lastPositionZ();
+
+  default Rotation lastRotation() {
+    return new Rotation(lastRotationYaw(), lastRotationPitch());
+  }
+  float lastRotationYaw();
+  float lastRotationPitch();
 
   default void setLastPosition(Position position) {
     setLastPosition(position.getX(), position.getY(), position.getZ());
@@ -101,6 +115,11 @@ public interface SimulationEnvironment {
   Vector motionMultiplier();
   void resetMotionMultiplier();
 
+
+  default Rotation rotation() {
+    return new Rotation(rotationYaw(), rotationPitch());
+  }
+
   float rotationYaw();
   float yawSine();
   float yawCosine();
@@ -114,6 +133,7 @@ public interface SimulationEnvironment {
 
   double jumpMotion();
   void setJumpMotion(double jumpMotion);
+  boolean hasJumpedInTick();
 
   double gravity();
 

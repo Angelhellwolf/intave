@@ -48,6 +48,34 @@ final class MutableSimulationEnvironmentViewTest {
   }
 
   @Test
+  void updateMovementPreservesPreviousRotationAsLastRotation() {
+    TestSimulationEnvironment delegate = new TestSimulationEnvironment();
+    delegate.setRotation(10.0F, 20.0F);
+
+    SimulationEnvironment view = delegate.mutableView();
+    view.updateMovement(0.0, 0.0, 0.0, 90.0F, 45.0F, false, true);
+
+    assertEquals(90.0F, view.rotationYaw(), 0.0F);
+    assertEquals(45.0F, view.rotationPitch(), 0.0F);
+    assertEquals(10.0F, view.lastRotationYaw(), 0.0F);
+    assertEquals(20.0F, view.lastRotationPitch(), 0.0F);
+  }
+
+  @Test
+  void directRotationOverrideDoesNotRewriteLastRotation() {
+    TestSimulationEnvironment delegate = new TestSimulationEnvironment();
+    delegate.setRotation(10.0F, 20.0F);
+
+    SimulationEnvironment view = delegate.mutableView();
+    view.setRotation(90.0F, 45.0F);
+
+    assertEquals(90.0F, view.rotationYaw(), 0.0F);
+    assertEquals(45.0F, view.rotationPitch(), 0.0F);
+    assertEquals(10.0F, view.lastRotationYaw(), 0.0F);
+    assertEquals(20.0F, view.lastRotationPitch(), 0.0F);
+  }
+
+  @Test
   void commitToAnotherEnvironment() {
     TestSimulationEnvironment delegate = new TestSimulationEnvironment();
     delegate.setPositionX(1.0);

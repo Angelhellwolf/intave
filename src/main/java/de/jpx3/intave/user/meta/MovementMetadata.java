@@ -334,7 +334,8 @@ public final class MovementMetadata implements SimulationEnvironment {
     }
   }
 
-  private void setRotation(float newRotationYaw, float newRotationPitch) {
+  @Override
+  public void setRotation(float newRotationYaw, float newRotationPitch) {
     rotationYaw = newRotationYaw;
     rotationPitch = newRotationPitch;
     lookVector = vectorForRotation(rotationYaw, rotationPitch);
@@ -1078,6 +1079,10 @@ public final class MovementMetadata implements SimulationEnvironment {
       pistonMotionToleranceRemaining--;
     }
 
+    activeTick(
+      ALIVE
+    );
+
     tick(IN_WEB, inWeb());
     tick(IN_WATER, inWater());
     tick(SNEAKING, isSneaking());
@@ -1262,6 +1267,11 @@ public final class MovementMetadata implements SimulationEnvironment {
   @Override
   public void setJumpMotion(double jumpMotion) {
     this.jumpMotion = jumpMotion;
+  }
+
+  @Override
+  public boolean hasJumpedInTick() {
+    return physicsJumped;
   }
 
   @Override

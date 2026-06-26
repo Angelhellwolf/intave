@@ -2,6 +2,7 @@ package de.jpx3.intave.check.movement.physics.environment;
 
 import de.jpx3.intave.block.fluid.Fluid;
 import de.jpx3.intave.check.movement.physics.MoveMetric;
+import de.jpx3.intave.check.movement.physics.MovementConfiguration;
 import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.check.movement.physics.Simulation;
 import de.jpx3.intave.player.collider.complex.SimulationResult;
@@ -40,11 +41,15 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
   private Vector motionMultiplier;
   private boolean rotationOverridden;
   private float rotationYaw, yawSine, yawCosine, rotationPitch;
+  private boolean lastRotationOverridden;
+  private float lastRotationYaw, lastRotationPitch;
   private Vector lookVector;
   private boolean boundingBoxOverridden;
   private BoundingBox boundingBox;
   private boolean jumpMotionOverridden;
   private double jumpMotion;
+  private boolean hasJumpedInTickOverridden;
+  private boolean hasJumpedInTick;
   private boolean inWaterOverridden, inWater;
   private boolean inLavaOverridden, inLava;
   private boolean inWebOverridden, inWeb;
@@ -145,6 +150,7 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
     if (hasMovement) {
       setPositionOverride(newPositionX, newPositionY, newPositionZ);
     }
+    setLastRotationOverride(rotationYaw(), rotationPitch());
     if (hasRotation) {
       setRotationOverride(newRotationYaw, newRotationPitch);
     }
@@ -160,6 +166,12 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
       newRotationYaw, newRotationPitch,
       hasMovement, hasRotation
     ));
+  }
+
+  @Override
+  public void setRotation(float newRotationYaw, float newRotationPitch) {
+    setRotationOverride(newRotationYaw, newRotationPitch);
+    deferredMutations.add(environment -> environment.setRotation(newRotationYaw, newRotationPitch));
   }
 
   @Override
@@ -215,6 +227,16 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
   @Override
   public double lastPositionZ() {
     return lastPositionOverridden ? lastPositionZ : delegate.lastPositionZ();
+  }
+
+  @Override
+  public float lastRotationYaw() {
+    return lastRotationOverridden ? lastRotationYaw : delegate.lastRotationYaw();
+  }
+
+  @Override
+  public float lastRotationPitch() {
+    return lastRotationOverridden ? lastRotationPitch : delegate.lastRotationPitch();
   }
 
   @Override
@@ -347,6 +369,11 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
     jumpMotionOverridden = true;
     this.jumpMotion = jumpMotion;
     deferredMutations.add(environment -> environment.setJumpMotion(jumpMotion));
+  }
+
+  @Override
+  public boolean hasJumpedInTick() {
+    return hasJumpedInTickOverridden ? hasJumpedInTick : delegate.hasJumpedInTick();
   }
 
   @Override
@@ -651,6 +678,7 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
 
   @Override
   public void tickComplete(boolean hasMovement, boolean hasRotation) {
+    activeTickOverride(ALIVE);
     tickOverride(IN_WEB, inWeb());
     tickOverride(IN_WATER, inWater());
     tickOverride(SNEAKING, isSneaking());
@@ -679,6 +707,7 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
   }
 
   private void applySimulation(Simulation simulation) {
+    MovementConfiguration configuration = simulation.configuration();
     SimulationResult collider = simulation.result();
     onGroundOverridden = true;
     onGround = collider.onGround();
@@ -690,6 +719,8 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
     motionXReset = collider.resetMotionX();
     motionZResetOverridden = true;
     motionZReset = collider.resetMotionZ();
+    hasJumpedInTickOverridden = true;
+    hasJumpedInTick = configuration.isJumping();
 
     if (collider.step()) {
       activeTickOverride(STEP);
@@ -758,6 +789,12 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
     yawSine = sin(rotationYawInRadians);
     yawCosine = cos(rotationYawInRadians);
     lookVector = vectorForRotation(rotationYaw, rotationPitch);
+  }
+
+  private void setLastRotationOverride(float lastRotationYaw, float lastRotationPitch) {
+    lastRotationOverridden = true;
+    this.lastRotationYaw = lastRotationYaw;
+    this.lastRotationPitch = lastRotationPitch;
   }
 
   private void setBeforeMoveColliderResultOverride(SimulationResult result) {

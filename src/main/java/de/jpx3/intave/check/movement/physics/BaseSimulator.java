@@ -15,7 +15,6 @@ import de.jpx3.intave.player.Effects;
 import de.jpx3.intave.player.Enchantments;
 import de.jpx3.intave.player.collider.Colliders;
 import de.jpx3.intave.player.collider.complex.SimulationResult;
-import de.jpx3.intave.player.collider.simple.SimpleColliderResult;
 import de.jpx3.intave.share.*;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.MetadataBundle;
@@ -30,7 +29,8 @@ import org.bukkit.entity.Player;
 
 import java.util.Collection;
 
-import static de.jpx3.intave.check.movement.physics.MoveMetric.*;
+import static de.jpx3.intave.check.movement.physics.MoveMetric.EXTERNAL_VELOCITY;
+import static de.jpx3.intave.check.movement.physics.MoveMetric.IN_LAVA;
 import static de.jpx3.intave.share.ClientMath.clamp_double;
 import static de.jpx3.intave.share.ClientMath.floor;
 import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_14;
@@ -131,8 +131,7 @@ class BaseSimulator extends Simulator {
     double positionZ = environment.verifiedLastPositionZ();
     boolean inWater = environment.inWater();
     boolean inLava = environment.inLava();
-    boolean elytraFlying = pose == Pose.FALL_FLYING;
-    boolean swimming = pose == Pose.SWIMMING;
+	  boolean swimming = pose == Pose.SWIMMING;
     boolean crouching = pose == Pose.CROUCHING;
     boolean waterUpdate = protocol.waterUpdate();
 
@@ -215,13 +214,10 @@ class BaseSimulator extends Simulator {
     } else {
       performDefaultMoveSimulationOfState(user, motion, environment, forward, strafe, yawSine, yawCosine, sprinting);
     }
-    if (!inWater && !elytraFlying && !inLava) {
-//      tryRelinkFlyingPosition(user, motion, environment);
-    }
+
     Timings.CHECK_PHYSICS_SIMULATOR_BASE_COLLIDER.start();
     SimulationResult collisionResult = Colliders.collision(user, environment, motion, environment.inWeb(), positionX, positionY, positionZ);
     Timings.CHECK_PHYSICS_SIMULATOR_BASE_COLLIDER.stop();
-//    notePossibleFlyingPacket(user, environment, collisionResult);
     Timings.CHECK_PHYSICS_SIMULATOR_BASE.stop();
     Timings.CHECK_PHYSICS_SIMULATOR.stop();
     return Simulation.of(user, configuration, collisionResult);
@@ -271,14 +267,14 @@ class BaseSimulator extends Simulator {
   ) {
     performRelativeMoveSimulationOfState(context, environment.friction(sprinting), yawSine, yawCosine, moveForward, moveStrafe);
 
-    boolean onLadder = MovementCharacteristics.onClimbable(
+    boolean onClimbable = MovementCharacteristics.onClimbable(
       user,
       environment.verifiedLastPositionX(),
       environment.verifiedLastPositionY(),
       environment.verifiedLastPositionZ()
     );
 
-    if (onLadder) {
+    if (onClimbable) {
       float axisLimit = 0.15F;
       context.motionX = ClientMath.clamp_double(context.motionX, -axisLimit, axisLimit);
       context.motionY = ClientMath.clamp_double(context.motionY, -axisLimit, Integer.MAX_VALUE); // no positive limit
@@ -316,135 +312,6 @@ class BaseSimulator extends Simulator {
       motion.motionX += moveStrafe * yawCosine - moveForward * yawSine;
       motion.motionZ += moveForward * yawCosine + moveStrafe * yawSine;
     }
-  }
-
-  private void tryRelinkFlyingPosition(
-    User user, Motion context, SimulationEnvironment environment
-  ) {
-    Player player = user.player();
-
-    double positionX = environment.verifiedLastPositionX();
-    double positionY = environment.verifiedLastPositionY();
-    double positionZ = environment.verifiedLastPositionZ();
-
-    boolean onGround;
-    double slipperiness = environment.lastOnGround()
-      ? MovementCharacteristics.currentSlipperiness(user, player.getWorld(), positionX, positionY, positionZ)
-      : 0.91f;
-    double resetMotion = environment.resetMotion();
-    double jumpUpwardsMotion = environment.jumpMotion();
-
-    int interpolations = 0;
-    double interpolateX = context.motionX;
-    double interpolateY = context.motionY;
-    double interpolateZ = context.motionZ;
-
-    for (; interpolations <= 2; interpolations++) {
-      SimpleColliderResult colliderResult =
-        Colliders.simplifiedCollision(
-          player, environment, positionX, positionY, positionZ, interpolateX, interpolateY, interpolateZ);
-
-      positionX += colliderResult.motionX();
-      positionY += colliderResult.motionY();
-      positionZ += colliderResult.motionZ();
-
-      double diffX = positionX - environment.verifiedLastPositionX();
-      double diffY = positionY - environment.verifiedLastPositionY();
-      double diffZ = positionZ - environment.verifiedLastPositionZ();
-      onGround = colliderResult.onGround();
-
-      boolean jumpLessThanExpected = colliderResult.motionY() < jumpUpwardsMotion;
-      boolean jump = onGround
-        && Math.abs(((colliderResult.motionY()) + jumpUpwardsMotion) - environment.motionY()) < 0.00001
-        && jumpLessThanExpected;
-
-      if (!flyingPacket(user, diffX, diffY, diffZ) && !jump) {
-        break;
-      } else if (jump
-        && flyingPacket(user, diffX * 0.05, 0.0, diffZ * 0.05)
-        && !environment.denyJump()
-      ) {
-        context.motionY = jumpUpwardsMotion;
-        environment.resetFallDistance();
-        environment.resetPhysicsPacketRelinkFlyVL();
-        break;
-      } else if (environment.motionY() < 0) {
-        double nextPredictedX = interpolateX * slipperiness;
-        double nextPredictedY = (interpolateY - 0.08) * 0.98f;
-        double nextPredictedZ = interpolateZ * slipperiness;
-
-        if (Math.abs(interpolateX) < resetMotion) {
-          interpolateX = 0;
-        }
-        if (Math.abs(interpolateY) < resetMotion) {
-          interpolateY = 0;
-        }
-        if (Math.abs(interpolateZ) < resetMotion) {
-          interpolateZ = 0;
-        }
-
-        applyCollidedMotionsToContext(
-          player,
-          environment,
-          context,
-          positionX,
-          positionY,
-          positionZ,
-          nextPredictedX,
-          nextPredictedY,
-          nextPredictedZ
-        );
-      }
-
-      interpolateX *= slipperiness;
-      interpolateY -= environment.gravity();
-      interpolateY *= 0.98f;
-      interpolateZ *= slipperiness;
-      if (Math.abs(interpolateX) < resetMotion) {
-        interpolateX = 0;
-      }
-      if (Math.abs(interpolateY) < resetMotion) {
-        interpolateY = 0;
-      }
-      if (Math.abs(interpolateZ) < resetMotion) {
-        interpolateZ = 0;
-      }
-    }
-    if (interpolations != 0) {
-      environment.activeTick(FLYING_PACKET_ACCURATE);
-    }
-  }
-
-  private void applyCollidedMotionsToContext(
-    Player player,
-    SimulationEnvironment environment,
-    Motion motion,
-    double positionX,
-    double positionY,
-    double positionZ,
-    double motionX,
-    double motionY,
-    double motionZ
-  ) {
-    SimpleColliderResult colliderResult =
-      Colliders.simplifiedCollision(
-        player, environment, positionX, positionY, positionZ, motionX, motionY, motionZ
-      );
-    motion.motionX = colliderResult.motionX();
-    motion.motionY = colliderResult.motionY();
-    motion.motionZ = colliderResult.motionZ();
-  }
-
-  void notePossibleFlyingPacket(User user, SimulationEnvironment environment, SimulationResult collisionResult) {
-    Motion context = collisionResult.motion();
-    if (flyingPacket(user, context.motionX, context.motionY, context.motionZ)) {
-      environment.activeTick(FLYING_PACKET_ACCURATE);
-    }
-  }
-
-  boolean flyingPacket(User user, double diffX, double diffY, double diffZ) {
-    double distance = diffX * diffX + diffY * diffY + diffZ * diffZ;
-    return Math.sqrt(distance) <= user.meta().protocol().flyingPacketUncertaintyRadius();
   }
 
   @Override
@@ -686,8 +553,7 @@ class BaseSimulator extends Simulator {
     Player player = user.player();
     MetadataBundle meta = user.meta();
     ProtocolMetadata clientData = meta.protocol();
-    double positionY = environment.positionY();
-    float motionXZMultiplier;
+	  float motionXZMultiplier;
     if (clientData.waterUpdate()) {
       motionXZMultiplier = environment.isSprinting() ? 0.9f : 0.8f;
     } else {
@@ -717,6 +583,21 @@ class BaseSimulator extends Simulator {
         motion.motionY = -0.003D;
       } else {
         motion.motionY -= gravity / 16.0D;
+      }
+    }
+
+    if (environment.collidedHorizontally()) {
+      double liquidMotionY;
+      if (user.meta().protocol().waterUpdate()) {
+        liquidMotionY = motion.motionY + 0.6f - environment.positionY() + environment.verifiedLastPositionY();
+      } else {
+        liquidMotionY = motion.motionY + 0.3f;
+      }
+      boolean offsetPositionInLiquid = MovementCharacteristics.isOffsetPositionInLiquid(
+        user, environment.boundingBox(), motion.motionX, liquidMotionY, motion.motionZ
+      );
+      if (offsetPositionInLiquid) {
+        motion.motionY = 0.3;
       }
     }
   }
@@ -753,6 +634,7 @@ class BaseSimulator extends Simulator {
     Motion motion, double gravity, double slipperiness
   ) {
     Player player = user.player();
+
     if (Effects.levitationEffectActive(player)) {
       int levitationAmplifier = Effects.effectAmplifier(player, Effects.EFFECT_LEVITATION);
       motion.motionY += (0.05D * (double) (levitationAmplifier + 1) - motion.motionY) * 0.2D;

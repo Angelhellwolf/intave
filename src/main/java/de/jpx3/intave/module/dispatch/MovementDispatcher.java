@@ -320,8 +320,8 @@ public final class MovementDispatcher extends Module {
     boolean hasRotation = reader.hasRotation();
 
     if (movement.isInVehicle() && !vehicleMove && hasRotation && !hasMovement) {
-      movement.rotationYaw = packet.getFloat().read(0);
-      movement.rotationPitch = packet.getFloat().read(1);
+      movement.rotationYaw = reader.yaw();
+      movement.rotationPitch = reader.pitch();
       logging.logSystemMessage(user, () -> "MOVEMENT IGNORED: Vehicle rotation only");
       reader.release();
       return;
