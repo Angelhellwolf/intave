@@ -37,13 +37,15 @@ import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_14;
 
 class BaseSimulator extends Simulator {
   @Override
-  public void simulatePreTick(
+  public Motion simulatePreTick(
     User user, Motion baseMotion,
     SimulationEnvironment environment
   ) {
+    baseMotion = baseMotion.copy();
     handleSneakInWater(user, baseMotion, environment);
     updateAquatics(user, baseMotion, environment);
     simulateMotionClamp(user, baseMotion, environment);
+    return baseMotion;
   }
 
   private void handleSneakInWater(User user, Motion motion, SimulationEnvironment environment) {
@@ -277,11 +279,11 @@ class BaseSimulator extends Simulator {
     if (onClimbable) {
       float axisLimit = 0.15F;
       context.motionX = ClientMath.clamp_double(context.motionX, -axisLimit, axisLimit);
-      context.motionY = ClientMath.clamp_double(context.motionY, -axisLimit, Integer.MAX_VALUE); // no positive limit
       context.motionZ = ClientMath.clamp_double(context.motionZ, -axisLimit, axisLimit);
-//      if (context.motionY < -0.15D) {
-//        context.motionY = -0.15D;
-//      }
+      if (context.motionY < -axisLimit) {
+        context.motionY = -axisLimit;
+      }
+
       Material type = VolatileBlockAccess.typeAccess(
         user, user.player().getWorld(),
         floor(environment.verifiedLastPositionX()),
@@ -315,11 +317,12 @@ class BaseSimulator extends Simulator {
   }
 
   @Override
-  public void simulateAfterTick(
+  public Motion simulateAfterTick(
     User user,
     SimulationEnvironment environment,
     Position position, Motion motion
   ) {
+    motion = motion.copy();
     Player player = user.player();
     MetadataBundle meta = user.meta();
     ProtocolMetadata clientData = meta.protocol();
@@ -390,6 +393,8 @@ class BaseSimulator extends Simulator {
       && MinecraftVersions.VER1_9_0.atOrAbove() /* todo: add scoreboard check */) {
       performGlobalEntityPush(user, environment, motion, boundingBox);
     }
+
+    return motion;
   }
 
   private void updateFallStateAfter(
@@ -597,7 +602,7 @@ class BaseSimulator extends Simulator {
         user, environment.boundingBox(), motion.motionX, liquidMotionY, motion.motionZ
       );
       if (offsetPositionInLiquid) {
-        motion.motionY = 0.3;
+        motion.motionY = 0.30000001192092896D;
       }
     }
   }
@@ -609,22 +614,24 @@ class BaseSimulator extends Simulator {
     BoundingBox boundingBox,
     boolean collidedHorizontally
   ) {
-    double positionY = environment.positionY();
     context.motionX *= 0.5D;
     context.motionY *= 0.5D;
     context.motionZ *= 0.5D;
     context.motionY -= 0.02D;
-    boolean offsetPositionInLiquid =
-      MovementCharacteristics.isOffsetPositionInLiquid(
-        user,
-        environment,
-        boundingBox,
-        context.motionX,
-        context.motionY + 0.6f - positionY + environment.verifiedLastPositionY(),
-        context.motionZ
+
+    if (environment.collidedHorizontally()) {
+      double liquidMotionY;
+      if (user.meta().protocol().waterUpdate()) {
+        liquidMotionY = context.motionY + 0.6f - environment.positionY() + environment.verifiedLastPositionY();
+      } else {
+        liquidMotionY = context.motionY + 0.3f;
+      }
+      boolean offsetPositionInLiquid = MovementCharacteristics.isOffsetPositionInLiquid(
+        user, environment.boundingBox(), context.motionX, liquidMotionY, context.motionZ
       );
-    if (collidedHorizontally && !offsetPositionInLiquid) {
-//      context.motionY = 0.3000001192092896D;
+      if (offsetPositionInLiquid) {
+        context.motionY = 0.30000001192092896D;
+      }
     }
   }
 
@@ -640,6 +647,7 @@ class BaseSimulator extends Simulator {
       motion.motionY += (0.05D * (double) (levitationAmplifier + 1) - motion.motionY) * 0.2D;
       environment.resetFallDistance();
     } else {
+      // todo isChunkLoaded support
       motion.motionY -= gravity;
     }
     motion.motionX *= slipperiness;

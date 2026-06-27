@@ -2,6 +2,7 @@ package de.jpx3.intave.check.movement.physics;
 
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.meta.ProtocolMetadata;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -11,15 +12,18 @@ public final class FPCSimulationContainer {
 	private Simulation best = Simulation.invalid();
 	private List<Simulation> possibleFlyingSimulations = null;
 	private final int maxFlyingSimulations;
+	private int totalFlyingPacketSimulations;
+	private int simulationsDone;
 
 	public FPCSimulationContainer(int maxFlyingSimulations) {
 		this.maxFlyingSimulations = maxFlyingSimulations;
 	}
 
 	public void add(Simulation simulation, User user, SimulationEnvironment environment) {
-		double flyingLimit = user.meta().protocol().flyingPacketUncertaintyRadius();
+		ProtocolMetadata protocol = user.meta().protocol();
+		double flyingLimit = protocol.flyingPacketUncertaintyRadius();
 
-		if (simulation.resultsInFlyingPacket(environment, flyingLimit)) {
+		if (simulation.resultsInFlyingPacket(environment, flyingLimit)/* && !flyingExplicit*/) {
 			if (possibleFlyingSimulations == null) {
 				possibleFlyingSimulations = new ArrayList<>(maxFlyingSimulations);
 			}
@@ -33,8 +37,18 @@ public final class FPCSimulationContainer {
 			if (!contained && possibleFlyingSimulations.size() < maxFlyingSimulations) {
 				possibleFlyingSimulations.add(simulation.reusableCopy());
 			}
+			totalFlyingPacketSimulations++;
 		}
 		best = best.select(simulation, environment.position(), environment.verifiedLastPosition());
+		simulationsDone++;
+	}
+
+	public int flyingPacketSimulations() {
+		return totalFlyingPacketSimulations;
+	}
+
+	public int simulationsDone() {
+		return simulationsDone;
 	}
 
 	public Simulation bestSimulation() {
@@ -58,6 +72,8 @@ public final class FPCSimulationContainer {
 				merged.add(simulation, user, environment);
 			}
 		}
+		merged.totalFlyingPacketSimulations = totalFlyingPacketSimulations + other.totalFlyingPacketSimulations;
+		merged.simulationsDone = simulationsDone + other.simulationsDone;
 		return merged;
 	}
 

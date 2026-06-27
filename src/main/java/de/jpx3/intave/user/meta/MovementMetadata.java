@@ -83,7 +83,7 @@ public final class MovementMetadata implements SimulationEnvironment {
   public long recordedMoves;
   public long invalidVehiclePositionTicks = 0;
   // Timestamps
-  public long lastTimeSneaking, lastTimeJumped, lastMovement, lastRotation;
+  public long lastTimeSneaking, lastTimeJumped, lastRotation;
   public Motion emulationVelocity;
   public Motion sneakPatchVelocity;
   public Motion setbackOverrideVelocity = Motion.newEmpty();
@@ -103,6 +103,7 @@ public final class MovementMetadata implements SimulationEnvironment {
   public AtomicInteger pendingVelocityPackets = new AtomicInteger();
   public int physicsPacketRelinkFlyVL; // In Air
   public boolean invalidMovement, suspiciousMovement;
+  public boolean treatThisFlyPacketAsMovePacket;
   public double baseMotionX, baseMotionY, baseMotionZ; // base or last motion, exclusively for the physics check
   public double baseMotionXBeforeVelocity, baseMotionYBeforeVelocity, baseMotionZBeforeVelocity;
   public double endMotionXOverride = Double.NaN, endMotionYOverride = Double.NaN, endMotionZOverride = Double.NaN;
@@ -883,7 +884,7 @@ public final class MovementMetadata implements SimulationEnvironment {
 
   public boolean receivedFlyingPacketIn(int ticks) {
     ProtocolMetadata protocol = user.meta().protocol();
-    if (protocol.flyingPacketsAreSent()) {
+    if (protocol.emptyFlyingPacketsAreExplicitlySent()) {
       return ticksPast(FLYING_PACKET_CLIENT) <= ticks && ticksPast(FLYING_PACKET_ACCURATE) <= ticks;
     } else {
       return ticksPast(FLYING_PACKET_ACCURATE) <= ticks;
@@ -1052,6 +1053,7 @@ public final class MovementMetadata implements SimulationEnvironment {
     step = false;
     reduceTicks = 0;
     invalidMovement = false;
+    treatThisFlyPacketAsMovePacket = false;
     legacyVehicleKeyInput = false;
     suspiciousMovement = false;
     ignoredAttackReduce = false;
@@ -1121,6 +1123,11 @@ public final class MovementMetadata implements SimulationEnvironment {
     }
 
     shulkerCleanup();
+  }
+
+  @Override
+  public void setTreatThisFlyPacketAsMovePacket(boolean treatThisFlyPacketAsMovePacket) {
+    this.treatThisFlyPacketAsMovePacket = treatThisFlyPacketAsMovePacket;
   }
 
   private void shulkerCleanup() {
@@ -1451,6 +1458,12 @@ public final class MovementMetadata implements SimulationEnvironment {
 
   public float lastRotationPitch() {
     return lastRotationPitch;
+  }
+
+  @Override
+  public void setLastRotation(float lastRotationYaw, float lastRotationPitch) {
+    this.lastRotationYaw = lastRotationYaw;
+    this.lastRotationPitch = lastRotationPitch;
   }
 
   @Override

@@ -11,7 +11,6 @@ import de.jpx3.intave.user.meta.MetadataBundle;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
 import de.jpx3.intave.user.meta.ViolationMetadata;
-import org.bukkit.entity.Player;
 
 import java.util.Set;
 
@@ -28,8 +27,7 @@ public final class SimulationEvaluator {
     boolean collidedWithBoat,
     Set<? super EvaluationTag> tags
   ) {
-    Player player = user.player();
-    MetadataBundle meta = user.meta();
+	  MetadataBundle meta = user.meta();
     ProtocolMetadata protocol = meta.protocol();
     MovementMetadata movement = meta.movement();
     double distanceMoved = MathHelper.resolveHorizontalDistance(
@@ -121,7 +119,7 @@ public final class SimulationEvaluator {
       } else if (abs(abs(receivedMotionY - crouchingHeightGap) - movement.jumpMotion()) < 0.01) {
         scuffed = true;
       }
-      boolean collides = Collision.present(player, BoundingBox.fromPosition(user, movement, movement.positionX, movement.positionY + 0.0001, movement.positionZ)
+      boolean collides = Collision.present(user, movement, BoundingBox.fromPosition(user, movement, movement.positionX, movement.positionY + 0.0001, movement.positionZ)
         .expand(movement.motionX(), abs(receivedMotionY + 0.1), movement.motionZ()));
 //      player.sendMessage(scuffed + " " + movement.isSneaking() + " " + Math.abs(receivedMotionY - crouchingHeightGap) + " " + Math.abs(receivedMotionY - standingHeightGap));
       if (scuffed && collides) {
@@ -288,7 +286,7 @@ public final class SimulationEvaluator {
 
     boolean justInPowderSnow = movement.ticksPast(IN_POWDER_SNOW) < 5;
     double maxLadderVel = justInPowderSnow ? LADDER_UPWARDS_MOTION * 1.5 : LADDER_UPWARDS_MOTION;
-    if ((onLadder || justInPowderSnow) && movement.motionY() <= maxLadderVel && movement.motionY() >= -0.05) {
+    if ((onLadder || justInPowderSnow) && movement.motionY() <= maxLadderVel && movement.motionY() >= -0.09) {
       abuseVertically = 0;
       tags.add(EvaluationTag.LADDER);
     }
@@ -310,7 +308,6 @@ public final class SimulationEvaluator {
     boolean onLadder, boolean collidedWithBoat,
     Set<? super EvaluationTag> tags
   ) {
-    Player player = user.player();
     MetadataBundle meta = user.meta();
     ViolationMetadata violationLevelData = meta.violationLevel();
     MovementMetadata movement = meta.movement();
@@ -483,7 +480,7 @@ public final class SimulationEvaluator {
         if (abs(movement.motionY()) < 0.001) {
           limit = 0.06;
         }
-        if (movement.ticksPast(EDGE_SNEAKING) <= 3 && !protocol.flyingPacketsAreSent()) {
+        if (movement.ticksPast(EDGE_SNEAKING) <= 3 && !protocol.emptyFlyingPacketsAreExplicitlySent()) {
           limit = Math.max(limit, 0.065);
         }
       } else {

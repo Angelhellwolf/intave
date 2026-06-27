@@ -85,6 +85,19 @@ dependencies {
   testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
+val benchmarkSourceSet = sourceSets.create("bench") {
+  java.srcDir("src/bench/java")
+  compileClasspath += sourceSets.main.get().output + configurations.testRuntimeClasspath.get()
+  runtimeClasspath += output + compileClasspath
+}
+
+configurations[benchmarkSourceSet.implementationConfigurationName].extendsFrom(
+  configurations.testImplementation.get()
+)
+configurations[benchmarkSourceSet.runtimeOnlyConfigurationName].extendsFrom(
+  configurations.testRuntimeOnly.get()
+)
+
 /*
  * plugin.yml
  */

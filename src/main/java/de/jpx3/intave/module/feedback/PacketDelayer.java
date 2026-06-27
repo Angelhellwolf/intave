@@ -146,7 +146,7 @@ public final class PacketDelayer extends Module {
 
     long lastMovementPacket = System.currentTimeMillis() - connection.lastMovementPacket();
     long oldestTransactionPacket = oldestPendingTransaction(user);
-    long positionTimeoutTolerance = protocol.flyingPacketsAreSent() ? 0 : 1100;
+    long positionTimeoutTolerance = protocol.emptyFlyingPacketsAreExplicitlySent() ? 0 : 1100;
 
     long lagTolerance = user.trustFactorSetting("timer.lt");
 

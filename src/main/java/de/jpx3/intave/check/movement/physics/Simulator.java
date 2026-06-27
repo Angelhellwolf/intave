@@ -9,37 +9,75 @@ import de.jpx3.intave.share.Rotation;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.MovementMetadata;
 
+import static de.jpx3.intave.check.movement.physics.MoveMetric.FLYING_PACKET_ACCURATE;
+
 public abstract class Simulator {
   public void simulateBetween(
     User user, MovementMetadata metadata,
     MovementConfiguration config
   ) {
     metadata.stepHeight = stepHeight();
-    Motion motion = metadata.mutableBaseMotionCopy();
-    simulatePreTick(
-      user, motion, metadata
-    );
-    metadata.setBaseMotion(motion);
+
+    /*
+     * Pre-tick
+     */
+    Motion lastMotion = metadata.mutableBaseMotionCopy();
+    Motion afterPreTickMotion = simulatePreTick(user, lastMotion, metadata);
+
+    /*
+     * Tick
+     */
     Simulation simulation = simulateTick(
-      user, motion.copy(), metadata.unmodifiable(), config
+      user, afterPreTickMotion.copy(), metadata.unmodifiable(), config
     );
     metadata.assumeOccurred(simulation);
-    motion = simulation.motion().copy();
-    Position newPosition = metadata.verifiedLastPosition().add(motion);
+    Motion afterSimulationMotion = simulation.motion().copy();
+    Position newPosition = metadata.verifiedLastPosition().add(afterSimulationMotion);
     metadata.updateMovement(newPosition, Rotation.zero());
-    simulateAfterTick(
-      user, metadata, metadata.position(), motion
+
+    /*
+     * Post-tick
+     */
+    Motion afterPostTickMotion = simulateAfterTick(
+      user, metadata, metadata.position(), afterSimulationMotion
     );
-    metadata.setBaseMotion(motion);
+    metadata.setBaseMotion(afterPostTickMotion);
     metadata.lastOnGround = metadata.onGround;
     metadata.setVerifiedLastPosition(
       metadata.position(), "AUTOACCEPT"
     );
   }
 
-  public abstract void simulatePreTick(
+  public void simulateAround(
+    User user, SimulationEnvironment environment,
+    Simulation simulation,
+    Position sentPosition, Rotation sentRotation
+  ) {
+    // assume received
+    Position verifiedLastPosition = environment.verifiedLastPosition();
+    Motion motionOfSimulation = simulation.motion();
+    Position firstTickPosition = verifiedLastPosition.add(motionOfSimulation);
+    environment.updateMovement(firstTickPosition, null);
+    environment.setLastPosition(verifiedLastPosition);
+    environment.assumeOccurred(simulation);
+
+    // after tick
+    Motion afterTickMotion = simulateAfterTick(user, environment, firstTickPosition, motionOfSimulation);
+    environment.setBaseMotion(afterTickMotion);
+    environment.setLastOnGround(environment.onGround());
+    environment.activeTick(FLYING_PACKET_ACCURATE);
+    environment.setVerifiedLastPosition(firstTickPosition, "Two-tick flying simulation");
+    environment.tickComplete(false, false);
+
+    // receive new packet
+    environment.updateMovement(sentPosition, sentRotation);
+    Motion afterPreTick = simulatePreTick(user, environment.mutableBaseMotionCopy(), environment);
+    environment.setBaseMotion(afterPreTick);
+  }
+
+  public abstract Motion simulatePreTick(
     User user,
-    @Mutable Motion baseMotion,
+    @Immutable Motion baseMotion,
     @Mutable SimulationEnvironment environment
   );
 
@@ -55,16 +93,15 @@ public abstract class Simulator {
     @Immutable MovementConfiguration configuration
   );
 
-  public abstract void simulateAfterTick(
+  public abstract Motion simulateAfterTick(
     User user,
     @Mutable SimulationEnvironment environment,
     @Immutable Position position,
-    @Mutable Motion motion
+    @Immutable Motion motion
   );
 
   public abstract void setback(
-    User user,
-    SimulationEnvironment environment,
+    User user, SimulationEnvironment environment,
     double predictedX, double predictedY, double predictedZ
   );
 

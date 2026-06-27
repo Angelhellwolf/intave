@@ -83,6 +83,10 @@ public final class Position implements Serializable, Cloneable {
 		return new Location(world, x, y, z);
 	}
 
+	public Location toLocation(World world, Rotation rotation) {
+		return new Location(world, x, y, z, rotation.yaw(), rotation.pitch());
+	}
+
 	public double distance(Position position) {
 		return distance(position.x, position.y, position.z);
 	}
@@ -221,7 +225,7 @@ public final class Position implements Serializable, Cloneable {
 
 	@Override
 	public String toString() {
-		return formatDouble(x, 2) + ", " + formatDouble(y, 2) + ", " + formatDouble(z, 2);
+		return formatDouble(x, 4) + ", " + formatDouble(y, 4) + ", " + formatDouble(z, 4);
 	}
 
 	public String format(int decimalPlaces) {

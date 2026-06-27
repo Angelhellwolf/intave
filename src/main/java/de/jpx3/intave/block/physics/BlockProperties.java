@@ -12,7 +12,7 @@ public final class BlockProperties {
   private static final Property DEFAULT_PROPERTY = Property.builderFor(AIR).build();
   private static final Map<Material, Property> registry = new HashMap<>();
 
-  public static void setup() {
+  static {
     Property.builderFor(ICE, PACKED_ICE, "FROSTED_ICE").slipperiness(0.98f).buildAndSave();
     Property.builderFor("BLUE_ICE").slipperiness(0.989f).buildAndSave();
     Property.builderFor(SLIME_BLOCK).slipperiness(0.8f).buildAndSave();

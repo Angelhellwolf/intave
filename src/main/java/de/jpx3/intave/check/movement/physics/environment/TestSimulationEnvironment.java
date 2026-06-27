@@ -28,6 +28,7 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
   private float height = 1.8F;
   private float width = 0.6F;
   private float yaw, pitch;
+  private float lastYaw, lastPitch;
   private float resetMotion = 0.05F;
   private float aiMovementSpeed;
   private float friction = 0.91F;
@@ -124,10 +125,12 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
 
   public void setYaw(float yaw) {
     this.yaw = yaw;
+    this.lastYaw = yaw;
   }
 
   public void setPitch(float pitch) {
     this.pitch = pitch;
+    this.lastPitch = pitch;
   }
 
   public void setResetMotion(float resetMotion) {
@@ -192,17 +195,25 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
 
   @Override
   public void updateMovement(double newPositionX, double newPositionY, double newPositionZ, float newRotationYaw, float newRotationPitch, boolean hasMovement, boolean hasRotation) {
-    positionX = newPositionX;
-    positionY = newPositionY;
-    positionZ = newPositionZ;
-    yaw = newRotationYaw;
-    pitch = newRotationPitch;
+    if (hasMovement) {
+      positionX = newPositionX;
+      positionY = newPositionY;
+      positionZ = newPositionZ;
+    }
+    lastYaw = yaw;
+    lastPitch = pitch;
+    if (hasRotation) {
+      yaw = newRotationYaw;
+      pitch = newRotationPitch;
+    }
   }
 
   @Override
   public void setRotation(float newRotationYaw, float newRotationPitch) {
     yaw = newRotationYaw;
     pitch = newRotationPitch;
+    lastYaw = newRotationYaw;
+    lastPitch = newRotationPitch;
   }
 
   @Override
@@ -259,12 +270,18 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
 
   @Override
   public float lastRotationYaw() {
-    return yaw;
+    return lastYaw;
   }
 
   @Override
   public float lastRotationPitch() {
-    return pitch;
+    return lastPitch;
+  }
+
+  @Override
+  public void setLastRotation(float lastRotationYaw, float lastRotationPitch) {
+    lastYaw = lastRotationYaw;
+    lastPitch = lastRotationPitch;
   }
 
   @Override
@@ -661,6 +678,11 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
 
   @Override
   public void tickComplete(boolean hasMovement, boolean hasRotation) {
+
+  }
+
+  @Override
+  public void setTreatThisFlyPacketAsMovePacket(boolean treatThisFlyPacketAsMovePacket) {
 
   }
 

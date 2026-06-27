@@ -19,9 +19,7 @@ public final class Simulation {
   private SimulationResult simulationResult;
   private String details = "";
 
-  private int assumedTick;
-
-  private final boolean mustBeCopied;
+	private final boolean mustBeCopied;
 
 	private Simulation() {
     this.mustBeCopied = true;
@@ -73,12 +71,11 @@ public final class Simulation {
   }
 
   public boolean resultsInFlyingPacket(
-    SimulationEnvironment environment,
-    double limit
+    SimulationEnvironment environment, double limit
   ) {
-    Position lastPosition = environment.lastPosition();
-    Position newPosition = lastPosition.add(motion());
-    double distance = lastPosition.distance(newPosition);
+    Position lastReportedPosition = environment.lastPosition();
+    Position newPosition = environment.verifiedLastPosition().add(motion());
+    double distance = lastReportedPosition.distance(newPosition);
     return distance < limit;
   }
 

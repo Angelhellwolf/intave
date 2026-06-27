@@ -5,7 +5,6 @@ import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.check.movement.physics.search.MovementSearchBranchers;
 import de.jpx3.intave.check.movement.physics.search.MovementSearchConfig;
 import de.jpx3.intave.check.movement.physics.search.MovementSearchInput;
-import de.jpx3.intave.diagnostic.KeyPressStudy;
 import de.jpx3.intave.diagnostic.timings.Timings;
 import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.player.ItemProperties;
@@ -42,39 +41,32 @@ public final class SimpleSimulationSearch implements SimulationSearch {
     this.detectNoSlowdown = detectNoSlowdown;
   }
 
-  @Override
-  public Simulation simulate(User user, Simulator simulator) {
-    MovementMetadata movementData = user.meta().movement();
-    Motion sentMotion = movementData.motion();
-
-    Simulation simulation = collectSimulations(
-      user, simulator,
-      Collectors.reducing(
-        Simulation.invalid(),
-        (o, o2) -> o.select(o2, sentMotion)
+	@Override
+	public Simulation simulate(User user, SimulationEnvironment environment, Simulator simulator) {
+		Motion sentMotion = environment.motion();
+		Simulation simulation = collectSimulations(
+			user, simulator, environment,
+			Collectors.reducing(
+				Simulation.invalid(),
+				(o, o2) -> o.select(o2, sentMotion)
       ),
       sim -> sim.motionDifference(sentMotion) < REQUIRED_ACCURACY_FOR_QUICK_PROC_EXIT
     );
-
     applySimulation(user, simulation);
-//    simulation.append("i" + simulationCollector.trials());
-//    simulation.append("fe" + simulationCollector.flyingEligibleTrials());
-    KeyPressStudy.enterKeyPress(movementData.keyForward, movementData.keyStrafe);
     return simulation;
   }
 
   private static final double REQUIRED_ACCURACY_FOR_QUICK_PROC_EXIT = 0.008;
 
-  private <C, R> R collectSimulations(
-    User user, Simulator simulator,
-    Collector<Simulation, C, R> collector,
-    Predicate<Simulation> earlyStop
-  ) {
-    SimulationEnvironment environment = user.meta().movement();
-
-    Timings.CHECK_PHYSICS_PROC_ITR.start();
-    Timings.CHECK_PHYSICS_PROC_ITR_BUILD_CONFIGS.start();
-    Set<MovementSearchConfig> configs = SEARCHER.searchConfigurationsFor(
+	private <C, R> R collectSimulations(
+		User user, Simulator simulator,
+		SimulationEnvironment environment,
+		Collector<Simulation, C, R> collector,
+		Predicate<Simulation> earlyStop
+	) {
+		Timings.CHECK_PHYSICS_PROC_ITR.start();
+		Timings.CHECK_PHYSICS_PROC_ITR_BUILD_CONFIGS.start();
+		Set<MovementSearchConfig> configs = SEARCHER.searchConfigurationsFor(
       MovementSearchInput.from(user, simulator, environment, detectNoSlowdown)
     );
     Timings.CHECK_PHYSICS_PROC_ITR_BUILD_CONFIGS.stop();

@@ -1,5 +1,7 @@
 package de.jpx3.intave.diagnostic;
 
+import de.jpx3.intave.check.movement.physics.MovementConfiguration;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -10,6 +12,13 @@ public final class KeyPressStudy {
   public static void enterKeyPress(int forward, int strafe) {
     String keys = resolveKeysFromInput(forward, strafe);
     KeyPressStudy.keys.put(keys, KeyPressStudy.keys.getOrDefault(keys, 0L) + 1);
+  }
+
+  public static void enterKeyPressFrom(MovementConfiguration configuration) {
+    enterKeyPress(
+      configuration.forward(),
+      configuration.strafe()
+    );
   }
 
   public static Map<String, Long> result() {

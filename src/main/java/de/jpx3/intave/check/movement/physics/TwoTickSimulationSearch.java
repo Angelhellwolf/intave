@@ -5,19 +5,16 @@ import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.check.movement.physics.search.MovementSearchBranchers;
 import de.jpx3.intave.check.movement.physics.search.MovementSearchConfig;
 import de.jpx3.intave.check.movement.physics.search.MovementSearchInput;
-import de.jpx3.intave.diagnostic.KeyPressStudy;
 import de.jpx3.intave.diagnostic.timings.Timings;
 import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.player.ItemProperties;
 import de.jpx3.intave.search.Searcher;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.Position;
-import de.jpx3.intave.share.Rotation;
 import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.InventoryMetadata;
 import de.jpx3.intave.user.meta.MetadataBundle;
-import de.jpx3.intave.user.meta.MovementMetadata;
 import org.bukkit.ChatColor;
 
 import java.util.List;
@@ -28,7 +25,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
-import static de.jpx3.intave.check.movement.physics.MoveMetric.FLYING_PACKET_ACCURATE;
 import static de.jpx3.intave.check.movement.physics.MoveMetric.TELEPORT;
 
 public final class TwoTickSimulationSearch implements SimulationSearch {
@@ -47,17 +43,16 @@ public final class TwoTickSimulationSearch implements SimulationSearch {
 	}
 
 	@Override
-	public Simulation simulate(User user, Simulator simulator) {
-		MovementMetadata movementData = user.meta().movement();
-		Position sentPosition = movementData.position();
-		Position lastPositionB4Flying = movementData.lastPosition();
+	public Simulation simulate(User user, SimulationEnvironment environment, Simulator simulator) {
+		Position sentPosition = environment.position();
+		Position lastPositionB4Flying = environment.lastPosition();
 
 		FPCSimulationContainer container = collectSimulations(
-			user, simulator, movementData,
+			user, simulator, environment,
 			Collector.of(
 				FPCSimulationContainer::def,
-				(c, o) -> c.add(o, user, movementData),
-				(c1, c2) -> c1.mergedWith(c2, user, movementData),
+				(c, o) -> c.add(o, user, environment),
+				(c1, c2) -> c1.mergedWith(c2, user, environment),
 				Function.identity()
 			),
 			sim -> sim.positionDifference(lastPositionB4Flying, sentPosition) < REQUIRED_ACCURACY_FOR_QUICK_PROC_EXIT
@@ -67,8 +62,7 @@ public final class TwoTickSimulationSearch implements SimulationSearch {
 		Simulation bestSimulation = container.bestSimulation();
 
 		if (flyingSimulations.isEmpty() || bestSimulation.positionDifference(lastPositionB4Flying, sentPosition) < REQUIRED_ACCURACY_FOR_QUICK_PROC_EXIT) {
-			applySimulation(user, bestSimulation);
-			KeyPressStudy.enterKeyPress(movementData.keyForward, movementData.keyStrafe);
+			applySimulation(user, environment, bestSimulation);
 			return bestSimulation;
 		}
 
@@ -76,12 +70,10 @@ public final class TwoTickSimulationSearch implements SimulationSearch {
 		double bestDistance = 2 * bestSimulation.positionDifference(lastPositionB4Flying, sentPosition);
 
 		for (Simulation flyingSimulation : flyingSimulations) {
-			SimulationEnvironment branchEnvironment = movementData.mutableView();
-			flyingTickSimulation(
-				user, simulator,
-				movementData.verifiedLastPosition(),
-				movementData.position(), movementData.rotation(),
-				branchEnvironment, flyingSimulation
+			SimulationEnvironment branchEnvironment = environment.mutableView();
+			simulator.simulateAround(
+				user, branchEnvironment, flyingSimulation,
+				environment.position(), environment.rotation()
 			);
 			Motion remainingMotion = branchEnvironment.motion();
 			Simulation secondTickSimulation = collectSimulations(
@@ -106,41 +98,15 @@ public final class TwoTickSimulationSearch implements SimulationSearch {
 		}
 
 		if (bestEnvironment != null) {
-			bestEnvironment.commitTo(user.meta().movement());
+			bestEnvironment.commitTo(environment);
 		}
 
-		applySimulation(user, bestSimulation);
-		KeyPressStudy.enterKeyPress(movementData.keyForward, movementData.keyStrafe);
+		applySimulation(user, environment, bestSimulation);
 		return bestSimulation;
 	}
 
-	private void flyingTickSimulation(
-		User user, Simulator simulator,
-		Position verifiedLastPosition,
-		Position sentPosition, Rotation sentRotation,
-		SimulationEnvironment environment,
-		Simulation flyingSimulation
-	) {
-		environment.assumeOccurred(flyingSimulation);
-		Motion firstTickMotion = flyingSimulation.motion().copy();
-		Position firstTickPosition = environment.verifiedLastPosition().add(firstTickMotion);
-		environment.updateMovement(firstTickPosition, null);
-		environment.setLastPosition(verifiedLastPosition);
-		simulator.simulateAfterTick(user, environment, firstTickPosition, firstTickMotion);
-		environment.setBaseMotion(firstTickMotion);
-		environment.setLastOnGround(environment.onGround());
-		environment.activeTick(FLYING_PACKET_ACCURATE);
-		environment.setVerifiedLastPosition(firstTickPosition, "Two-tick flying simulation");
-		environment.tickComplete(false, false);
-		environment.updateMovement(sentPosition, sentRotation);
-		Motion secondTickBaseMotion = environment.mutableBaseMotionCopy();
-		simulator.simulatePreTick(user, secondTickBaseMotion, environment);
-		environment.setBaseMotion(secondTickBaseMotion);
-	}
-
-	private void applySimulation(User user, Simulation simulation) {
+	private void applySimulation(User user, SimulationEnvironment environment, Simulation simulation) {
 		MetadataBundle meta = user.meta();
-		MovementMetadata movementData = meta.movement();
 		InventoryMetadata inventoryData = meta.inventory();
 
 		MovementConfiguration configuration = simulation.configuration();
@@ -148,7 +114,7 @@ public final class TwoTickSimulationSearch implements SimulationSearch {
 		boolean movementSuggestsHandIsActive = configuration.isHandActive();
 		boolean packetsSuggestsHandIsActive = inventoryData.handActive();
 		if (packetsSuggestsHandIsActive && !movementSuggestsHandIsActive) {
-			boolean releaseHandConditions = Hypot.fast(movementData.motionX(), movementData.motionZ()) > 0.3 || movementData.ticksPast(TELEPORT) >= 2;
+			boolean releaseHandConditions = Hypot.fast(environment.motionX(), environment.motionZ()) > 0.3 || environment.ticksPast(TELEPORT) >= 2;
 			boolean itemIsBow = ItemProperties.isBow(meta.inventory().activeItemType()) || ItemProperties.isBow(meta.inventory().offhandItemType());
 			boolean viaVersionBlockReplacement = meta.protocol().viaVersionShieldBlockReplacement();
 			if (releaseHandConditions && (!itemIsBow || (inventoryData.handActiveTicks > 3 && !viaVersionBlockReplacement)) && itemUsageReset) {

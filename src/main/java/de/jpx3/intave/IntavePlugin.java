@@ -15,7 +15,6 @@ import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.collision.modifier.CollisionModifiers;
 import de.jpx3.intave.block.fluid.Fluids;
 import de.jpx3.intave.block.physics.BlockPhysics;
-import de.jpx3.intave.block.physics.BlockProperties;
 import de.jpx3.intave.block.shape.resolve.DrillResolver;
 import de.jpx3.intave.block.shape.resolve.patch.BlockShapePatcher;
 import de.jpx3.intave.block.type.BlockTypeAccess;
@@ -303,7 +302,6 @@ public final class IntavePlugin extends JavaPlugin {
       ViaVersionAdapter.setup();
       WorldPermission.setup();
       BlockPhysics.setup();
-      BlockProperties.setup();
       ItemProperties.setup();
       BlockShapePatcher.setup();
       EntityLookup.setup();

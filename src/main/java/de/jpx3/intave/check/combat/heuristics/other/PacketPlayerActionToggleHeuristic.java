@@ -76,7 +76,7 @@ public final class PacketPlayerActionToggleHeuristic extends ClassicHeuristic<Pa
       : heuristicMeta.sneakTogglesInTick++ >= 1;
 
     if (flag) {
-      boolean flyingPacketStream = clientData.flyingPacketsAreSent();
+      boolean flyingPacketStream = clientData.emptyFlyingPacketsAreExplicitlySent();
       boolean checkable = flyingPacketStream || !movementData.receivedFlyingPacketIn(20);
       if (checkable) {
         String description = sprint

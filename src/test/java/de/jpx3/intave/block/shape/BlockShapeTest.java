@@ -1,73 +1,51 @@
 package de.jpx3.intave.block.shape;
 
 import de.jpx3.intave.share.BoundingBox;
-import de.jpx3.intave.test.IntegrationTests;
-import de.jpx3.intave.test.Severity;
-import de.jpx3.intave.test.Test;
+import org.junit.jupiter.api.Test;
 
-public final class BlockShapeTests extends IntegrationTests {
-  public BlockShapeTests() {
-    super("BS");
-  }
+import static org.junit.jupiter.api.Assertions.*;
 
-  @Test(
-    testCode = "A",
-    severity = Severity.ERROR
-  )
-  public void emptyMustBeEmpty() {
+final class BlockShapeTest {
+  @Test
+  void emptyMustBeEmpty() {
     BlockShape empty = BlockShapes.emptyShape();
     assertTrue(empty.isEmpty());
     assertFalse(empty.isCubic());
   }
 
-  @Test(
-    testCode = "B",
-    severity = Severity.ERROR
-  )
-  public void testArrayMustBeEmpty() {
+  @Test
+  void testArrayMustBeEmpty() {
     BlockShape empty = BlockShapes.emptyShape();
     ArrayBlockShape array = new ArrayBlockShape(empty);
     assertTrue(array.isEmpty());
   }
 
-  @Test(
-    testCode = "C",
-    severity = Severity.ERROR
-  )
-  public void arrayMustNotBeEmptyIfContainsNonEmpty() {
+  @Test
+  void arrayMustNotBeEmptyIfContainsNonEmpty() {
     BlockShape empty = BlockShapes.emptyShape();
     BlockShape nonEmpty = BlockShapes.originCube();
     ArrayBlockShape array = new ArrayBlockShape(empty, nonEmpty);
     assertFalse(array.isEmpty());
   }
 
-  @Test(
-    testCode = "D",
-    severity = Severity.ERROR
-  )
-  public void testCubicBoundingBoxMustBeCubic() {
+  @Test
+  void testCubicBoundingBoxMustBeCubic() {
     BlockShape blockShape = BoundingBox.originFrom(0, 0, 0, 1, 1, 1);
     assertTrue(blockShape.isCubic());
     blockShape = blockShape.contextualized(1, 1, 1);
     assertTrue(blockShape.isCubic());
   }
 
-  @Test(
-    testCode = "E",
-    severity = Severity.ERROR
-  )
-  public void testCubeShapeMustBeCubic() {
+  @Test
+  void testCubeShapeMustBeCubic() {
     BlockShape blockShape = BlockShapes.originCube();
     assertTrue(blockShape.isCubic());
     blockShape = blockShape.contextualized(1, 1, 1);
     assertTrue(blockShape.isCubic());
   }
 
-  @Test(
-    testCode = "F",
-    severity = Severity.ERROR
-  )
-  public void testArrayShapeMustBeCubic() {
+  @Test
+  void testArrayShapeMustBeCubic() {
     BlockShape blockShape = BlockShapes.originCube();
     blockShape.contextualized(1, 1, 1);
     for (int i = 0; i < 10; i++) {
@@ -76,11 +54,8 @@ public final class BlockShapeTests extends IntegrationTests {
     assertTrue(blockShape.isCubic());
   }
 
-  @Test(
-    testCode = "G",
-    severity = Severity.ERROR
-  )
-  public void testMergeShapeMustBeCubic() {
+  @Test
+  void testMergeShapeMustBeCubic() {
     BlockShape blockShape = BlockShapes.originCube();
     blockShape.contextualized(1, 1, 1);
     for (int i = 0; i < 10; i++) {
@@ -89,11 +64,8 @@ public final class BlockShapeTests extends IntegrationTests {
     assertTrue(blockShape.isCubic());
   }
 
-  @Test(
-    testCode = "H",
-    severity = Severity.ERROR
-  )
-  public void testMergeShapeMustBeEmpty() {
+  @Test
+  void testMergeShapeMustBeEmpty() {
     BlockShape blockShape = BlockShapes.originCube();
     blockShape.contextualized(1, 1, 1);
     for (int j = 0; j < 10; j++) {
@@ -110,11 +82,8 @@ public final class BlockShapeTests extends IntegrationTests {
     }
   }
 
-  @Test(
-    testCode = "I",
-    severity = Severity.ERROR
-  )
-  public void testMerge() {
+  @Test
+  void testMerge() {
     BlockShape blockShape = BlockShapes.originCube();
     BlockShape empty = BlockShapes.emptyShape();
     assertSame(blockShape, BlockShapes.merge(blockShape, empty));

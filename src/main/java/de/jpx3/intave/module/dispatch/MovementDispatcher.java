@@ -529,11 +529,9 @@ public final class MovementDispatcher extends Module {
         movement.physicsResetMotionZ = true;
       }
 
-      if (hasMovement || hasRotation) {
-        physicsCheck.receiveMovement(user, hasMovement, hasRotation);
-      } else {
+      physicsCheck.receiveMovement(user, hasMovement, hasRotation);
+      if (!hasMovement && !hasRotation && !movement.treatThisFlyPacketAsMovePacket) {
         logging.logSystemMessage(user, () -> "MOVEMENT IGNORED: No movement or rotation");
-        physicsCheck.updateOnGroundIfFlying(user);
       }
 
       boolean clientOnGround = vehicleMove ? player.isOnGround() : reader.onGround();
@@ -700,7 +698,7 @@ public final class MovementDispatcher extends Module {
     }
 
     if (!cancellable.isCancelled() && !movement.isTeleportConfirmationPacket && !movement.dropPostTickMotionProcessing) {
-      physicsCheck.endMovement(user, hasMovement);
+      physicsCheck.endMovement(user, hasMovement, hasRotation);
       movement.lastOnGround = movement.onGround;
       movement.setVerifiedLastPosition(
         movement.position(),

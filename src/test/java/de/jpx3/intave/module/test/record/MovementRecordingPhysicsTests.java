@@ -5,9 +5,11 @@ import de.jpx3.intave.adapter.MinecraftVersion;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.block.cache.PlaybackBlockCacheView;
 import de.jpx3.intave.block.fluid.Fluids;
+import de.jpx3.intave.block.physics.BlockPhysics;
 import de.jpx3.intave.block.shape.resolve.DenyShapeResolverPipeline;
 import de.jpx3.intave.block.shape.resolve.DrillResolver;
 import de.jpx3.intave.check.movement.physics.*;
+import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.module.test.record.action.Action;
 import de.jpx3.intave.module.test.record.action.ReceiveVelocity;
 import de.jpx3.intave.player.collider.Colliders;
@@ -24,12 +26,14 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.WorldBorder;
 import org.bukkit.entity.Player;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -39,11 +43,21 @@ import java.util.stream.Stream;
 
 import static de.jpx3.intave.check.movement.physics.MoveMetric.*;
 import static de.jpx3.intave.math.MathHelper.formatDouble;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.fail;
 
 final class MovementRecordingPhysicsTests {
 	private static final UUID EMPTY_ID = UUID.fromString("00000000-0000-0000-0000-000000000000");
-	private static final double DIVERGED_MOTION_DISTANCE = 0.5;
+	private static final double DIVERGED_MOTION_DISTANCE = 0.0001;
+	private static final double FLYING_PACKET_DIVERGED_MOTION_DISTANCE = 0.05;
+
+	@BeforeAll
+	static void setup() {
+		System.out.println("--------------------------------");
+		System.out.println("Movement recording physics tests");
+		System.out.println("--------------------------------");
+		System.out.println();
+	}
 
 	@Test
 	void simulationProcessorProcessesAllRecordedMovements() throws IOException {
@@ -51,6 +65,11 @@ final class MovementRecordingPhysicsTests {
 		assertFalse(recordingPaths.isEmpty(), "No movement recordings were found");
 
 		for (Path recordingPath : recordingPaths) {
+			String fileName = recordingPath.getFileName().toString();
+			if (fileName.startsWith("_")) {
+				System.out.println("[SKIPPED] " + recordingPath);
+				continue;
+			}
 			processRecordingResource(resourcePathOf(recordingPath));
 		}
 	}
@@ -67,7 +86,7 @@ final class MovementRecordingPhysicsTests {
 		String resourcePath,
 		MovementRecording recording
 	) {
-		System.out.println("Playback of " + resourcePath);
+		System.out.print("\r[START] " + resourcePath + "...");
 		List<MoveFrame> frames = recording.frames();
 		int firstPositionFrame = firstPositionFrame(frames);
 		if (firstPositionFrame < 0) {
@@ -90,8 +109,9 @@ final class MovementRecordingPhysicsTests {
 		MovementMetadata metadata = user.meta().movement();
 		seedInitialMovementState(user, metadata, initialPosition, initialRotation);
 
-		SimulationSearch processor = new TwoTickSimulationSearch(false, false);
+		SimulationSearch processor = new ThreeTickSimulationSearch(false, false);
 		Simulator simulator = Simulators.PLAYER;
+		List<String> lastMessages = new LinkedList<>();
 
 		for (int tick = firstPositionFrame + 1; tick < frames.size(); tick++) {
 			MoveFrame frame = frames.get(tick);
@@ -117,34 +137,123 @@ final class MovementRecordingPhysicsTests {
 				location.getYaw(), location.getPitch(),
 				hasMovement, hasRotation
 			);
-			if (!hasMovement && !hasRotation) {
+			metadata.setSimulator(simulator);
+			metadata.stepHeight = simulator.stepHeight();
+			metadata.treatThisFlyPacketAsMovePacket = false;
+
+			Motion previousBaseMotion = metadata.mutableBaseMotionCopy();
+			Motion preTickMotion = simulator.simulatePreTick(user, previousBaseMotion.copy(), metadata);
+			metadata.setBaseMotion(preTickMotion);
+
+			SimulationEnvironment simulationEnvironment = metadata.mutableView();
+			Simulation simulation = processor.simulate(user, simulationEnvironment, simulator);
+//			Simulation simulation = processor.simulate(user, simulator, hasMovement || hasRotation);
+			boolean subversiveFlyingMovement = subversiveFlyingMovement(user, simulationEnvironment, simulation, hasMovement, hasRotation);
+			if (!hasMovement && !hasRotation && !subversiveFlyingMovement) {
+				metadata.setBaseMotion(previousBaseMotion);
 				finishTick(user, simulator, metadata, false, false);
 				continue;
 			}
-			metadata.setSimulator(simulator);
-			metadata.stepHeight = simulator.stepHeight();
+			double loss = hasMovement || hasRotation ? simulation.motionDifference(metadata.motion()) : 0;
+			double allowedLoss = allowedMotionDivergence(user, subversiveFlyingMovement || simulationEnvironment.receivedFlyingPacketIn(2));
+			String output = formatDouble(loss, 4) + " " + simulation.motion() + " [actual: " + metadata.motion() + "] " + simulation.configuration() + (!simulation.details().isEmpty() ? " [" + simulation.details() + "]" : "");
+			lastMessages.add(output);
 
-			Motion baseMotion = metadata.mutableBaseMotionCopy();
-			simulator.simulatePreTick(user, baseMotion, metadata);
-			metadata.setBaseMotion(baseMotion);
+			if (loss > allowedLoss && tick > 16) {
+				System.out.println("\r" + "[FAILED] " + resourcePath + " (tick " + tick + ")");
+				System.err.println("==== <HEAD> ====");
+				System.err.println("Physics test " + resourcePath + " has failed");
+				System.err.println("Tick " + tick + " is incorrect");
+				System.err.println("Loss: " + loss);
+				System.err.println("Allowed loss: " + allowedLoss);
+				System.err.println("==== </HEAD> ====");
 
-			Simulation simulation = processor.simulate(user, simulator);
-			double accuracy = simulation.motionDifference(metadata.motion());
-			System.out.println(formatDouble(accuracy, 4) + " " + simulation.motion() + " " + simulation.configuration() + (!simulation.details().isEmpty() ? " [" + simulation.details() + "]" : ""));
+				System.err.println("==== <HISTORY> ====");
+				for (String lastMessage : lastMessages) {
+					System.err.println(lastMessage);
+				}
+				System.err.println("==== </HISTORY> ====");
 
-			assertTrue(
-				accuracy < DIVERGED_MOTION_DISTANCE,
-				resourcePath + " tick " + tick + " replayed movement inaccurately; distance was " + accuracy
-			);
+				System.err.println("==== <USERDATA> ====");
+				System.err.println("Position");
+				System.err.println("  Sim   " + metadata.lastPosition().mutable().add(simulation.motion()));
+				System.err.println("  Sent  " + metadata.position());
+				System.err.println("  Last  " + metadata.lastPosition());
+				System.err.println("  LastV " + metadata.verifiedLastPosition());
+				Position nextPosition;
+				if (frames.size() > tick + 1 && (nextPosition = frames.get(tick + 1).moveTo()) != null) {
+					System.err.println("  Next " + nextPosition + " (dy to sent: " +(nextPosition.getY() - metadata.position().getY()) + ")");
+				}
+				System.err.println("Motion");
+				System.err.println("  Sim   " + simulation.motion());
+				System.err.println("  Sent  " + metadata.motion());
+				System.err.println("  Base  " + metadata.mutableBaseMotionCopy());
+				System.err.println("Rotation: " + metadata.rotation());
+				System.err.println("Motion: " + metadata.motion());
+				System.err.println("Ground");
+				System.err.println("  Current " + metadata.onGround());
+				System.err.println("  Last " + metadata.lastOnGround());
+				System.err.println("Sneaking " + metadata.isSneaking());
+				System.err.println("==== </USERDATA> ====");
+				System.err.println("Movement diverged at tick " + tick + " with a distance of " + loss);
+				fail();
+			}
+
+			System.out.print("\r" + output);
+
+			if (subversiveFlyingMovement) {
+				simulationEnvironment.reinterpretMovePacket(simulation);
+			}
+			simulationEnvironment.commitTo(metadata);
 			metadata.assumeOccurred(simulation);
 			finishTick(user, simulator, metadata, hasMovement, hasRotation);
+
+			if (lastMessages.size() > 16) {
+				lastMessages.removeFirst();
+			}
 		}
+
+		System.out.println("\r[SUCCESS] " + resourcePath + "...");
+	}
+
+	private static boolean subversiveFlyingMovement(
+		User user,
+		SimulationEnvironment environment,
+		Simulation simulation,
+		boolean hasMovement,
+		boolean hasRotation
+	) {
+		boolean verticalOnlyFlyingPacket = !hasRotation && simulation.motion().horizontalLength() == 0.0;
+		return !hasMovement && !simulation.motion().isZero() && !verticalOnlyFlyingPacket && simulation.resultsInFlyingPacket(
+			environment,
+			user.meta().protocol().flyingPacketUncertaintyRadius()
+		);
+	}
+
+	private static double allowedMotionDivergence(User user, boolean flyingUncertainty) {
+		if (!flyingUncertainty) {
+			return DIVERGED_MOTION_DISTANCE;
+		}
+		MovementMetadata movement = user.meta().movement();
+		double flyingEvaluatorAllowance = Math.max(
+			FLYING_PACKET_DIVERGED_MOTION_DISTANCE,
+			movement.baseMoveSpeed() * (movement.isSprinting() ? 0.5 : 0.3)
+		);
+		return Math.max(
+			DIVERGED_MOTION_DISTANCE,
+			Math.max(
+				user.meta().protocol().flyingPacketUncertaintyRadius(),
+				flyingEvaluatorAllowance
+			)
+		);
 	}
 
 	private static void preparePhysicsTestRuntime(MovementRecording recording) {
-		MinecraftVersion.setCurrent(recording.serverVersion());
+		MinecraftVersion serverVersion = recording.serverVersion();
+		MinecraftVersion.setCurrent(serverVersion);
 		DrillResolver.manualInit(DenyShapeResolverPipeline.create());
 		Fluids.overrideFluids(recording.fluids());
+		BlockPhysics.setup(serverVersion);
 	}
 
 	private static User createReplayUser(
@@ -217,15 +326,24 @@ final class MovementRecordingPhysicsTests {
 		boolean hasRotation
 	) {
 		if (hasMovement) {
-			Motion receivedMotion = metadata.motion();
-			simulator.simulateAfterTick(user, metadata, metadata.position(), receivedMotion);
-			metadata.setBaseMotion(receivedMotion);
+			Motion afterTickMotion = simulator.simulateAfterTick(
+				user, metadata, metadata.position(), metadata.motion()
+			);
+			metadata.setBaseMotion(afterTickMotion);
 			metadata.inactiveTick(
 				FLYING_PACKET_ACCURATE,
 				FLYING_PACKET_CLIENT,
 				NEARBY_COLLISION_INACCURACY,
 				ENTITY_USE
 			);
+		} else if (hasRotation || metadata.treatThisFlyPacketAsMovePacket) {
+			Motion afterTickMotion = simulator.simulateAfterTick(
+				user,
+				metadata,
+				metadata.lastPosition().mutable().add(metadata.motion()),
+				metadata.motion()
+			);
+			metadata.setBaseMotion(afterTickMotion);
 		}
 
 		metadata.tickComplete(hasMovement, hasRotation);

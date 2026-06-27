@@ -77,6 +77,12 @@ public interface SimulationEnvironment {
   float lastRotationYaw();
   float lastRotationPitch();
 
+  default void setLastRotation(Rotation rotation) {
+    setLastRotation(rotation.yaw(), rotation.pitch());
+  }
+
+  void setLastRotation(float lastRotationYaw, float lastRotationPitch);
+
   default void setLastPosition(Position position) {
     setLastPosition(position.getX(), position.getY(), position.getZ());
   }
@@ -233,6 +239,28 @@ public interface SimulationEnvironment {
 
   void assumeOccurred(Simulation simulation);
   void tickComplete(boolean hasMovement, boolean hasRotation);
+
+  void setTreatThisFlyPacketAsMovePacket(boolean treatThisFlyPacketAsMovePacket);
+
+  default boolean tryMoveReinterpretation(Simulation simulation, double flyingLimit) {
+    if (simulation.motion().isZero() || !simulation.resultsInFlyingPacket(this, flyingLimit)) {
+      return false;
+    }
+    reinterpretMovePacket(simulation);
+    return true;
+  }
+
+  default void reinterpretMovePacket(Simulation simulation) {
+    Position verifiedLastPosition = verifiedLastPosition();
+    Rotation lastRotation = lastRotation();
+    Position subversivePosition = verifiedLastPosition.add(simulation.motion());
+
+    updateMovement(subversivePosition, null);
+    setLastPosition(verifiedLastPosition);
+    setLastRotation(lastRotation);
+    activeTick(MoveMetric.FLYING_PACKET_ACCURATE);
+    setTreatThisFlyPacketAsMovePacket(true);
+  }
 
   default SimulationEnvironment unmodifiable() {
     return UnmodifiableSimulationEnvironmentView.of(this);

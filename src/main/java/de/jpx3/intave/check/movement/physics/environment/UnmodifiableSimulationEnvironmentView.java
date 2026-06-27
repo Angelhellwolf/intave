@@ -124,6 +124,11 @@ public final class UnmodifiableSimulationEnvironmentView implements SimulationEn
 	}
 
 	@Override
+	public void setLastRotation(float lastRotationYaw, float lastRotationPitch) {
+		throw new UnsupportedOperationException("This environment view is unmodifiable");
+	}
+
+	@Override
 	public void setLastPosition(double x, double y, double z) {
 		throw new UnsupportedOperationException("This environment view is unmodifiable");
 	}
@@ -535,6 +540,11 @@ public final class UnmodifiableSimulationEnvironmentView implements SimulationEn
 
 	@Override
 	public void tickComplete(boolean hasMovement, boolean hasRotation) {
+		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
+	}
+
+	@Override
+	public void setTreatThisFlyPacketAsMovePacket(boolean treatThisFlyPacketAsMovePacket) {
 		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
 	}
 

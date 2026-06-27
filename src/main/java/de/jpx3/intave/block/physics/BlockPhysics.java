@@ -11,25 +11,35 @@ import java.util.HashMap;
 import java.util.Map;
 
 public final class BlockPhysics {
-  private static final MinecraftVersion MINECRAFT_VERSION = MinecraftVersion.current();
+  private static final MinecraftVersion THIS_MINECRAFT_VERSION = MinecraftVersion.current();
   private static final Map<Material, BlockPhysic> materialLookup = new HashMap<>();
 
   public static void setup() {
-    setup(BedPhysics.class);
-    setup(SlimePhysics.class);
-    setup(WebPhysics.class);
-    setup(SoulSandPhysics.class);
-    setup(BerryBushPhysics.class);
-    setup(HoneyPhysics.class);
-    setup(FluidPhysics.class);
-    setup(BubbleColumnPhysics.class);
-    setup(PowderSnowPhysics.class);
+    setup(THIS_MINECRAFT_VERSION);
   }
 
-  private static void setup(Class<? extends BlockPhysic> blockPhysicClass) {
+  public static void setup(
+    MinecraftVersion version
+  ) {
+    materialLookup.clear();
+    setup(BedPhysics.class, version);
+    setup(SlimePhysics.class, version);
+    setup(WebPhysics.class, version);
+    setup(SoulSandPhysics.class, version);
+    setup(BerryBushPhysics.class, version);
+    setup(HoneyPhysics.class, version);
+    setup(FluidPhysics.class, version);
+    setup(BubbleColumnPhysics.class, version);
+    setup(PowderSnowPhysics.class, version);
+  }
+
+  public static void setup(
+    Class<? extends BlockPhysic> blockPhysicClass,
+    MinecraftVersion version
+  ) {
     try {
       BlockPhysic blockPhysic = blockPhysicClass.newInstance();
-      blockPhysic.setupFor(MINECRAFT_VERSION);
+      blockPhysic.setupFor(version);
       if (blockPhysic.supportedOnServerVersion()) {
         for (Material material : blockPhysic.applicableMaterials()) {
           materialLookup.put(material, blockPhysic);

@@ -1,20 +1,14 @@
 package de.jpx3.intave.check.movement.physics;
 
-import de.jpx3.intave.test.IntegrationTests;
-import de.jpx3.intave.test.Severity;
-import de.jpx3.intave.test.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.ThreadLocalRandom;
 
-public final class MovementConfigurationTests extends IntegrationTests {
-  public MovementConfigurationTests() {
-    super("MC");
-  }
+import static org.junit.jupiter.api.Assertions.*;
 
-  @Test(
-    severity = Severity.ERROR
-  )
-  public void testKeys() {
+final class MovementConfigurationTest {
+  @Test
+  void testKeys() {
     MovementConfiguration conf = MovementConfiguration.blank();
     conf = conf.withReduceTicks(1);
     conf = conf.withForward(1);
@@ -30,10 +24,8 @@ public final class MovementConfigurationTests extends IntegrationTests {
     assertFalse(conf.isSprinting());
   }
 
-  @Test(
-    severity = Severity.ERROR
-  )
-  public void testSprint() {
+  @Test
+  void testSprint() {
     for (MovementConfiguration value : MovementConfiguration.values()) {
       value = value.withSprinting();
       assertTrue(value.isSprinting());
@@ -84,10 +76,8 @@ public final class MovementConfigurationTests extends IntegrationTests {
     }
   }
 
-  @Test(
-    severity = Severity.ERROR
-  )
-  public void testReduce() {
+  @Test
+  void testReduce() {
     for (MovementConfiguration value : MovementConfiguration.values()) {
       int randomTicks = ThreadLocalRandom.current().nextInt(0, 2);
       value = value.withReduceTicks(randomTicks);
@@ -98,18 +88,10 @@ public final class MovementConfigurationTests extends IntegrationTests {
 
     MovementConfiguration configuration = MovementConfiguration.blank();
     configuration = configuration.withForward(1);
-//    System.out.println(configuration.bitString());
     configuration = configuration.withStrafe(1);
-//    System.out.println(configuration.bitString());
     configuration = configuration.withReduceTicks(0);
-//    System.out.println(configuration.bitString());
     configuration = configuration.withSprintingSetTo(false);
-//    System.out.println(configuration.bitString());
     configuration = configuration.withJumped(true);
-//    System.out.println(configuration.bitString());
     configuration = configuration.withHandActive(false);
-//    System.out.println(configuration.bitString());
-
-
   }
 }

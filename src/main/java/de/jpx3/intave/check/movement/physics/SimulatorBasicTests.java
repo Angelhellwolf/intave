@@ -116,15 +116,14 @@ public final class SimulatorBasicTests extends IntegrationTests {
     environment.setFriction(0.09998f);
     environment.setAiMovementSpeed(0.1f);
 
-    Motion afterFirstMotion = Motion.newEmpty();
-    simulator.simulateAfterTick(
+    Motion afterTickMotion1 = simulator.simulateAfterTick(
       testUser,
       environment,
       environment.position(),
-      afterFirstMotion
+      Motion.newEmpty()
     );
 
-    environment.setBaseMotion(afterFirstMotion);
+    environment.setBaseMotion(afterTickMotion1);
 
     for (int i = 1; i < relativeMotion.length; i++) {
       double lastMotionX = relativeMotion[i - 1][0];
@@ -148,6 +147,8 @@ public final class SimulatorBasicTests extends IntegrationTests {
         configuration
       );
 
+      environment.assumeOccurred(simulation);
+
       double accuracy = simulation.motionDifference(motion);
       if (accuracy > 0.001 && environment.positionY() > 3) {
         System.out.println("#" + i + " (" + lastMotion + " -> " + simulation.motion() + ", but expected " + motion + ")");
@@ -155,14 +156,14 @@ public final class SimulatorBasicTests extends IntegrationTests {
       }
 
       Motion modifiableSimulationMotion = simulation.motion();
-      simulator.simulateAfterTick(
+      Motion afterTickMotion = simulator.simulateAfterTick(
         testUser,
         environment,
         environment.position(),
         modifiableSimulationMotion
       );
 
-      environment.setBaseMotion(modifiableSimulationMotion);
+      environment.setBaseMotion(afterTickMotion);
       environment.copyPositionToVerifiedPosition();
     }
   }

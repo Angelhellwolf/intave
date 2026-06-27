@@ -53,7 +53,7 @@ public final class RestartCheck extends MetaCheckPart<BreakSpeedLimiter, Restart
 			if (!clientTickEnd) {
 				return;
 			}
-		} else if (!clientData.flyingPacketsAreSent()) {
+		} else if (!clientData.emptyFlyingPacketsAreExplicitlySent()) {
 			return;
 		}
 		BreakSpeedStartMeta meta = metaOf(user);
@@ -81,7 +81,7 @@ public final class RestartCheck extends MetaCheckPart<BreakSpeedLimiter, Restart
 					return;
 				}
 
-				if (!clientData.flyingPacketsAreSent() && !clientData.sendsClientTickEnd()) {
+				if (!clientData.emptyFlyingPacketsAreExplicitlySent() && !clientData.sendsClientTickEnd()) {
 					meta.breakProcess = true;
 					meta.targetBlockPosition = blockPosition;
 					break;

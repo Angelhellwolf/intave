@@ -240,6 +240,12 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
   }
 
   @Override
+  public void setLastRotation(float lastRotationYaw, float lastRotationPitch) {
+    setLastRotationOverride(lastRotationYaw, lastRotationPitch);
+    deferredMutations.add(environment -> environment.setLastRotation(lastRotationYaw, lastRotationPitch));
+  }
+
+  @Override
   public void setLastPosition(double x, double y, double z) {
     setLastPositionOverride(x, y, z);
     deferredMutations.add(environment -> environment.setLastPosition(x, y, z));
@@ -696,6 +702,13 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
       inactiveTickOverride(MoveMetric.EXTERNAL_VELOCITY);
     }
     deferredMutations.add(environment -> environment.tickComplete(hasMovement, hasRotation));
+  }
+
+  @Override
+  public void setTreatThisFlyPacketAsMovePacket(boolean treatThisFlyPacketAsMovePacket) {
+    deferredMutations.add(environment ->
+      environment.setTreatThisFlyPacketAsMovePacket(treatThisFlyPacketAsMovePacket)
+    );
   }
 
   private final SimulationEnvironment unmodifiableView =
