@@ -12,11 +12,12 @@ import java.util.Objects;
 import static de.jpx3.intave.math.MathHelper.distanceOf;
 
 public final class Simulation {
-  private static final Simulation INVALID_SIMULATION = new Simulation(MovementConfiguration.blank(), SimulationResult.invalid());
+  private static final Simulation INVALID_SIMULATION = new Simulation(MovementConfiguration.blank(), SimulationEnvironment.invalid(), SimulationResult.invalid());
   private static final UserLocal<Simulation> SIMULATION_OBJ_CACHE = UserLocal.withInitial(Simulation::new);
 
   private MovementConfiguration configuration;
   private SimulationResult simulationResult;
+  private SimulationEnvironment environment;
   private String details = "";
 
 	private final boolean mustBeCopied;
@@ -27,17 +28,32 @@ public final class Simulation {
 
   private Simulation(
     MovementConfiguration configuration,
+    SimulationEnvironment environment,
     SimulationResult simulationResult
   ) {
     this.configuration = configuration;
+    this.environment = environment;
     this.simulationResult = simulationResult;
     this.mustBeCopied = false;
   }
 
-  public void flush(MovementConfiguration configuration, SimulationResult simulationResult) {
+  public void flush(
+    MovementConfiguration configuration,
+    SimulationEnvironment environment,
+    SimulationResult simulationResult
+  ) {
     this.configuration = configuration;
+    this.environment = environment;
     this.simulationResult = simulationResult;
     this.details = "";
+  }
+
+  public void setEnvironment(SimulationEnvironment myEnv) {
+    this.environment = myEnv;
+  }
+
+  public SimulationEnvironment environment() {
+    return environment;
   }
 
   public boolean wasSprinting() {
@@ -88,7 +104,7 @@ public final class Simulation {
   }
 
   public Simulation reusableCopy() {
-    Simulation copy = new Simulation(configuration, simulationResult);
+    Simulation copy = new Simulation(configuration, environment, simulationResult);
     copy.details = details;
     return copy;
   }
@@ -140,13 +156,13 @@ public final class Simulation {
     return Objects.hash(configuration, simulationResult);
   }
 
-  static Simulation of(User user, MovementConfiguration configuration, SimulationResult simulationResult) {
+  static Simulation of(User user, MovementConfiguration configuration, SimulationEnvironment environment, SimulationResult simulationResult) {
     Simulation simulation = SIMULATION_OBJ_CACHE.get(user);
-    simulation.flush(configuration, simulationResult);
+    simulation.flush(configuration, environment, simulationResult);
     return simulation;
   }
 
-  static Simulation invalid() {
+  public static Simulation invalid() {
     return INVALID_SIMULATION;
   }
 }

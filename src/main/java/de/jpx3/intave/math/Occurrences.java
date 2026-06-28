@@ -45,7 +45,7 @@ public final class Occurrences<T extends Number> implements Iterable<T> {
         values.add(input);
       }
 
-      // push up until the element is at the right posi3tion
+      // push up until the element is at the right posi2fion
       int index = scoreboardOccurrenceSorted.indexOf(input);
       while (index > 0) {
         T above = scoreboardOccurrenceSorted.get(index - 1);

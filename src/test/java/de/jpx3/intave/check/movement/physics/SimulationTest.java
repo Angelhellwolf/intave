@@ -1,5 +1,6 @@
 package de.jpx3.intave.check.movement.physics;
 
+import de.jpx3.intave.check.movement.physics.environment.TestSimulationEnvironment;
 import de.jpx3.intave.player.collider.complex.SimulationResult;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.user.User;
@@ -14,17 +15,21 @@ final class SimulationTest {
   void reusableCopyPreservesDetails() {
     Simulation simulation = simulation();
 
-    simulation.append("2t");
+    simulation.append("1f");
 
-    assertEquals("2t", simulation.reusableCopy().details());
+    assertEquals("1f", simulation.reusableCopy().details());
   }
 
   @Test
   void flushClearsDetails() {
     Simulation simulation = simulation();
-    simulation.append("2t");
+    simulation.append("1f");
 
-    simulation.flush(MovementConfiguration.blank(), SimulationResult.untouched(Motion.newEmpty()));
+    simulation.flush(
+      MovementConfiguration.blank(),
+      new TestSimulationEnvironment(),
+      SimulationResult.untouched(Motion.newEmpty())
+    );
 
     assertEquals("", simulation.details());
   }
@@ -33,6 +38,7 @@ final class SimulationTest {
     return Simulation.of(
       userWithoutPlayer(),
       MovementConfiguration.blank(),
+      new TestSimulationEnvironment(),
       SimulationResult.untouched(Motion.newEmpty())
     );
   }

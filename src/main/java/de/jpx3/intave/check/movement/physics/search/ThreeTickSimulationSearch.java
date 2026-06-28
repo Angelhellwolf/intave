@@ -1,10 +1,13 @@
-package de.jpx3.intave.check.movement.physics;
+package de.jpx3.intave.check.movement.physics.search;
 
 import de.jpx3.intave.IntavePlugin;
+import de.jpx3.intave.check.movement.physics.MovementConfiguration;
+import de.jpx3.intave.check.movement.physics.Simulation;
+import de.jpx3.intave.check.movement.physics.Simulator;
+import de.jpx3.intave.check.movement.physics.branch.MovementSearchBranchers;
+import de.jpx3.intave.check.movement.physics.branch.MovementSearchConfig;
+import de.jpx3.intave.check.movement.physics.branch.MovementSearchInput;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
-import de.jpx3.intave.check.movement.physics.search.MovementSearchBranchers;
-import de.jpx3.intave.check.movement.physics.search.MovementSearchConfig;
-import de.jpx3.intave.check.movement.physics.search.MovementSearchInput;
 import de.jpx3.intave.diagnostic.timings.Timings;
 import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.player.ActionBar;
@@ -19,8 +22,6 @@ import de.jpx3.intave.user.meta.MetadataBundle;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import org.bukkit.ChatColor;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -51,17 +52,19 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 		Position sentPosition = movementData.position();
 		Position lastPositionB4Flying = movementData.lastPosition();
 
-		FPCSimulationContainer firstTickContainer = collectSimulations(
+		SimulationCollector firstTickContainer = collectSimulations(
 			user, simulator, movementData,
-			flyingPacketCandidates(user, movementData),
+			SimulationCollector.positionBased(user, movementData),
 			sim -> sim.positionDifference(lastPositionB4Flying, sentPosition) < REQUIRED_ACCURACY_FOR_QUICK_PROC_EXIT
 		);
 
-		List<Simulation> firstTickFlyingSimulations = firstTickContainer.possibleFlyingSimulations();
+		List<Simulation> firstTickFlyingSimulations = firstTickContainer.flyingSimulations();
 		Simulation bestSimulation = firstTickContainer.bestSimulation();
 
 		if (firstTickFlyingSimulations.isEmpty() || bestSimulation.positionDifference(lastPositionB4Flying, sentPosition) < REQUIRED_ACCURACY_FOR_QUICK_PROC_EXIT) {
 			applySimulation(user, bestSimulation);
+			// commit environment changes to active
+			bestSimulation.environment().commitTo(movementData);
 			return bestSimulation;
 		}
 
@@ -72,16 +75,16 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 		int secondFlyTickRuns = 0;
 
 		for (Simulation firstTickSimulation : firstTickFlyingSimulations) {
-			SimulationEnvironment firstTickEnvironment = movementData.mutableView();
+			SimulationEnvironment firstTickEnvironment = firstTickSimulation.environment().mutableView();
 			simulator.simulateAround(
 				user, firstTickEnvironment, firstTickSimulation,
 				sentPosition, movementData.rotation()
 			);
 
 			Motion secondTickRemainingMotion = firstTickEnvironment.motion();
-			MotionTrackingFPCSimulationContainer secondTickContainer = collectSimulations(
+			SimulationCollector secondTickContainer = collectSimulations(
 				user, simulator, firstTickEnvironment,
-				motionTrackingFlyingPacketCandidates(
+				SimulationCollector.offsetBased(
 					user, firstTickEnvironment, secondTickRemainingMotion, lastPositionB4Flying
 				),
 				sim -> sim.motionDifference(secondTickRemainingMotion) < REQUIRED_ACCURACY_FOR_QUICK_PROC_EXIT &&
@@ -91,7 +94,7 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 			firstFlyTickRuns++;
 
 			Simulation secondTickSimulation = secondTickContainer.bestSimulation();
-			secondTickSimulation.append("2t");
+			secondTickSimulation.append("1f");
 			double secondTickDistance = simulationDistance(
 				secondTickSimulation, firstTickEnvironment,
 				sentPosition, secondTickRemainingMotion
@@ -102,12 +105,8 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 				bestEnvironment = firstTickEnvironment;
 			}
 
-			for (Simulation secondTickFlyingSimulation : secondTickContainer.possibleFlyingSimulations()) {
-				SimulationEnvironment secondTickEnvironment = movementData.mutableView();
-				simulator.simulateAround(
-					user, secondTickEnvironment, firstTickSimulation,
-					sentPosition, movementData.rotation()
-				);
+			for (Simulation secondTickFlyingSimulation : secondTickContainer.flyingSimulations()) {
+				SimulationEnvironment secondTickEnvironment = secondTickFlyingSimulation.environment().mutableView();
 				simulator.simulateAround(
 					user, secondTickEnvironment, secondTickFlyingSimulation,
 					sentPosition, movementData.rotation()
@@ -126,7 +125,7 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 
 				secondFlyTickRuns++;
 
-				thirdTickSimulation.append("3t");
+				thirdTickSimulation.append("2f");
 				double thirdTickDistance = simulationDistance(
 					thirdTickSimulation, secondTickEnvironment,
 					sentPosition, thirdTickRemainingMotion
@@ -141,39 +140,14 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 
 		if (bestEnvironment != null) {
 			bestEnvironment.commitTo(movementData);
+			ActionBar.sendActionBar(
+				user.player(),
+				ChatColor.GRAY + "L-"+firstFlyTickRuns+"-"+secondFlyTickRuns+"-|? <" + bestEnvironment.depth() + ">"
+			);
 		}
 
-		ActionBar.sendActionBar(
-			user.player(),
-			ChatColor.GRAY + "L-"+firstFlyTickRuns+"-"+secondFlyTickRuns+"-|?"
-		);
 		applySimulation(user, bestSimulation);
 		return bestSimulation;
-	}
-
-	private Collector<Simulation, FPCSimulationContainer, FPCSimulationContainer> flyingPacketCandidates(
-		User user, SimulationEnvironment environment
-	) {
-		return Collector.of(
-			FPCSimulationContainer::def,
-			(c, o) -> c.add(o, user, environment),
-			(c1, c2) -> c1.mergedWith(c2, user, environment),
-			Function.identity()
-		);
-	}
-
-	private Collector<Simulation, MotionTrackingFPCSimulationContainer, MotionTrackingFPCSimulationContainer> motionTrackingFlyingPacketCandidates(
-		User user,
-		SimulationEnvironment environment,
-		Motion targetMotion,
-		Position lastReportedPosition
-	) {
-		return Collector.of(
-			() -> new MotionTrackingFPCSimulationContainer(user, environment, targetMotion, lastReportedPosition),
-			MotionTrackingFPCSimulationContainer::add,
-			MotionTrackingFPCSimulationContainer::mergedWith,
-			Function.identity()
-		);
 	}
 
 	private double simulationDistance(
@@ -229,15 +203,13 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 		BiConsumer<C, Simulation> accumulator = collector.accumulator();
 
 		for (MovementSearchConfig config : configs) {
-			SimulationEnvironment myEnv = environment;
-			if (config.rotation() != null) {
-				myEnv = myEnv.mutableView();
-				myEnv.setRotation(config.rotation());
-			}
+			SimulationEnvironment myEnv = environment.mutableView();
+			myEnv = config.applyTo(myEnv);
 			Simulation simulation = simulator.simulateTick(
 				user, myEnv.mutableBaseMotionCopy(),
 				myEnv.unmodifiable(), config.moveConfig()
 			);
+			simulation.setEnvironment(myEnv);
 			accumulator.accept(container, simulation);
 			if (earlyStop.test(simulation)) {
 				break;
@@ -245,79 +217,5 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 		}
 		Timings.CHECK_PHYSICS_PROC_ITR.stop();
 		return finisher.apply(container);
-	}
-
-	private static final class MotionTrackingFPCSimulationContainer {
-		private final User user;
-		private final SimulationEnvironment environment;
-		private final Motion targetMotion;
-		private final Position lastReportedPosition;
-		private Simulation best = Simulation.invalid();
-		private List<Simulation> possibleFlyingSimulations;
-		private int totalFlyingPacketSimulations;
-
-		private MotionTrackingFPCSimulationContainer(
-			User user,
-			SimulationEnvironment environment,
-			Motion targetMotion,
-			Position lastReportedPosition
-		) {
-			this.user = user;
-			this.environment = environment;
-			this.targetMotion = targetMotion;
-			this.lastReportedPosition = lastReportedPosition;
-		}
-
-		private void add(Simulation simulation) {
-			double flyingLimit = user.meta().protocol().flyingPacketUncertaintyRadius();
-			Position simulatedPosition = environment.verifiedLastPosition().add(simulation.motion());
-
-			if (lastReportedPosition.distance(simulatedPosition) < flyingLimit) {
-				if (possibleFlyingSimulations == null) {
-					possibleFlyingSimulations = new ArrayList<>(8);
-				}
-				boolean contained = false;
-				for (Simulation flyingSimulation : possibleFlyingSimulations) {
-					if (flyingSimulation.result().almostIdenticalTo(simulation.result())) {
-						contained = true;
-						break;
-					}
-				}
-				if (!contained && possibleFlyingSimulations.size() < 64) {
-					possibleFlyingSimulations.add(simulation.reusableCopy());
-				}
-				totalFlyingPacketSimulations++;
-			}
-			best = best.select(simulation, targetMotion);
-		}
-
-		private MotionTrackingFPCSimulationContainer mergedWith(
-			MotionTrackingFPCSimulationContainer other
-		) {
-			MotionTrackingFPCSimulationContainer merged =
-				new MotionTrackingFPCSimulationContainer(user, environment, targetMotion, lastReportedPosition);
-			merged.add(best);
-			merged.add(other.best);
-			if (possibleFlyingSimulations != null) {
-				for (Simulation simulation : possibleFlyingSimulations) {
-					merged.add(simulation);
-				}
-			}
-			if (other.possibleFlyingSimulations != null) {
-				for (Simulation simulation : other.possibleFlyingSimulations) {
-					merged.add(simulation);
-				}
-			}
-			merged.totalFlyingPacketSimulations = totalFlyingPacketSimulations + other.totalFlyingPacketSimulations;
-			return merged;
-		}
-
-		private Simulation bestSimulation() {
-			return best;
-		}
-
-		private List<Simulation> possibleFlyingSimulations() {
-			return possibleFlyingSimulations == null ? Collections.emptyList() : possibleFlyingSimulations;
-		}
 	}
 }

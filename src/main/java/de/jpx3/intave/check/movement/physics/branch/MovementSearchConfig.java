@@ -1,39 +1,55 @@
-package de.jpx3.intave.check.movement.physics.search;
+package de.jpx3.intave.check.movement.physics.branch;
 
 import de.jpx3.intave.check.movement.physics.MovementConfiguration;
+import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.search.SearchConfig;
 import de.jpx3.intave.share.Rotation;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
+import java.util.function.UnaryOperator;
 
 public final class MovementSearchConfig extends SearchConfig {
 	private final MovementConfiguration configuration;
-	private final Rotation rotation;
+	private final List<UnaryOperator<SimulationEnvironment>> environmentModifier;
 
-	private MovementSearchConfig(MovementConfiguration configuration, Rotation rotation) {
-		this.configuration = configuration;
-		this.rotation = rotation;
+	private MovementSearchConfig(MovementConfiguration configuration, List<UnaryOperator<SimulationEnvironment>> environmentModifier) {
+		this.configuration = Objects.requireNonNull(configuration, "configuration");
+		this.environmentModifier = Objects.requireNonNull(environmentModifier, "environmentModifier");
 	}
 
 	public static MovementSearchConfig blank(MovementSearchInput input) {
-		return new MovementSearchConfig(MovementConfiguration.blank(), null);
+		return new MovementSearchConfig(MovementConfiguration.blank(), new ArrayList<>());
 	}
 
 	public MovementConfiguration moveConfig() {
 		return configuration;
 	}
 
-	public Rotation rotation() {
-		return rotation;
-	}
-
 	@Deprecated
 	MovementSearchConfig withMoveConfig(MovementConfiguration configuration) {
-		return new MovementSearchConfig(configuration, rotation);
+		return new MovementSearchConfig(configuration, environmentModifier);
+	}
+
+	public MovementSearchConfig withEnvironmentModifier(UnaryOperator<SimulationEnvironment> modifier) {
+		List<UnaryOperator<SimulationEnvironment>> newList = new ArrayList<>(environmentModifier);
+		newList.add(modifier);
+		return new MovementSearchConfig(configuration, newList);
 	}
 
 	public MovementSearchConfig withRotation(Rotation rotation) {
-		return new MovementSearchConfig(configuration, rotation);
+		return withEnvironmentModifier(env -> {
+			env.setRotation(rotation);
+			return env;
+		});
+	}
+
+	public SimulationEnvironment applyTo(SimulationEnvironment env) {
+		for (UnaryOperator<SimulationEnvironment> modifier : environmentModifier) {
+			env = modifier.apply(env);
+		}
+		return env;
 	}
 
 	public MovementSearchConfig withHandActive(boolean handActive) {
@@ -80,11 +96,11 @@ public final class MovementSearchConfig extends SearchConfig {
 		}
 		MovementSearchConfig that = (MovementSearchConfig) other;
 		return this.configuration.equals(that.configuration) &&
-			Objects.equals(this.rotation, that.rotation);
+			Objects.equals(this.environmentModifier, that.environmentModifier);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(this.configuration, this.rotation);
+		return Objects.hash(this.configuration, this.environmentModifier);
 	}
 }

@@ -550,7 +550,12 @@ public final class UnmodifiableSimulationEnvironmentView implements SimulationEn
 
 	@Override
 	public SimulationEnvironment mutableView() {
-		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
+		return delegate.mutableView();
+	}
+
+	@Override
+	public int depth() {
+		return delegate.depth() + 1;
 	}
 
 	@Override

@@ -1,4 +1,4 @@
-package de.jpx3.intave.check.movement.physics.search;
+package de.jpx3.intave.check.movement.physics.branch;
 
 import java.util.Set;
 

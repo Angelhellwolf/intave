@@ -194,4 +194,8 @@ public final class SimulationResult {
   public static SimulationResult untouched(Motion motion) {
     return new SimulationResult(motion, null,false, false, false, false, false, false, false, 0);
   }
+
+	public SimulationResult copy() {
+    return new SimulationResult(motion, intermittentResult, onGround, collidedHorizontally, collidedVertically, resetMotionX, resetMotionZ, step, edgeSneak, yStepHeight);
+	}
 }

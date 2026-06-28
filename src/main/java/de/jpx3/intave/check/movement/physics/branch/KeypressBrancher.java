@@ -1,4 +1,4 @@
-package de.jpx3.intave.check.movement.physics.search;
+package de.jpx3.intave.check.movement.physics.branch;
 
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.math.Hypot;

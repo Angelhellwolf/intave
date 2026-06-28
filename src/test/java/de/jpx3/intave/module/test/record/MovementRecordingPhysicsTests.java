@@ -8,8 +8,12 @@ import de.jpx3.intave.block.fluid.Fluids;
 import de.jpx3.intave.block.physics.BlockPhysics;
 import de.jpx3.intave.block.shape.resolve.DenyShapeResolverPipeline;
 import de.jpx3.intave.block.shape.resolve.DrillResolver;
-import de.jpx3.intave.check.movement.physics.*;
+import de.jpx3.intave.check.movement.physics.Simulation;
+import de.jpx3.intave.check.movement.physics.Simulator;
+import de.jpx3.intave.check.movement.physics.Simulators;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
+import de.jpx3.intave.check.movement.physics.search.SimulationSearch;
+import de.jpx3.intave.check.movement.physics.search.ThreeTickSimulationSearch;
 import de.jpx3.intave.module.test.record.action.Action;
 import de.jpx3.intave.module.test.record.action.ReceiveVelocity;
 import de.jpx3.intave.player.collider.Colliders;
@@ -223,8 +227,7 @@ final class MovementRecordingPhysicsTests {
 		boolean hasMovement,
 		boolean hasRotation
 	) {
-		boolean verticalOnlyFlyingPacket = !hasRotation && simulation.motion().horizontalLength() == 0.0;
-		return !hasMovement && !simulation.motion().isZero() && !verticalOnlyFlyingPacket && simulation.resultsInFlyingPacket(
+		return !hasMovement && !simulation.motion().isZero() && simulation.resultsInFlyingPacket(
 			environment,
 			user.meta().protocol().flyingPacketUncertaintyRadius()
 		);

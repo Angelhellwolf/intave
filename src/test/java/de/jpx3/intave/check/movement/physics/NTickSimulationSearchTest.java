@@ -7,6 +7,9 @@ import de.jpx3.intave.block.cache.MockFullBlockStaticPlane;
 import de.jpx3.intave.block.shape.resolve.DrillResolver;
 import de.jpx3.intave.block.shape.resolve.MockShapeResolverPipeline;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
+import de.jpx3.intave.check.movement.physics.search.SimulationSearch;
+import de.jpx3.intave.check.movement.physics.search.ThreeTickSimulationSearch;
+import de.jpx3.intave.check.movement.physics.search.TwoTickSimulationSearch;
 import de.jpx3.intave.player.collider.complex.SimulationResult;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
@@ -64,7 +67,7 @@ final class NTickSimulationSearchTest {
 			simulator,
 			exampleSlowHorizontalFlyingPacketScenario(simulator, 500),
 			2,
-			"3t"
+			"2f"
 		);
 	}
 
@@ -76,7 +79,7 @@ final class NTickSimulationSearchTest {
 			simulator,
 			exampleReversingVerticalFlyingPacketScenario(simulator),
 			2,
-			"3t",
+			"2f",
 			new Motion(0.0, 0.02, 0.0)
 		);
 	}
@@ -306,7 +309,7 @@ final class NTickSimulationSearchTest {
 				motion.motionX += moveStrafe * yawCosine - moveForward * yawSine;
 				motion.motionZ += moveForward * yawCosine + moveStrafe * yawSine;
 			}
-			return Simulation.of(user, configuration, SimulationResult.untouched(motion));
+			return Simulation.of(user, configuration, environment, SimulationResult.untouched(motion));
 		}
 
 		@Override
@@ -366,7 +369,7 @@ final class NTickSimulationSearchTest {
 				motion.motionX += moveStrafe * yawCosine - moveForward * yawSine;
 				motion.motionZ += moveForward * yawCosine + moveStrafe * yawSine;
 			}
-			return Simulation.of(user, configuration, SimulationResult.untouched(motion));
+			return Simulation.of(user, configuration, environment, SimulationResult.untouched(motion));
 		}
 
 		@Override
@@ -410,7 +413,7 @@ final class NTickSimulationSearchTest {
 			SimulationEnvironment environment,
 			MovementConfiguration configuration
 		) {
-			return Simulation.of(user, configuration, SimulationResult.untouched(motion.copy()));
+			return Simulation.of(user, configuration, environment, SimulationResult.untouched(motion.copy()));
 		}
 
 		@Override

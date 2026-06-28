@@ -66,7 +66,7 @@ final class ElytraSimulator extends BaseSimulator {
     );
     Timings.CHECK_PHYSICS_SIMULATOR_ELYTRA.stop();
     Timings.CHECK_PHYSICS_SIMULATOR.stop();
-    return Simulation.of(user, configuration, collisionResult);
+    return Simulation.of(user, configuration, environment, collisionResult);
   }
 
   @Override

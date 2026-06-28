@@ -1,10 +1,13 @@
-package de.jpx3.intave.check.movement.physics;
+package de.jpx3.intave.check.movement.physics.search;
 
 import de.jpx3.intave.IntavePlugin;
+import de.jpx3.intave.check.movement.physics.MovementConfiguration;
+import de.jpx3.intave.check.movement.physics.Simulation;
+import de.jpx3.intave.check.movement.physics.Simulator;
+import de.jpx3.intave.check.movement.physics.branch.MovementSearchBranchers;
+import de.jpx3.intave.check.movement.physics.branch.MovementSearchConfig;
+import de.jpx3.intave.check.movement.physics.branch.MovementSearchInput;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
-import de.jpx3.intave.check.movement.physics.search.MovementSearchBranchers;
-import de.jpx3.intave.check.movement.physics.search.MovementSearchConfig;
-import de.jpx3.intave.check.movement.physics.search.MovementSearchInput;
 import de.jpx3.intave.diagnostic.timings.Timings;
 import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.player.ItemProperties;

@@ -719,6 +719,11 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
     return unmodifiableView;
   }
 
+  @Override
+  public int depth() {
+    return delegate.depth() + 1;
+  }
+
   private void applySimulation(Simulation simulation) {
     MovementConfiguration configuration = simulation.configuration();
     SimulationResult collider = simulation.result();

@@ -1,10 +1,14 @@
-package de.jpx3.intave.check.movement.physics;
+package de.jpx3.intave.check.movement.physics.search;
 
 import de.jpx3.intave.IntavePlugin;
+import de.jpx3.intave.annotate.Immutable;
+import de.jpx3.intave.check.movement.physics.MovementConfiguration;
+import de.jpx3.intave.check.movement.physics.Simulation;
+import de.jpx3.intave.check.movement.physics.Simulator;
+import de.jpx3.intave.check.movement.physics.branch.MovementSearchBranchers;
+import de.jpx3.intave.check.movement.physics.branch.MovementSearchConfig;
+import de.jpx3.intave.check.movement.physics.branch.MovementSearchInput;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
-import de.jpx3.intave.check.movement.physics.search.MovementSearchBranchers;
-import de.jpx3.intave.check.movement.physics.search.MovementSearchConfig;
-import de.jpx3.intave.check.movement.physics.search.MovementSearchInput;
 import de.jpx3.intave.diagnostic.timings.Timings;
 import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.player.ItemProperties;
@@ -47,18 +51,13 @@ public final class TwoTickSimulationSearch implements SimulationSearch {
 		Position sentPosition = environment.position();
 		Position lastPositionB4Flying = environment.lastPosition();
 
-		FPCSimulationContainer container = collectSimulations(
+		SimulationCollector container = collectSimulations(
 			user, simulator, environment,
-			Collector.of(
-				FPCSimulationContainer::def,
-				(c, o) -> c.add(o, user, environment),
-				(c1, c2) -> c1.mergedWith(c2, user, environment),
-				Function.identity()
-			),
+			SimulationCollector.positionBased(user, environment),
 			sim -> sim.positionDifference(lastPositionB4Flying, sentPosition) < REQUIRED_ACCURACY_FOR_QUICK_PROC_EXIT
 		);
 
-		List<Simulation> flyingSimulations = container.possibleFlyingSimulations();
+		List<Simulation> flyingSimulations = container.flyingSimulations();
 		Simulation bestSimulation = container.bestSimulation();
 
 		if (flyingSimulations.isEmpty() || bestSimulation.positionDifference(lastPositionB4Flying, sentPosition) < REQUIRED_ACCURACY_FOR_QUICK_PROC_EXIT) {
@@ -86,7 +85,7 @@ public final class TwoTickSimulationSearch implements SimulationSearch {
 					sim.positionDifference(lastPositionB4Flying, sentPosition) < REQUIRED_ACCURACY_FOR_QUICK_PROC_EXIT
 			);
 
-			secondTickSimulation.append("2t");
+			secondTickSimulation.append("1f");
 			Position lastPosition = branchEnvironment.lastPosition();
 			double branchDistance = secondTickSimulation.positionDifference(lastPosition, sentPosition) +
 				secondTickSimulation.motionDifference(remainingMotion);
@@ -131,7 +130,7 @@ public final class TwoTickSimulationSearch implements SimulationSearch {
 
 	private <C, R> R collectSimulations(
 		User user, Simulator simulator,
-		SimulationEnvironment environment,
+		@Immutable SimulationEnvironment environment,
 		Collector<Simulation, C, R> collector,
 		Predicate<Simulation> earlyStop
 	) {
@@ -147,11 +146,8 @@ public final class TwoTickSimulationSearch implements SimulationSearch {
 		BiConsumer<C, Simulation> accumulator = collector.accumulator();
 
 		for (MovementSearchConfig config : configs) {
-			SimulationEnvironment myEnv = environment;
-			if (config.rotation() != null) {
-				myEnv = myEnv.mutableView();
-				myEnv.setRotation(config.rotation());
-			}
+			SimulationEnvironment myEnv = environment.mutableView();
+			myEnv = config.applyTo(myEnv);
 			Simulation simulation = simulator.simulateTick(
 				user, myEnv.mutableBaseMotionCopy(),
 				myEnv.unmodifiable(), config.moveConfig()

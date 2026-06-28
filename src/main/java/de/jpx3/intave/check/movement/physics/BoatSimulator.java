@@ -48,7 +48,7 @@ public final class BoatSimulator extends BaseSimulator {
 
     Timings.CHECK_PHYSICS_SIMULATOR_BOAT.stop();
     Timings.CHECK_PHYSICS_SIMULATOR.stop();
-    return Simulation.of(user, configuration, collision);
+    return Simulation.of(user, configuration, environment, collision);
   }
 
   private Status boatStatus(User user) {

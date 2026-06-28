@@ -266,11 +266,23 @@ public interface SimulationEnvironment {
     return UnmodifiableSimulationEnvironmentView.of(this);
   }
 
+  default SimulationEnvironment immutableCopy() {
+    return ImmutableSimulationEnvironmentCopy.of(this);
+  }
+
   default SimulationEnvironment mutableView() {
     return MutableSimulationEnvironmentView.of(this);
   }
 
   default void commitTo(SimulationEnvironment other) {
     throw new UnsupportedOperationException("commitTo is not supported for this SimulationEnvironment");
+  }
+
+  default int depth() {
+    return 0;
+  }
+
+  static SimulationEnvironment invalid() {
+    return null;
   }
 }

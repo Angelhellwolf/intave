@@ -222,7 +222,7 @@ class BaseSimulator extends Simulator {
     Timings.CHECK_PHYSICS_SIMULATOR_BASE_COLLIDER.stop();
     Timings.CHECK_PHYSICS_SIMULATOR_BASE.stop();
     Timings.CHECK_PHYSICS_SIMULATOR.stop();
-    return Simulation.of(user, configuration, collisionResult);
+    return Simulation.of(user, configuration, environment, collisionResult);
   }
 
   private void performSimulationInWaterOfState(
