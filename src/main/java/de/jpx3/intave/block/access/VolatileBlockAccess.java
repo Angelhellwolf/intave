@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.block.access;
 
 import de.jpx3.intave.block.fluid.Fluid;
@@ -7,6 +18,7 @@ import de.jpx3.intave.block.variant.BlockVariant;
 import de.jpx3.intave.block.variant.BlockVariantRegister;
 import de.jpx3.intave.cleanup.GarbageCollector;
 import de.jpx3.intave.share.BlockPosition;
+import de.jpx3.intave.share.MutableBlockPosition;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.user.User;
 import org.bukkit.Bukkit;
@@ -92,7 +104,7 @@ public final class VolatileBlockAccess {
   }
 
   public static Block blockAccess(World blockAccess, BlockPosition position) {
-    return blockAccess(blockAccess, position.x, position.y, position.z);
+    return blockAccess(blockAccess, position.x(), position.y(), position.z());
   }
 
   public static Block blockAccess(World blockAccess, double x, double y, double z) {
@@ -139,6 +151,10 @@ public final class VolatileBlockAccess {
     return fluidAccess(user, user.player().getWorld(), position.getBlockX(), position.getBlockY(), position.getBlockZ());
   }
 
+  public static Fluid fluidAccess(User user, MutableBlockPosition position) {
+    return fluidAccess(user, user.player().getWorld(), position.x(), position.y(), position.z());
+  }
+
   public static Fluid fluidAccess(User user, World blockAccess, double x, double y, double z) {
     return fluidAccess(user, blockAccess, floor(x), floor(y), floor(z));
   }
@@ -167,6 +183,10 @@ public final class VolatileBlockAccess {
 
   public static Material typeAccess(User user, BlockPosition position) {
     return typeAccess(user, user.player().getWorld(), position.getBlockX(), position.getBlockY(), position.getBlockZ());
+  }
+
+  public static Material typeAccess(User user, MutableBlockPosition position) {
+    return typeAccess(user, user.player().getWorld(), position.x(), position.y(), position.z());
   }
 
   public static Material typeAccess(User user, Position position) {
@@ -247,7 +267,7 @@ public final class VolatileBlockAccess {
   }
 
   public static BlockShape collisionShapeAccess(User user, BlockPosition position) {
-    return collisionShapeAccess(user, position.x, position.y, position.z);
+    return collisionShapeAccess(user, position.getX(), position.getY(), position.getZ());
   }
 
   public static BlockShape collisionShapeAccess(User user, double x, double y, double z) {

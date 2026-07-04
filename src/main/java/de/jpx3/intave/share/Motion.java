@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.share;
 
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
@@ -192,9 +203,16 @@ public final class Motion {
 	}
 
 	public boolean almostIdentical(Motion motion) {
-		return Math.abs(motionX - motion.motionX) < 1E-5 &&
-			Math.abs(motionY - motion.motionY) < 1E-5 &&
-			Math.abs(motionZ - motion.motionZ) < 1E-5;
+		return Math.abs(motionX - motion.motionX) < 1E-3 &&
+			Math.abs(motionY - motion.motionY) < 1E-3 &&
+			Math.abs(motionZ - motion.motionZ) < 1E-3;
+	}
+
+	public long almostIdenticalHash() {
+		long x = (long) (motionX * 1000);
+		long y = (long) (motionY * 1000);
+		long z = (long) (motionZ * 1000);
+		return x ^ y ^ z;
 	}
 
 	@Override

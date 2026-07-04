@@ -1,19 +1,39 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check.movement.physics.branch;
 
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 
-import java.util.Set;
+import java.util.List;
 
+/*
+ * The following can happen:
+ * A player rotates, then sends a flying packet, then rotate-moves.
+ * We must account for the flying-packet using the outdated rotation.
+ * This class was used instead of tick-ambiguous updates, since it does basically the same.
+ */
 public final class RotationBrancher extends MovementSearchBrancher {
 	@Override
-	public Set<MovementSearchConfig> branch(MovementSearchInput input, MovementSearchConfig config) {
+	public void branch(MovementSearchInput input, MovementSearchConfig config, List<MovementSearchConfig> result) {
 		SimulationEnvironment environment = input.environment();
 		if (environment.lastRotation().equals(environment.rotation())) {
-			return single(config);
+			result.add(config);
+			return;
 		}
-		Set<MovementSearchConfig> ordered = ordered();
-		ordered.add(config);
-		ordered.add(config.withRotation(environment.lastRotation()));
-		return ordered;
+		if (input.user().meta().protocol().flyingPacketUncertaintyRadius() < 0.00001) {
+			result.add(config);
+			return;
+		}
+		result.add(config);
+		result.add(config.withRotation(environment.lastRotation()).withExplicitTickFinishAllow(false));
 	}
 }

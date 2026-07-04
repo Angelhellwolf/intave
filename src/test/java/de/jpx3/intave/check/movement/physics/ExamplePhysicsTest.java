@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check.movement.physics;
 
 import de.jpx3.intave.adapter.MinecraftVersion;
@@ -16,10 +27,8 @@ import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserFactory;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.MovementMetadata;
-import de.jpx3.intave.world.border.MockWorldBorder;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.WorldBorder;
 import org.bukkit.entity.Player;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,12 +52,10 @@ public final class ExamplePhysicsTest {
 		com.comphenix.protocol.utility.MinecraftVersion.setCurrentVersion(com.comphenix.protocol.utility.MinecraftVersion.v1_21_4);
 
 		DrillResolver.manualInit(MockShapeResolverPipeline.createStoneDefault());
-		WorldBorder worldBorder = MockWorldBorder.create();
 		World world = FakeWorldFactory.createWorld(
 			(methodName, _) -> switch (methodName) {
 				case "isChunkLoaded", "isChunkInUse" -> true;
 				case "isThundering", "hasStorm" -> false;
-				case "getWorldBorder" -> worldBorder;
 				default -> null;
 			}
 		);

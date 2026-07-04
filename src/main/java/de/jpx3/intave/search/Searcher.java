@@ -1,44 +1,54 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.search;
 
 import java.util.*;
 import java.util.function.Function;
 
-public final class Searcher<I, T extends SearchConfig> {
+public final class Searcher<I, T> {
 	private final List<SearchBrancher<I, T>> branchers;
 	private final Function<I, T> initial;
-	private final boolean cacheResults;
-	private final Map<I, Set<T>> brancherCache = new HashMap<>();
 
 	public Searcher(List<SearchBrancher<I, T>> branchers, Function<I, T> initial) {
-		this(branchers, initial, true);
-	}
-
-	public Searcher(List<SearchBrancher<I, T>> branchers, Function<I, T> initial, boolean cacheResults) {
 		this.branchers = branchers;
 		this.initial = initial;
-		this.cacheResults = cacheResults;
 	}
 
+	private final ThreadLocal<List<T>> cachedAlphaLists = ThreadLocal.withInitial(ArrayList::new);
+	private final ThreadLocal<List<T>> cachedBetaLists = ThreadLocal.withInitial(ArrayList::new);
+	private final ThreadLocal<Set<T>> cachedDeduplicatedSets = ThreadLocal.withInitial(LinkedHashSet::new);
+
 	public Set<T> searchConfigurationsFor(I input) {
-		if (cacheResults) {
-			Set<T> cached = brancherCache.get(input);
-			if (cached != null) {
-				return cached;
-			}
-		}
-		Set<T> result = new LinkedHashSet<>(8);
+		boolean alphaFirst = true;
+		List<T> result = cachedAlphaLists.get();
+		result.clear();
 		result.add(initial.apply(input));
+		Set<T> deduplicated = cachedDeduplicatedSets.get();
 		for (SearchBrancher<I, T> brancher : branchers) {
-			Set<T> newResult = new LinkedHashSet<>(8);
+			List<T> newResult = alphaFirst ? cachedBetaLists.get() : cachedAlphaLists.get();
+			newResult.clear();
 			for (T t : result) {
-				Set<T> output = brancher.branch(input, t);
-				newResult.addAll(output);
+				brancher.branch(input, t, newResult);
 			}
+			deduplicated.clear();
+			deduplicated.addAll(newResult);
+			newResult.clear();
+			newResult.addAll(deduplicated);
 			result = newResult;
+			alphaFirst = !alphaFirst;
 		}
-		if (cacheResults) {
-			brancherCache.put(input, result);
-		}
-		return result;
+		deduplicated.clear();
+		deduplicated.addAll(result);
+		// Result must be dropped before calling the method again
+		return Collections.unmodifiableSet(deduplicated);
 	}
 }

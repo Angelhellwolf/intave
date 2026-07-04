@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.module.mitigate;
 
 import de.jpx3.intave.IntaveControl;
@@ -556,8 +567,8 @@ public final class SetbackSimulator extends Module {
 
   private Vector resolvePushVector(Player player, double positionX, double positionY, double positionZ) {
     BlockPosition blockPosition = new BlockPosition(positionX, positionY, positionZ);
-    double d0 = positionX - blockPosition.x;
-    double d1 = positionZ - blockPosition.z;
+    double d0 = positionX - blockPosition.x();
+    double d1 = positionZ - blockPosition.z();
     Vector vector = new Vector();
     int i = -1;
     double d2 = 9999.0D;

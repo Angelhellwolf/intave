@@ -1,17 +1,33 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check.movement.physics.environment;
 
 import de.jpx3.intave.block.fluid.Fluid;
 import de.jpx3.intave.check.movement.physics.MoveMetric;
 import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.check.movement.physics.Simulation;
+import de.jpx3.intave.check.movement.physics.update.TickAmbiguousUpdate;
 import de.jpx3.intave.player.collider.complex.SimulationResult;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.Position;
+import de.jpx3.intave.world.border.WorldBorder;
 import org.bukkit.Material;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 
 import static de.jpx3.intave.share.ClientMath.cos;
@@ -42,6 +58,7 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
   private boolean inWeb;
   private boolean onGround;
   private boolean lastOnGround;
+  private WorldBorder worldBorder = WorldBorder.createDefault();
 
   private Fluid interactingFluid;
   private BoundingBox boundingBox = BoundingBox.fromBounds(0, 0, 0, 0, 0, 0);
@@ -357,6 +374,16 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
   @Override
   public void resetMotionMultiplier() {
     motionMultiplier = null;
+  }
+
+  @Override
+  public WorldBorder worldBorder() {
+    return worldBorder;
+  }
+
+  @Override
+  public void setWorldBorder(@NotNull WorldBorder worldBorder) {
+    this.worldBorder = worldBorder;
   }
 
   @Override
@@ -677,8 +704,28 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
   }
 
   @Override
-  public void tickComplete(boolean hasMovement, boolean hasRotation) {
+  public void tickComplete(boolean hasMovement, boolean hasRotation, boolean isRealClientTick) {
 
+  }
+
+  @Override
+  public long currentTick() {
+    return 0;
+  }
+
+  @Override
+  public long activeSequence() {
+    return 0;
+  }
+
+  @Override
+  public void setActiveSequence(long activeSequence) {
+
+  }
+
+  @Override
+  public List<TickAmbiguousUpdate> tickAmbiguousUpdates() {
+    return new ArrayList<>();
   }
 
   @Override
@@ -687,7 +734,7 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
   }
 
   @Override
-  public SimulationEnvironment unmodifiable() {
+  public SimulationEnvironment immutableView() {
     return this;
   }
 }

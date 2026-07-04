@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check.movement.physics;
 
 import de.jpx3.intave.access.player.trust.TrustFactor;
@@ -9,7 +20,6 @@ import de.jpx3.intave.block.shape.resolve.MockShapeResolverPipeline;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.check.movement.physics.search.SimulationSearch;
 import de.jpx3.intave.check.movement.physics.search.ThreeTickSimulationSearch;
-import de.jpx3.intave.check.movement.physics.search.TwoTickSimulationSearch;
 import de.jpx3.intave.player.collider.complex.SimulationResult;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
@@ -22,10 +32,8 @@ import de.jpx3.intave.user.UserFactory;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
-import de.jpx3.intave.world.border.MockWorldBorder;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.WorldBorder;
 import org.bukkit.entity.Player;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,23 +48,10 @@ import static org.junit.jupiter.api.Assertions.*;
 final class NTickSimulationSearchTest {
 	private static final UUID EMPTY_ID = UUID.fromString("00000000-0000-0000-0000-000000000000");
 
-	private final Simulator simulator = new LinearTestSimulator();
-
 	@BeforeEach
 	void setUp() {
 		MinecraftVersion.setCurrent(MinecraftVersions.VER1_17_0);
 		DrillResolver.manualInit(MockShapeResolverPipeline.createStoneDefault());
-	}
-
-	@Test
-	void reconstructsMovementAcrossFilteredFlyingPacketWithRotationChange() {
-		reconstructsMovementAcrossFilteredFlyingPackets(
-			new TwoTickSimulationSearch(false, false),
-			simulator,
-			exampleFlyingPacketScenario(simulator, 500),
-			1,
-			null
-		);
 	}
 
 	@Test
@@ -128,19 +123,19 @@ final class NTickSimulationSearchTest {
 			Motion preTickMotion = simulator.simulatePreTick(user, motion, movement);
 			movement.setBaseMotion(preTickMotion);
 
-			Simulation simulate = search.simulate(
+			Simulation simulate = search.greedyNarrowSearch(
 				user, movement, simulator
 			);
 			if (!foundRequiredDetail && simulate.details().contains(requiredDetail)) {
 				foundRequiredDetail = true;
 			}
 
-			double motionDifference = simulate.motionDifference(movement.motion());
+			double motionDifference = simulate.offsetDifference();
 			if (motionDifference > 0.00001) {
 				fail("Packet " + i +
 					": difference=" + motionDifference +
-					", expected=" + movement.motion() +
-					", simulated=" + simulate.motion() +
+					", expected=" + movement.sentOffsetMotion() +
+					", simulated=" + simulate.offsetMotion() +
 					", configuration=" + simulate.configuration() +
 					", details=" + simulate.details());
 			}
@@ -150,11 +145,11 @@ final class NTickSimulationSearchTest {
 			Motion afterMotion = simulator.simulateAfterTick(
 				user, movement,
 				movement.position(),
-				simulate.motion()
+				simulate.offsetMotion()
 			);
 
 			movement.setBaseMotion(afterMotion);
-			movement.tickComplete(true, false);
+			movement.tickComplete(true, false, true);
 			movement.lastKeyStrafe = movement.keyStrafe;
 			movement.lastKeyForward = movement.keyForward;
 			movement.lastOnGround = movement.onGround;
@@ -227,12 +222,10 @@ final class NTickSimulationSearchTest {
 	}
 
 	private User createUser(Position position, Rotation rotation) {
-		WorldBorder worldBorder = MockWorldBorder.create();
 		World world = FakeWorldFactory.createWorld(
 			(methodName, _) -> switch (methodName) {
 				case "isChunkLoaded", "isChunkInUse" -> true;
 				case "isThundering", "hasStorm" -> false;
-				case "getWorldBorder" -> worldBorder;
 				default -> null;
 			}
 		);

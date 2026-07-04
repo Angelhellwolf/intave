@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check.movement.physics.search;
 
 import de.jpx3.intave.IntavePlugin;
@@ -10,7 +21,6 @@ import de.jpx3.intave.check.movement.physics.branch.MovementSearchInput;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.diagnostic.timings.Timings;
 import de.jpx3.intave.math.Hypot;
-import de.jpx3.intave.player.ActionBar;
 import de.jpx3.intave.player.ItemProperties;
 import de.jpx3.intave.search.Searcher;
 import de.jpx3.intave.share.Motion;
@@ -28,15 +38,14 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
 import static de.jpx3.intave.check.movement.physics.MoveMetric.TELEPORT;
+import static de.jpx3.intave.math.MathHelper.formatDouble;
 
 public final class ThreeTickSimulationSearch implements SimulationSearch {
 	private final static Searcher<MovementSearchInput, MovementSearchConfig> SEARCHER = new Searcher<>(
 		MovementSearchBranchers.normal(),
-		MovementSearchConfig::blank,
-		false
+		MovementSearchConfig::blank
 	);
 
 	private final boolean itemUsageReset;
@@ -48,116 +57,135 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 	}
 
 	@Override
-	public Simulation simulate(User user, SimulationEnvironment movementData, Simulator simulator) {
-		Position sentPosition = movementData.position();
+	public Simulation greedyNarrowSearch(User user, SimulationEnvironment environment, Simulator simulator) {
+		return greedySearch(user, environment, simulator, false);
+	}
+
+	@Override
+	public Simulation greedyFullSearch(User user, SimulationEnvironment environment, Simulator simulator) {
+		return greedySearch(user, environment, simulator, true);
+	}
+
+	private Simulation greedySearch(User user, SimulationEnvironment movementData, Simulator simulator, boolean full) {
+		Position receivedPosition = movementData.position();
 		Position lastPositionB4Flying = movementData.lastPosition();
 
+		int maxFlyingSimulations = full ? Integer.MAX_VALUE : 3;
+
+		// Go through all this-tick possibilities
 		SimulationCollector firstTickContainer = collectSimulations(
 			user, simulator, movementData,
-			SimulationCollector.positionBased(user, movementData),
-			sim -> sim.positionDifference(lastPositionB4Flying, sentPosition) < REQUIRED_ACCURACY_FOR_QUICK_PROC_EXIT
+			SimulationCollector.forEnvironment(user, movementData, maxFlyingSimulations),
+			sim -> sim.offsetDifference() < REQUIRED_ACCURACY_FOR_QUICK_PROC_EXIT
 		);
+
+		int totalSimulationsDone = firstTickContainer.simulationsDone();
+		long start = System.nanoTime();
 
 		List<Simulation> firstTickFlyingSimulations = firstTickContainer.flyingSimulations();
 		Simulation bestSimulation = firstTickContainer.bestSimulation();
 
-		if (firstTickFlyingSimulations.isEmpty() || bestSimulation.positionDifference(lastPositionB4Flying, sentPosition) < REQUIRED_ACCURACY_FOR_QUICK_PROC_EXIT) {
-			applySimulation(user, bestSimulation);
-			// commit environment changes to active
-			bestSimulation.environment().commitTo(movementData);
-			return bestSimulation;
+		if (firstTickFlyingSimulations.isEmpty() || bestSimulation.offsetDifference() < REQUIRED_ACCURACY_FOR_QUICK_PROC_EXIT) {
+			if (bestSimulation.canFinishExplicitTick()) {
+				if (totalSimulationsDone > 1) {
+					bestSimulation.append(totalSimulationsDone + "as");
+				}
+				double durationMs = ((double)System.nanoTime() - start) / 1_000_000d;
+				bestSimulation.append(formatDouble(durationMs, 4) + "ms");
+				applySimulation(user, bestSimulation);
+				return bestSimulation;
+			}
 		}
-
-		SimulationEnvironment bestEnvironment = null;
-		double bestDistance = 2 * bestSimulation.positionDifference(lastPositionB4Flying, sentPosition);
-
-		int firstFlyTickRuns = 0;
-		int secondFlyTickRuns = 0;
+		double bestDistance = bestSimulation.offsetDifference();
 
 		for (Simulation firstTickSimulation : firstTickFlyingSimulations) {
 			SimulationEnvironment firstTickEnvironment = firstTickSimulation.environment().mutableView();
 			simulator.simulateAround(
 				user, firstTickEnvironment, firstTickSimulation,
-				sentPosition, movementData.rotation()
+				receivedPosition, movementData.rotation()
 			);
 
-			Motion secondTickRemainingMotion = firstTickEnvironment.motion();
+			// If simulating take too long, we can not search that deep
+			if (totalSimulationsDone > 512 && !full) {
+				continue;
+			}
+
+			Motion secondTickRemainingMotion = firstTickEnvironment.sentOffsetMotion();
 			SimulationCollector secondTickContainer = collectSimulations(
 				user, simulator, firstTickEnvironment,
-				SimulationCollector.offsetBased(
-					user, firstTickEnvironment, secondTickRemainingMotion, lastPositionB4Flying
+				SimulationCollector.forEnvironmentWithCustomTargets(
+					user, firstTickEnvironment, secondTickRemainingMotion, lastPositionB4Flying, maxFlyingSimulations
 				),
-				sim -> sim.motionDifference(secondTickRemainingMotion) < REQUIRED_ACCURACY_FOR_QUICK_PROC_EXIT &&
-					sim.positionDifference(lastPositionB4Flying, sentPosition) < REQUIRED_ACCURACY_FOR_QUICK_PROC_EXIT
+				sim -> sim.positionDifference(receivedPosition) < REQUIRED_ACCURACY_FOR_QUICK_PROC_EXIT
 			);
-
-			firstFlyTickRuns++;
+			totalSimulationsDone += secondTickContainer.simulationsDone();
 
 			Simulation secondTickSimulation = secondTickContainer.bestSimulation();
 			secondTickSimulation.append("1f");
-			double secondTickDistance = simulationDistance(
-				secondTickSimulation, firstTickEnvironment,
-				sentPosition, secondTickRemainingMotion
-			);
-			if (secondTickDistance < bestDistance) {
+			double secondTickDistance = secondTickSimulation.positionDifference(receivedPosition);
+			if (secondTickDistance < bestDistance && secondTickSimulation.canFinishExplicitTick()) {
 				bestSimulation = secondTickSimulation.reusableCopy();
 				bestDistance = secondTickDistance;
-				bestEnvironment = firstTickEnvironment;
+			}
+
+			if (bestDistance < REQUIRED_ACCURACY_FOR_QUICK_PROC_EXIT) {
+				if (totalSimulationsDone > 1) {
+					bestSimulation.append(totalSimulationsDone + "bs");
+				}
+				double durationMs = ((double)System.nanoTime() - start) / 1_000_000d;
+				bestSimulation.append(formatDouble(durationMs, 4) + "ms");
+				applySimulation(user, bestSimulation);
+				return bestSimulation;
 			}
 
 			for (Simulation secondTickFlyingSimulation : secondTickContainer.flyingSimulations()) {
 				SimulationEnvironment secondTickEnvironment = secondTickFlyingSimulation.environment().mutableView();
 				simulator.simulateAround(
 					user, secondTickEnvironment, secondTickFlyingSimulation,
-					sentPosition, movementData.rotation()
+					receivedPosition, movementData.rotation()
 				);
 
-				Motion thirdTickRemainingMotion = secondTickEnvironment.motion();
-				Simulation thirdTickSimulation = collectSimulations(
+				// If simulating take too long, we can not search that deep
+				if (totalSimulationsDone > 256 && !full) {
+					continue;
+				}
+
+				Motion thirdTickRemainingMotion = secondTickEnvironment.sentOffsetMotion();
+				SimulationCollector thirdTickSimulator = collectSimulations(
 					user, simulator, secondTickEnvironment,
-					Collectors.reducing(
-						Simulation.invalid(),
-						(o, o2) -> o.select(o2, thirdTickRemainingMotion)
+					SimulationCollector.forEnvironmentWithCustomTargets(
+						user, secondTickEnvironment, thirdTickRemainingMotion, lastPositionB4Flying, maxFlyingSimulations
 					),
-					sim -> sim.motionDifference(thirdTickRemainingMotion) < REQUIRED_ACCURACY_FOR_QUICK_PROC_EXIT &&
-						sim.positionDifference(secondTickEnvironment.lastPosition(), sentPosition) < REQUIRED_ACCURACY_FOR_QUICK_PROC_EXIT
+					sim -> sim.positionDifference(receivedPosition) < REQUIRED_ACCURACY_FOR_QUICK_PROC_EXIT
 				);
+				totalSimulationsDone += thirdTickSimulator.simulationsDone();
 
-				secondFlyTickRuns++;
-
+				Simulation thirdTickSimulation = thirdTickSimulator.bestSimulation();
 				thirdTickSimulation.append("2f");
-				double thirdTickDistance = simulationDistance(
-					thirdTickSimulation, secondTickEnvironment,
-					sentPosition, thirdTickRemainingMotion
-				);
-				if (thirdTickDistance < bestDistance) {
+				double thirdTickDistance = thirdTickSimulation.positionDifference(receivedPosition);
+				if (thirdTickDistance < bestDistance && thirdTickSimulation.canFinishExplicitTick()) {
 					bestSimulation = thirdTickSimulation.reusableCopy();
 					bestDistance = thirdTickDistance;
-					bestEnvironment = secondTickEnvironment;
+				}
+
+				if (bestDistance < REQUIRED_ACCURACY_FOR_QUICK_PROC_EXIT) {
+					if (totalSimulationsDone > 1) {
+						bestSimulation.append(totalSimulationsDone + "cs");
+					}
+					double durationMs = ((double)System.nanoTime() - start) / 1_000_000d;
+					bestSimulation.append(formatDouble(durationMs, 4) + "ms");
+					applySimulation(user, bestSimulation);
+					return bestSimulation;
 				}
 			}
 		}
-
-		if (bestEnvironment != null) {
-			bestEnvironment.commitTo(movementData);
-			ActionBar.sendActionBar(
-				user.player(),
-				ChatColor.GRAY + "L-"+firstFlyTickRuns+"-"+secondFlyTickRuns+"-|? <" + bestEnvironment.depth() + ">"
-			);
+		if (totalSimulationsDone > 1) {
+			bestSimulation.append(totalSimulationsDone + "ds");
 		}
-
+		double durationMs = ((double)System.nanoTime() - start) / 1_000_000d;
+		bestSimulation.append(formatDouble(durationMs, 4) + "ms");
 		applySimulation(user, bestSimulation);
 		return bestSimulation;
-	}
-
-	private double simulationDistance(
-		Simulation simulation,
-		SimulationEnvironment environment,
-		Position sentPosition,
-		Motion remainingMotion
-	) {
-		return simulation.positionDifference(environment.lastPosition(), sentPosition) +
-			simulation.motionDifference(remainingMotion);
 	}
 
 	private void applySimulation(User user, Simulation simulation) {
@@ -193,7 +221,7 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 	) {
 		Timings.CHECK_PHYSICS_PROC_ITR.start();
 		Timings.CHECK_PHYSICS_PROC_ITR_BUILD_CONFIGS.start();
-		Set<MovementSearchConfig> configs = SEARCHER.searchConfigurationsFor(
+		Set<MovementSearchConfig> possibleConfigs = SEARCHER.searchConfigurationsFor(
 			MovementSearchInput.from(user, simulator, environment, detectNoSlowdown)
 		);
 		Timings.CHECK_PHYSICS_PROC_ITR_BUILD_CONFIGS.stop();
@@ -202,18 +230,21 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 		Function<C, R> finisher = collector.finisher();
 		BiConsumer<C, Simulation> accumulator = collector.accumulator();
 
-		for (MovementSearchConfig config : configs) {
+		for (MovementSearchConfig config : possibleConfigs) {
+			boolean canFinishExplicitTick = config.canFinishExplicitTick();
 			SimulationEnvironment myEnv = environment.mutableView();
 			myEnv = config.applyTo(myEnv);
 			Simulation simulation = simulator.simulateTick(
 				user, myEnv.mutableBaseMotionCopy(),
-				myEnv.unmodifiable(), config.moveConfig()
+				myEnv.immutableView(), config.moveConfig()
 			);
 			simulation.setEnvironment(myEnv);
+			simulation.setCanFinishExplicitTick(canFinishExplicitTick);
 			accumulator.accept(container, simulation);
-			if (earlyStop.test(simulation)) {
+			if (canFinishExplicitTick && earlyStop.test(simulation)) {
 				break;
 			}
+			simulation.expire();
 		}
 		Timings.CHECK_PHYSICS_PROC_ITR.stop();
 		return finisher.apply(container);

@@ -1,17 +1,33 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check.movement.physics.environment;
 
 import de.jpx3.intave.block.fluid.Fluid;
 import de.jpx3.intave.check.movement.physics.MoveMetric;
 import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.check.movement.physics.Simulation;
+import de.jpx3.intave.check.movement.physics.update.TickAmbiguousUpdate;
 import de.jpx3.intave.player.collider.complex.SimulationResult;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.Position;
+import de.jpx3.intave.world.border.WorldBorder;
 import org.bukkit.Material;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.List;
 
 public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvironment {
 	private final Pose pose;
@@ -46,10 +62,14 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 	private final boolean pushedByEntity;
 	private final SimulationResult beforeMoveCollider;
 	private final int reduceTicks;
+	private final long currentTick;
+	private final long currentSequence;
+	private final List<TickAmbiguousUpdate> possibleMovementUpdates;
 	private final boolean denyJump;
 	private final float height, width, eyeHeight;
 	private final double heightRounded, widthRounded;
 	private final Fluid interactingFluid;
+	private final WorldBorder worldBorder;
 	private final EnumMap<MoveMetric, Integer> activeTracker;
 	private final EnumMap<MoveMetric, Integer> pastTracker;
 
@@ -125,6 +145,11 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 		this.widthRounded = source.widthRounded();
 		this.eyeHeight = source.eyeHeight();
 		this.interactingFluid = source.interactingFluid();
+		this.currentTick = source.currentTick();
+		this.currentSequence = source.activeSequence();
+		this.possibleMovementUpdates = new ArrayList<>(source.tickAmbiguousUpdates());
+		this.worldBorder = source.worldBorder();
+
 		this.activeTracker = new EnumMap<>(MoveMetric.class);
 		this.pastTracker = new EnumMap<>(MoveMetric.class);
 		for (MoveMetric metric : MoveMetric.values()) {
@@ -296,6 +321,16 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 
 	@Override
 	public void resetMotionMultiplier() {
+		throw immutableCopyException();
+	}
+
+	@Override
+	public WorldBorder worldBorder() {
+		return worldBorder;
+	}
+
+	@Override
+	public void setWorldBorder(@NotNull WorldBorder worldBorder) {
 		throw immutableCopyException();
 	}
 
@@ -633,8 +668,28 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 	}
 
 	@Override
-	public void tickComplete(boolean hasMovement, boolean hasRotation) {
+	public void tickComplete(boolean hasMovement, boolean hasRotation, boolean isRealClientTick) {
 		throw immutableCopyException();
+	}
+
+	@Override
+	public long currentTick() {
+		return currentTick;
+	}
+
+	@Override
+	public long activeSequence() {
+		return currentSequence;
+	}
+
+	@Override
+	public void setActiveSequence(long activeSequence) {
+		throw immutableCopyException();
+	}
+
+	@Override
+	public List<TickAmbiguousUpdate> tickAmbiguousUpdates() {
+		return possibleMovementUpdates;
 	}
 
 	@Override
@@ -643,7 +698,7 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 	}
 
 	@Override
-	public SimulationEnvironment unmodifiable() {
+	public SimulationEnvironment immutableView() {
 		return this;
 	}
 
@@ -654,7 +709,7 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 
 	@Override
 	public void commitTo(SimulationEnvironment other) {
-		throw immutableCopyException();
+		throw new UnsupportedOperationException("Cannot commit to another environment from an immutable copy (yet)");
 	}
 
 	private static boolean useClientFlyingPacketTicks(

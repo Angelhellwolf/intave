@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.block.shape;
 
 import de.jpx3.intave.codec.StreamCodec;
@@ -162,6 +173,18 @@ public final class ComparisonAlertShape implements BlockShape {
     boolean second = secondShape.isCubic();
     if (first != second) {
       System.err.println("Difference in isCubic: " + first + " vs " + second);
+      System.err.println("First shape: " + firstShape);
+      System.err.println("Second shape: " + secondShape);
+    }
+    return first;
+  }
+
+  @Override
+  public boolean strictlyInside(double positionX, double positionY, double positionZ) {
+    boolean first = firstShape.strictlyInside(positionX, positionY, positionZ);
+    boolean second = secondShape.strictlyInside(positionX, positionY, positionZ);
+    if (first != second) {
+      System.err.println("Difference in strictlyInside: " + first + " vs " + second);
       System.err.println("First shape: " + firstShape);
       System.err.println("Second shape: " + secondShape);
     }

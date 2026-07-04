@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.packet.reader;
 
 import com.comphenix.protocol.PacketType;
@@ -68,6 +79,13 @@ public final class PacketReaders {
     setup(UPDATE_ATTRIBUTES, EntityReader::new);
     setup(UPDATE_ENTITY_NBT, EntityReader::new);
     setup(USE_BED, EntityReader::new);
+    setup(WORLD_BORDER, WorldBorderReader::new);
+    setup(SET_BORDER_CENTER, WorldBorderReader::new);
+    setup(SET_BORDER_SIZE, WorldBorderReader::new);
+    setup(SET_BORDER_LERP_SIZE, WorldBorderReader::new);
+    setup(SET_BORDER_WARNING_DELAY, WorldBorderReader::new);
+    setup(SET_BORDER_WARNING_DISTANCE, WorldBorderReader::new);
+    setup(INITIALIZE_BORDER, WorldBorderReader::new);
 
     setup(ATTACK_ENTITY, EntityUseReader::new);
     setup(ABILITIES_IN, AbilityInReader::new);

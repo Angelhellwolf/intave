@@ -1,26 +1,40 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.block.cache;
 
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import de.jpx3.intave.share.Position;
+import it.unimi.dsi.fastutil.longs.Long2ReferenceMap;
+import it.unimi.dsi.fastutil.longs.Long2ReferenceMaps;
+import it.unimi.dsi.fastutil.longs.Long2ReferenceOpenHashMap;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
-final class BlockStateReplacementCache<K> {
-  private final Map<Position, BlockState> located = Maps.newConcurrentMap();
-  private final Map<Position, Long> locked = Maps.newConcurrentMap();
-  private final Map<K, BlockState> indexed = Maps.newConcurrentMap();
+final class BlockStateReplacementCache {
+  private final Map<Position, BlockState> located = new ConcurrentHashMap<>(96);
+  private final Map<Position, Long> locked = new ConcurrentHashMap<>(96);
+  private final Long2ReferenceMap<BlockState> indexed = Long2ReferenceMaps.synchronize(new Long2ReferenceOpenHashMap<>(96));
   private final Set<Position> locations = Sets.newConcurrentHashSet();
 
-	private final Function<? super Position, ? extends K> keyer;
+	private final Function<? super Position, ? extends Long> keyer;
 
-  BlockStateReplacementCache(Function<? super Position, ? extends K> keyer) {
+  BlockStateReplacementCache(Function<? super Position, ? extends Long> keyer) {
 	  this.keyer = keyer;
   }
 
-  public BlockState byKey(K index) {
+  public BlockState byKey(long index) {
     return indexed.get(index);
   }
 
@@ -42,11 +56,11 @@ final class BlockStateReplacementCache<K> {
     return locked.containsKey(position) && System.currentTimeMillis() - locked.get(position) < 5000L;
   }
 
-  public void remove(K key) {
+  public void remove(long key) {
     indexed.remove(key);
   }
 
-  public boolean contains(K key) {
+  public boolean contains(long key) {
     return indexed.containsKey(key);
   }
 
@@ -59,7 +73,9 @@ final class BlockStateReplacementCache<K> {
       if (blockState == null || blockState.expired()) {
         locations.remove(location);
         located.remove(location);
-        indexed.remove(keyer.apply(location));
+        BlockState old = indexed.remove(keyer.apply(location));
+        if (old != null) {
+        }
         locked.remove(location);
       }
     }
@@ -74,10 +90,12 @@ final class BlockStateReplacementCache<K> {
       }
       if (location.getX() >= chunkXMinPos && location.getX() < chunkXMaxPos &&
         location.getZ() >= chunkZMinPos && location.getZ() < chunkZMaxPos) {
-        K key = keyer.apply(location);
+        long key = keyer.apply(location);
         located.remove(location);
         locations.remove(location);
-        indexed.remove(key);
+        BlockState old = indexed.remove(key);
+        if (old != null) {
+        }
         locked.remove(location);
       }
     }
@@ -104,7 +122,7 @@ final class BlockStateReplacementCache<K> {
     return located;
   }
 
-  public Map<K, BlockState> indexed() {
+  public Map<Long, BlockState> indexed() {
     return indexed;
   }
 

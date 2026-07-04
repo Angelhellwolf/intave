@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.block.shape;
 
 import de.jpx3.intave.codec.StreamCodec;
@@ -59,12 +70,30 @@ final class CubeShape extends MemoryTraced implements BlockShape {
 
   @Override
   public double min(Direction.Axis axis) {
-    return axis.select(x, y, z);
+    switch (axis) {
+      case X_AXIS:
+        return x;
+      case Y_AXIS:
+        return y;
+      case Z_AXIS:
+        return z;
+      default:
+        throw new IllegalArgumentException("Unknown axis: " + axis);
+    }
   }
 
   @Override
   public double max(Direction.Axis axis) {
-    return axis.select(x, y, z) + 1;
+    switch (axis) {
+      case X_AXIS:
+        return x + 1;
+      case Y_AXIS:
+        return y + 1;
+      case Z_AXIS:
+        return z + 1;
+      default:
+        throw new IllegalArgumentException("Unknown axis: " + axis);
+    }
   }
 
   @Override
@@ -278,6 +307,11 @@ final class CubeShape extends MemoryTraced implements BlockShape {
   @Override
   public boolean isCubic() {
     return true;
+  }
+
+  @Override
+  public boolean strictlyInside(double positionX, double positionY, double positionZ) {
+    return positionX > x && positionX < x + 1 && positionY > y && positionY < y + 1 && positionZ > z && positionZ < z + 1;
   }
 
   @Override

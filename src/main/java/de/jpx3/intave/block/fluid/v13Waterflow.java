@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.block.fluid;
 
 import de.jpx3.intave.block.access.VolatileBlockAccess;
@@ -116,7 +127,7 @@ final class v13Waterflow implements FluidFlow {
     Fluid fluid = VolatileBlockAccess.fluidAccess(user, blockX, blockY, blockZ);
     for (Direction direction : Direction.Plane.HORIZONTAL) {
       BlockPosition position = new BlockPosition(blockX, blockY, blockZ).offset(direction);
-      Fluid adjacentFluid = VolatileBlockAccess.fluidAccess(user, position.x, position.y, position.z);
+      Fluid adjacentFluid = VolatileBlockAccess.fluidAccess(user, position.x(), position.y(), position.z());
 
       if (fluid.affectsFlow(adjacentFluid)) {
         float adjacentHeight = adjacentFluid.height();
@@ -125,7 +136,7 @@ final class v13Waterflow implements FluidFlow {
         if (adjacentHeight == 0) {
           if (!blocksMovement(user, position)) {
             BlockPosition below = position.down();
-            Fluid belowFluid = VolatileBlockAccess.fluidAccess(user, below.x, below.y, below.z);
+            Fluid belowFluid = VolatileBlockAccess.fluidAccess(user, below.x(), below.y(), below.z());
             if (fluid.affectsFlow(belowFluid)) {
               adjacentHeight = belowFluid.height();
               if (adjacentHeight > 0) {
@@ -159,14 +170,14 @@ final class v13Waterflow implements FluidFlow {
   }
 
   private static boolean blocksMovement(User user, BlockPosition position) {
-    Material type = VolatileBlockAccess.typeAccess(user, user.player().getWorld(), position.x, position.y, position.z);
+    Material type = VolatileBlockAccess.typeAccess(user, user.player().getWorld(), position.x(), position.y(), position.z());
     return MaterialMagic.blocksMovement(type);
   }
 
   private static boolean isBlockSolid(User user, BlockPosition pos, Direction side) {
     World world = user.player().getWorld();
-    Material type = VolatileBlockAccess.typeAccess(user, world, pos.x, pos.y, pos.z);
-    int variantIndex = VolatileBlockAccess.variantIndexAccess(user, world, pos.x, pos.y, pos.z);
+    Material type = VolatileBlockAccess.typeAccess(user, world, pos.x(), pos.y(), pos.z());
+    int variantIndex = VolatileBlockAccess.variantIndexAccess(user, world, pos.x(), pos.y(), pos.z());
     if (MaterialMagic.couldContainLiquid(type, variantIndex)) {
       return false;
     }

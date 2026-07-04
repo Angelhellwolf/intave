@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.user.meta;
 
 import com.comphenix.protocol.wrappers.BlockPosition;
@@ -16,8 +27,8 @@ import de.jpx3.intave.block.tick.ShulkerBox;
 import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.check.movement.physics.*;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
+import de.jpx3.intave.check.movement.physics.update.TickAmbiguousUpdate;
 import de.jpx3.intave.check.world.interaction.BlockTrustChain;
-import de.jpx3.intave.cleanup.GarbageCollector;
 import de.jpx3.intave.executor.RateLimiter;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.math.MathHelper;
@@ -33,14 +44,18 @@ import de.jpx3.intave.share.Rotation;
 import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
+import de.jpx3.intave.world.border.WorldBorder;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static de.jpx3.intave.IntaveControl.REPLACE_JOAP_SETBACK_WITH_CM;
 import static de.jpx3.intave.check.movement.physics.MoveMetric.*;
@@ -58,6 +73,7 @@ public final class MovementMetadata implements SimulationEnvironment {
   public final BlockTrustChain placementTrustChain = new BlockTrustChain();
   public final Map<String, Double> serverMovementDebugValues = new HashMap<>();
   public final Map<String, Double> clientMovementDebugValues = new HashMap<>();
+  public final List<TickAmbiguousUpdate> movementUpdates = new LinkedList<>();
   public float width = 0.6f, height = 1.8f;
   public float stepHeight = 0.6f;
   public double stepHeightThisMove = 0d;
@@ -152,14 +168,6 @@ public final class MovementMetadata implements SimulationEnvironment {
   public int outgoingTeleportCountdown = 5;
   public long lastRescueAttempt;
   public long lastSimulationSprintResetAttempt;
-  public int speculativeTicks = 0;
-  public Map<UUID, Integer> pendingSpeculativeMovementTicks = GarbageCollector.watch(new HashMap<>());
-  public boolean inReceiveSpeculativePacketRoutine = false;
-  public double speculativeMotionX, speculativeMotionY, speculativeMotionZ;
-  public double speculativePositionX, speculativePositionY, speculativePositionZ;
-  public boolean speculationEnded = false;
-  public int speculativeLowThresholdOverflows;
-  public boolean inSpeculation = false;
   // States if an external entity push onto the player is estimated
   public boolean pushedByEntity;
   // Key inputs sent by the client
@@ -204,6 +212,14 @@ public final class MovementMetadata implements SimulationEnvironment {
   private volatile Location verifiedLocation;
   public Input input = Input.none();
   public Input lastInput = Input.none();
+  private @NotNull WorldBorder worldBorder = WorldBorder.createDefault();
+
+  // tick for causal constraint solving
+  // must always be a client position packet
+  // must not be implied flying or client_tick_end
+  private long currentTick = 0;
+  private long currentSequence = 0;
+  private long activeSequence = 0;
 
   private final Map<MoveMetric, Integer> activeTracker = new EnumMap<>(MoveMetric.class);
   private final Map<MoveMetric, Integer> pastTracker = new EnumMap<>(MoveMetric.class);
@@ -1048,7 +1064,8 @@ public final class MovementMetadata implements SimulationEnvironment {
   @Override
   public void tickComplete(
     boolean hasMovement,
-    boolean hasRotation
+    boolean hasRotation,
+    boolean isRealClientTick
   ) {
     step = false;
     reduceTicks = 0;
@@ -1062,6 +1079,11 @@ public final class MovementMetadata implements SimulationEnvironment {
     physicsUnpredictableVelocityExpected = false;
     lastSprinting = sprinting;
     lastSneaking = sneaking;
+    if (isRealClientTick) {
+      currentTick++;
+      movementUpdates.removeIf(tau -> tau.expired(this));
+      worldBorder.tick();
+    }
 
     if (shulkerXToleranceRemaining > 0) {
       shulkerXToleranceRemaining--;
@@ -1123,6 +1145,42 @@ public final class MovementMetadata implements SimulationEnvironment {
     }
 
     shulkerCleanup();
+  }
+
+  @Override
+  public long currentTick() {
+    return currentTick;
+  }
+
+  public void addAmbiguousUpdate(TickAmbiguousUpdate contextAction) {
+    movementUpdates.add(contextAction);
+  }
+
+  @Override
+  public List<TickAmbiguousUpdate> tickAmbiguousUpdates() {
+    return Collections.unmodifiableList(movementUpdates);
+  }
+
+  @Override
+  public long activeSequence() {
+    return activeSequence;
+  }
+
+  @Override
+  public void setActiveSequence(long activeSequence) {
+    this.activeSequence = activeSequence;
+  }
+
+  private final Lock currentSequenceLock = new ReentrantLock();
+
+  public long reserveNewFutureSequenceNumber() {
+    try {
+      currentSequenceLock.lock();
+      currentSequence++;
+      return currentSequence;
+    } finally {
+      currentSequenceLock.unlock();
+    }
   }
 
   @Override
@@ -1255,7 +1313,7 @@ public final class MovementMetadata implements SimulationEnvironment {
     return physicsResetMotionZ;
   }
 
-  public Motion motion() {
+  public Motion sentOffsetMotion() {
     return new Motion(motionX, motionY, motionZ);
   }
 
@@ -1496,6 +1554,16 @@ public final class MovementMetadata implements SimulationEnvironment {
     this.motionMultiplier = null;
   }
 
+  @Override
+  public @NotNull WorldBorder worldBorder() {
+    return worldBorder;
+  }
+
+  @Override
+  public void setWorldBorder(@NotNull WorldBorder worldBorder) {
+	  this.worldBorder = worldBorder;
+  }
+
   public void setVerifiedLocation(Location verifiedLocation) {
     this.verifiedLocation = verifiedLocation;
   }
@@ -1574,10 +1642,10 @@ public final class MovementMetadata implements SimulationEnvironment {
     return pushedByEntity;
   }
 
-  private final SimulationEnvironment unmodifiableView = SimulationEnvironment.super.unmodifiable();
+  private final SimulationEnvironment unmodifiableView = SimulationEnvironment.super.immutableView();
 
   @Override
-  public SimulationEnvironment unmodifiable() {
+  public SimulationEnvironment immutableView() {
     return unmodifiableView;
   }
 }

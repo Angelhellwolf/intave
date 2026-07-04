@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check.movement.physics.branch;
 
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
@@ -6,7 +17,7 @@ import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.InventoryMetadata;
 import de.jpx3.intave.user.meta.MovementMetadata;
 
-import java.util.Set;
+import java.util.List;
 
 final class KeypressBrancher extends MovementSearchBrancher {
   private static final int[][] KEYS_USAGE_ORDERED = {
@@ -22,26 +33,28 @@ final class KeypressBrancher extends MovementSearchBrancher {
   };
 
   @Override
-  public Set<MovementSearchConfig> branch(MovementSearchInput input, MovementSearchConfig config) {
+  public void branch(MovementSearchInput input, MovementSearchConfig config, List<MovementSearchConfig> result) {
     User user = input.user();
     MovementMetadata movement = user.meta().movement();
 
     // Elytra is key-independent
     if (!input.simulator().affectedByMovementKeys()) {
-      return single(config);
+      result.add(config);
+      return;
     }
 
     // For 1.9-1.20 vehicles send their keys
     if (movement.legacyVehicleKeyInput) {
-      return single(config.withKeypress(
+      result.add(config.withKeypress(
         movement.legacyVehicleForwardKey,
         movement.legacyVehicleStrafeKey
       ));
+      return;
     }
 
-    Set<MovementSearchConfig> result = ordered();
+    int resultStart = result.size();
 
-    // predict the keys
+    // try predicting the keys
     int predictedDirection = predictedDirection(input, config);
     if (predictedDirection >= 0) {
       int predictedForward = forwardKeyFrom(predictedDirection);
@@ -51,7 +64,7 @@ final class KeypressBrancher extends MovementSearchBrancher {
       }
     }
 
-    // use last keys
+    // try the last keys
     int lastKeyForward = movement.lastKeyForward;
     int lastKeyStrafe = movement.lastKeyStrafe;
     if (isValidPress(input, config, lastKeyForward, lastKeyStrafe)) {
@@ -68,10 +81,9 @@ final class KeypressBrancher extends MovementSearchBrancher {
     }
 
     // we always have the option to "not press" keys
-    if (result.isEmpty()) {
+    if (result.size() == resultStart) {
       result.add(config.withKeypress(0, 0));
     }
-    return result;
   }
 
   private int predictedDirection(

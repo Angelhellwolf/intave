@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check.movement.physics;
 
 import de.jpx3.intave.annotate.Immutable;
@@ -28,10 +39,10 @@ public abstract class Simulator {
      * Tick
      */
     Simulation simulation = simulateTick(
-      user, afterPreTickMotion.copy(), metadata.unmodifiable(), config
+      user, afterPreTickMotion.copy(), metadata.immutableView(), config
     );
     metadata.assumeOccurred(simulation);
-    Motion afterSimulationMotion = simulation.motion().copy();
+    Motion afterSimulationMotion = simulation.offsetMotion().copy();
     Position newPosition = metadata.verifiedLastPosition().add(afterSimulationMotion);
     metadata.updateMovement(newPosition, Rotation.zero());
 
@@ -55,7 +66,7 @@ public abstract class Simulator {
   ) {
     // assume received
     Position verifiedLastPosition = environment.verifiedLastPosition();
-    Motion motionOfSimulation = simulation.motion();
+    Motion motionOfSimulation = simulation.offsetMotion();
     Position firstTickPosition = verifiedLastPosition.add(motionOfSimulation);
     environment.updateMovement(firstTickPosition, null);
     environment.setLastPosition(verifiedLastPosition);
@@ -67,7 +78,7 @@ public abstract class Simulator {
     environment.setLastOnGround(environment.onGround());
     environment.activeTick(FLYING_PACKET_ACCURATE);
     environment.setVerifiedLastPosition(firstTickPosition, "Two-tick flying simulation");
-    environment.tickComplete(false, false);
+    environment.tickComplete(false, false, false);
 
     // receive new packet
     environment.updateMovement(sentPosition, sentRotation);

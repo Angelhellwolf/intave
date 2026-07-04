@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check.movement.physics.environment;
 
 import de.jpx3.intave.block.fluid.Fluid;
@@ -5,12 +16,15 @@ import de.jpx3.intave.check.movement.physics.MoveMetric;
 import de.jpx3.intave.check.movement.physics.MovementConfiguration;
 import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.check.movement.physics.Simulation;
+import de.jpx3.intave.check.movement.physics.update.TickAmbiguousUpdate;
 import de.jpx3.intave.player.collider.complex.SimulationResult;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.Position;
+import de.jpx3.intave.world.border.WorldBorder;
 import org.bukkit.Material;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -65,6 +79,13 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
   private boolean interactingFluidOverridden;
   private Fluid interactingFluid;
   private boolean inVehicleOverridden, inVehicle;
+  private WorldBorder worldBorder;
+  private boolean worldBorderOverridden;
+
+  private long currentTick = 0;
+  private boolean currentTickOverridden;
+  private long activeSequence = 0;
+  private boolean activeSequenceOverridden;
 
   private final EnumMap<MoveMetric, Integer> activeTrackerOverrides = new EnumMap<>(MoveMetric.class);
   private final EnumMap<MoveMetric, Integer> pastTrackerOverrides = new EnumMap<>(MoveMetric.class);
@@ -81,6 +102,9 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
   public void commitTo(SimulationEnvironment other) {
     if (other == this) {
       return;
+    }
+    if (delegate != other && delegate.depth() > 0) {
+      delegate.commitTo(other);
     }
     for (EnvironmentMutation deferredMutation : deferredMutations) {
       deferredMutation.apply(other);
@@ -323,6 +347,18 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
     motionMultiplierOverridden = true;
     motionMultiplier = null;
     deferredMutations.add(SimulationEnvironment::resetMotionMultiplier);
+  }
+
+  @Override
+  public WorldBorder worldBorder() {
+    return worldBorderOverridden ? worldBorder : delegate.worldBorder();
+  }
+
+  @Override
+  public void setWorldBorder(@NotNull WorldBorder worldBorder) {
+    worldBorderOverridden = true;
+    this.worldBorder = worldBorder;
+    deferredMutations.add(environment -> environment.setWorldBorder(worldBorder));
   }
 
   @Override
@@ -683,7 +719,7 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
   }
 
   @Override
-  public void tickComplete(boolean hasMovement, boolean hasRotation) {
+  public void tickComplete(boolean hasMovement, boolean hasRotation, boolean isRealClientTick) {
     activeTickOverride(ALIVE);
     tickOverride(IN_WEB, inWeb());
     tickOverride(IN_WATER, inWater());
@@ -697,11 +733,41 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
       EDGE_SNEAKING,
       RECEIVED_VELOCITY_PACKET
     );
+    currentTick = currentTick() + 1;
+    currentTickOverridden = true;
     inactiveTickOverride(INVENTORY_OPEN);
     if (hasMovement || hasRotation) {
       inactiveTickOverride(MoveMetric.EXTERNAL_VELOCITY);
     }
-    deferredMutations.add(environment -> environment.tickComplete(hasMovement, hasRotation));
+    deferredMutations.add(environment -> environment.tickComplete(hasMovement, hasRotation, true));
+  }
+
+  @Override
+  public long currentTick() {
+    if (currentTickOverridden) {
+      return currentTick;
+    }
+    return delegate.currentTick();
+  }
+
+  @Override
+  public long activeSequence() {
+    if (activeSequenceOverridden) {
+      return activeSequence;
+    }
+    return delegate.activeSequence();
+  }
+
+  @Override
+  public void setActiveSequence(long activeSequence) {
+    activeSequenceOverridden = true;
+    this.activeSequence = activeSequence;
+    deferredMutations.add(environment -> environment.setActiveSequence(activeSequence));
+  }
+
+  @Override
+  public List<TickAmbiguousUpdate> tickAmbiguousUpdates() {
+    return delegate.tickAmbiguousUpdates();
   }
 
   @Override
@@ -712,10 +778,10 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
   }
 
   private final SimulationEnvironment unmodifiableView =
-    UnmodifiableSimulationEnvironmentView.of(this);
+    ImmutableSimulationEnvironmentView.of(this);
 
   @Override
-  public SimulationEnvironment unmodifiable() {
+  public SimulationEnvironment immutableView() {
     return unmodifiableView;
   }
 

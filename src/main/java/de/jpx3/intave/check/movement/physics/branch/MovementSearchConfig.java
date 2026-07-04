@@ -1,26 +1,36 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check.movement.physics.branch;
 
 import de.jpx3.intave.check.movement.physics.MovementConfiguration;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
-import de.jpx3.intave.search.SearchConfig;
 import de.jpx3.intave.share.Rotation;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
 
-public final class MovementSearchConfig extends SearchConfig {
+public final class MovementSearchConfig {
 	private final MovementConfiguration configuration;
-	private final List<UnaryOperator<SimulationEnvironment>> environmentModifier;
+	private final UnaryOperator<SimulationEnvironment> environmentModifier;
+	private final boolean canFinishExplicitTick;
 
-	private MovementSearchConfig(MovementConfiguration configuration, List<UnaryOperator<SimulationEnvironment>> environmentModifier) {
+	private MovementSearchConfig(MovementConfiguration configuration, UnaryOperator<SimulationEnvironment> environmentModifier, boolean canFinishExplicitTick) {
 		this.configuration = Objects.requireNonNull(configuration, "configuration");
 		this.environmentModifier = Objects.requireNonNull(environmentModifier, "environmentModifier");
+		this.canFinishExplicitTick = canFinishExplicitTick;
 	}
 
 	public static MovementSearchConfig blank(MovementSearchInput input) {
-		return new MovementSearchConfig(MovementConfiguration.blank(), new ArrayList<>());
+		return new MovementSearchConfig(MovementConfiguration.blank(), env -> env, true);
 	}
 
 	public MovementConfiguration moveConfig() {
@@ -29,13 +39,18 @@ public final class MovementSearchConfig extends SearchConfig {
 
 	@Deprecated
 	MovementSearchConfig withMoveConfig(MovementConfiguration configuration) {
-		return new MovementSearchConfig(configuration, environmentModifier);
+		return new MovementSearchConfig(configuration, environmentModifier, canFinishExplicitTick);
 	}
 
 	public MovementSearchConfig withEnvironmentModifier(UnaryOperator<SimulationEnvironment> modifier) {
-		List<UnaryOperator<SimulationEnvironment>> newList = new ArrayList<>(environmentModifier);
-		newList.add(modifier);
-		return new MovementSearchConfig(configuration, newList);
+		return new MovementSearchConfig(configuration, modifier, canFinishExplicitTick);
+	}
+
+	public MovementSearchConfig withExplicitTickFinishAllow(boolean canFinishUserTick) {
+		boolean newFinishTick = canFinishUserTick && canFinishExplicitTick;
+		return new MovementSearchConfig(
+			configuration, environmentModifier, newFinishTick
+		);
 	}
 
 	public MovementSearchConfig withRotation(Rotation rotation) {
@@ -46,10 +61,7 @@ public final class MovementSearchConfig extends SearchConfig {
 	}
 
 	public SimulationEnvironment applyTo(SimulationEnvironment env) {
-		for (UnaryOperator<SimulationEnvironment> modifier : environmentModifier) {
-			env = modifier.apply(env);
-		}
-		return env;
+		return environmentModifier.apply(env);
 	}
 
 	public MovementSearchConfig withHandActive(boolean handActive) {
@@ -72,6 +84,10 @@ public final class MovementSearchConfig extends SearchConfig {
 
 	public MovementSearchConfig withJumped(boolean jumped) {
 		return withMoveConfig(configuration.withJumped(jumped));
+	}
+
+	public boolean canFinishExplicitTick() {
+		return canFinishExplicitTick;
 	}
 
 	public boolean isJumping() {
@@ -101,6 +117,8 @@ public final class MovementSearchConfig extends SearchConfig {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(this.configuration, this.environmentModifier);
+		int result = configuration.hashCode();
+		result = 31 * result + environmentModifier.hashCode();
+		return result;
 	}
 }

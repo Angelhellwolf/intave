@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.user.meta;
 
 import com.google.common.collect.ImmutableMap;
@@ -10,8 +21,8 @@ import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 import static de.jpx3.intave.module.tracker.player.AbilityTracker.GameMode.NOT_SET;
@@ -33,8 +44,9 @@ public final class AbilityMetadata {
 
   private float flySpeed = 0.05f;
 
-	private final Map<String, Attribute> attributes = new ConcurrentHashMap<>();
-  private final Map<String, List<AttributeModifier>> attributeModifiers = new ConcurrentHashMap<>();
+	private final AtomicReference<Map<String, Attribute>> attributes = new AtomicReference<>(new HashMap<>());
+  private final AtomicReference<Map<String, List<AttributeModifier>>> attributeModifiers = new AtomicReference<>(new HashMap<>());
+  private double scaleCache = Double.NEGATIVE_INFINITY;
 
   public float unsynchronizedHealth;
   public float health;
@@ -93,16 +105,34 @@ public final class AbilityMetadata {
 
   private void setupAttribute(String name, double baseValue) {
     name = keyTranslation(name);
-//    PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.UPDATE_ATTRIBUTES);
     try {
       Attribute attribute = Attribute.newBuilder()
         .withAttributeKey(name).withBaseValue(baseValue).build();
-      attributes.put(name, reduceNumberPrecision(attribute));
-      attributeModifiers.put(name, new CopyOnWriteArrayList<>());
+      String finalName = name;
+      attributes.updateAndGet(oldMap -> {
+        Map<String, Attribute> newMap = new HashMap<>(oldMap);
+        newMap.put(finalName, reduceNumberPrecision(attribute));
+        return newMap;
+      });
+      attributeModifiers.updateAndGet(oldMap -> {
+        Map<String, List<AttributeModifier>> newMap = new HashMap<>(oldMap);
+        newMap.put(finalName, new CopyOnWriteArrayList<>());
+        return newMap;
+      });
+      scaleCache = Double.NEGATIVE_INFINITY;
     } catch (Exception e) {
       IntaveLogger.logger().error("Unable to setup attribute " + name + " for player " + player.getName());
       e.printStackTrace();
     }
+  }
+
+  public double scale() {
+    if (Double.isInfinite(scaleCache)) {
+      double newScaleCache = attributeValue("generic.scale");
+      scaleCache = newScaleCache;
+      return newScaleCache;
+    }
+    return scaleCache;
   }
 
   public double attributeValue(String key) {
@@ -111,8 +141,8 @@ public final class AbilityMetadata {
 
   public double attributeValue(String key, Predicate<? super AttributeModifier> filter) {
     key = keyTranslation(key);
-    Attribute attribute = attributes.get(key);
-    List<AttributeModifier> attributeModifiers = this.attributeModifiers.get(key);
+    Attribute attribute = attributes.get().get(key);
+    List<AttributeModifier> attributeModifiers = this.attributeModifiers.get().get(key);
     if (attribute == null || attributeModifiers == null) {
       return Double.NaN;
     }
@@ -146,7 +176,7 @@ public final class AbilityMetadata {
   }
 
   public List<AttributeModifier> modifiersOf(Attribute attribute) {
-    return attributeModifiers.get(keyTranslation(attribute.attributeKey()));
+    return attributeModifiers.get().get(keyTranslation(attribute.attributeKey()));
   }
 
   private Attribute reduceNumberPrecision(Attribute input) {
@@ -161,9 +191,9 @@ public final class AbilityMetadata {
   }
 
   public Attribute findAttribute(String key) {
-    Attribute attribute = attributes.get(keyTranslation(key));
+    Attribute attribute = attributes.get().get(keyTranslation(key));
     if (attribute == null) {
-      attribute = attributes.get(keyTranslation("generic." + key));
+      attribute = attributes.get().get(keyTranslation("generic." + key));
     }
     return attribute;
   }
@@ -212,10 +242,18 @@ public final class AbilityMetadata {
     key = keyTranslation(key);
     Attribute attribute = findAttribute(key);
     if (attribute != null) {
-      attributes.put(key, Attribute.newBuilder(attribute).withBaseValue(baseValue).build());
+      String finalKey = key;
+      attributes.updateAndGet(oldMap -> {
+        Map<String, Attribute> newMap = new HashMap<>(oldMap);
+        newMap.put(finalKey, Attribute.newBuilder(attribute).withBaseValue(baseValue).build());
+        return newMap;
+      });
       List<AttributeModifier> modifiers = modifiersOf(attribute);
-      attributeModifiers.remove(key);
-      attributeModifiers.put(key, new ArrayList<>(modifiers));
+      attributeModifiers.updateAndGet(oldMap -> {
+        Map<String, List<AttributeModifier>> newMap = new HashMap<>(oldMap);
+        newMap.put(finalKey, new ArrayList<>(modifiers));
+        return newMap;
+      });
     }
   }
 

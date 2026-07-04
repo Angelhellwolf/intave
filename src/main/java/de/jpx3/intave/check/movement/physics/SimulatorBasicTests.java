@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check.movement.physics;
 
 import de.jpx3.intave.block.cache.MockFullBlockStaticPlane;
@@ -136,6 +147,10 @@ public final class SimulatorBasicTests extends IntegrationTests {
       double motionZ = relativeMotion[i][2];
       Motion motion = new Motion(motionX, motionY, motionZ);
 
+      environment.setMotionX(motionX);
+      environment.setMotionY(motionY);
+      environment.setMotionZ(motionZ);
+
       environment.setPositionX(environment.positionX() + motionX);
       environment.setPositionY(environment.positionY() + motionY);
       environment.setPositionZ(environment.positionZ() + motionZ);
@@ -143,19 +158,19 @@ public final class SimulatorBasicTests extends IntegrationTests {
       Simulation simulation = simulator.simulateTick(
         testUser,
         environment.mutableBaseMotionCopy(),
-        environment.unmodifiable(),
+        environment.immutableView(),
         configuration
       );
 
       environment.assumeOccurred(simulation);
 
-      double accuracy = simulation.motionDifference(motion);
+      double accuracy = simulation.offsetDifference();
       if (accuracy > 0.001 && environment.positionY() > 3) {
-        System.out.println("#" + i + " (" + lastMotion + " -> " + simulation.motion() + ", but expected " + motion + ")");
+        System.out.println("#" + i + " (" + lastMotion + " -> " + simulation.offsetMotion() + ", but expected " + motion + ")");
         fail("Simulation accuracy deviation: " + accuracy);
       }
 
-      Motion modifiableSimulationMotion = simulation.motion();
+      Motion modifiableSimulationMotion = simulation.offsetMotion();
       Motion afterTickMotion = simulator.simulateAfterTick(
         testUser,
         environment,

@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.module.test.record;
 
 import de.jpx3.intave.access.player.trust.TrustFactor;
@@ -25,16 +36,15 @@ import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserFactory;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.MovementMetadata;
-import de.jpx3.intave.world.border.MockWorldBorder;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.WorldBorder;
 import org.bukkit.entity.Player;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.LinkedList;
@@ -150,7 +160,7 @@ final class MovementRecordingPhysicsTests {
 			metadata.setBaseMotion(preTickMotion);
 
 			SimulationEnvironment simulationEnvironment = metadata.mutableView();
-			Simulation simulation = processor.simulate(user, simulationEnvironment, simulator);
+			Simulation simulation = processor.greedyFullSearch(user, simulationEnvironment, simulator);
 //			Simulation simulation = processor.simulate(user, simulator, hasMovement || hasRotation);
 			boolean subversiveFlyingMovement = subversiveFlyingMovement(user, simulationEnvironment, simulation, hasMovement, hasRotation);
 			if (!hasMovement && !hasRotation && !subversiveFlyingMovement) {
@@ -158,9 +168,9 @@ final class MovementRecordingPhysicsTests {
 				finishTick(user, simulator, metadata, false, false);
 				continue;
 			}
-			double loss = hasMovement || hasRotation ? simulation.motionDifference(metadata.motion()) : 0;
+			double loss = hasMovement || hasRotation ? simulation.offsetDifference() : 0;
 			double allowedLoss = allowedMotionDivergence(user, subversiveFlyingMovement || simulationEnvironment.receivedFlyingPacketIn(2));
-			String output = formatDouble(loss, 4) + " " + simulation.motion() + " [actual: " + metadata.motion() + "] " + simulation.configuration() + (!simulation.details().isEmpty() ? " [" + simulation.details() + "]" : "");
+			String output = formatDouble(loss, 4) + " " + simulation.offsetMotion() + " [actual: " + metadata.sentOffsetMotion() + "] " + simulation.configuration() + (!simulation.details().isEmpty() ? " [" + simulation.details() + "]" : "");
 			lastMessages.add(output);
 
 			if (loss > allowedLoss && tick > 16) {
@@ -180,7 +190,7 @@ final class MovementRecordingPhysicsTests {
 
 				System.err.println("==== <USERDATA> ====");
 				System.err.println("Position");
-				System.err.println("  Sim   " + metadata.lastPosition().mutable().add(simulation.motion()));
+				System.err.println("  Sim   " + metadata.lastPosition().mutable().add(simulation.offsetMotion()));
 				System.err.println("  Sent  " + metadata.position());
 				System.err.println("  Last  " + metadata.lastPosition());
 				System.err.println("  LastV " + metadata.verifiedLastPosition());
@@ -189,11 +199,11 @@ final class MovementRecordingPhysicsTests {
 					System.err.println("  Next " + nextPosition + " (dy to sent: " +(nextPosition.getY() - metadata.position().getY()) + ")");
 				}
 				System.err.println("Motion");
-				System.err.println("  Sim   " + simulation.motion());
-				System.err.println("  Sent  " + metadata.motion());
+				System.err.println("  Sim   " + simulation.offsetMotion());
+				System.err.println("  Sent  " + metadata.sentOffsetMotion());
 				System.err.println("  Base  " + metadata.mutableBaseMotionCopy());
 				System.err.println("Rotation: " + metadata.rotation());
-				System.err.println("Motion: " + metadata.motion());
+				System.err.println("Motion: " + metadata.sentOffsetMotion());
 				System.err.println("Ground");
 				System.err.println("  Current " + metadata.onGround());
 				System.err.println("  Last " + metadata.lastOnGround());
@@ -227,7 +237,7 @@ final class MovementRecordingPhysicsTests {
 		boolean hasMovement,
 		boolean hasRotation
 	) {
-		return !hasMovement && !simulation.motion().isZero() && simulation.resultsInFlyingPacket(
+		return !hasMovement && !simulation.offsetMotion().isZero() && simulation.resultsInFlyingPacket(
 			environment,
 			user.meta().protocol().flyingPacketUncertaintyRadius()
 		);
@@ -290,12 +300,10 @@ final class MovementRecordingPhysicsTests {
 	}
 
 	private static World createReplayWorld() {
-		WorldBorder worldBorder = MockWorldBorder.create();
 		return FakeWorldFactory.createWorld(
 			(methodName, _) -> switch (methodName) {
 				case "isChunkLoaded", "isChunkInUse" -> true;
 				case "isThundering", "hasStorm" -> false;
-				case "getWorldBorder" -> worldBorder;
 				default -> null;
 			}
 		);
@@ -330,7 +338,7 @@ final class MovementRecordingPhysicsTests {
 	) {
 		if (hasMovement) {
 			Motion afterTickMotion = simulator.simulateAfterTick(
-				user, metadata, metadata.position(), metadata.motion()
+				user, metadata, metadata.position(), metadata.sentOffsetMotion()
 			);
 			metadata.setBaseMotion(afterTickMotion);
 			metadata.inactiveTick(
@@ -343,13 +351,13 @@ final class MovementRecordingPhysicsTests {
 			Motion afterTickMotion = simulator.simulateAfterTick(
 				user,
 				metadata,
-				metadata.lastPosition().mutable().add(metadata.motion()),
-				metadata.motion()
+				metadata.lastPosition().mutable().add(metadata.sentOffsetMotion()),
+				metadata.sentOffsetMotion()
 			);
 			metadata.setBaseMotion(afterTickMotion);
 		}
 
-		metadata.tickComplete(hasMovement, hasRotation);
+		metadata.tickComplete(hasMovement, hasRotation, true);
 
 		metadata.lastKeyStrafe = metadata.keyStrafe;
 		metadata.lastKeyForward = metadata.keyForward;
@@ -425,6 +433,8 @@ final class MovementRecordingPhysicsTests {
 				.filter(path -> path.getFileName().toString().endsWith(".ptr"))
 				.sorted()
 				.collect(Collectors.toList());
+		} catch (NoSuchFileException ignored) {
+			return List.of();
 		}
 	}
 

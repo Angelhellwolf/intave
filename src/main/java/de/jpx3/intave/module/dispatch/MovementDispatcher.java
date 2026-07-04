@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.module.dispatch;
 
 import com.comphenix.protocol.PacketType;
@@ -23,6 +34,7 @@ import de.jpx3.intave.check.CheckService;
 import de.jpx3.intave.check.movement.Physics;
 import de.jpx3.intave.check.movement.Timer;
 import de.jpx3.intave.check.movement.physics.Pose;
+import de.jpx3.intave.check.movement.physics.update.VelocityUpdate;
 import de.jpx3.intave.check.world.InteractionRaytrace;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.math.Hypot;
@@ -68,6 +80,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static de.jpx3.intave.IntaveControl.DEBUG_MOVEMENT_IGNORE;
@@ -409,7 +422,7 @@ public final class MovementDispatcher extends Module {
     inventoryData.updateSlotSwitch();
 
     if (hasMovement) {
-      logging.logSystemMessage(user, () -> "MOTION LOGIC: Received motion: " + movement.motion());
+      logging.logSystemMessage(user, () -> "MOTION LOGIC: Received motion: " + movement.sentOffsetMotion());
     }
 
     teleportController.receiveMovement(event);
@@ -503,7 +516,7 @@ public final class MovementDispatcher extends Module {
     if (!movement.isTeleportConfirmationPacket &&
       movement.canResetMotion &&
       movement.mutableBaseMotionCopy().isZero() &&
-      movement.motion().isZero()
+      movement.sentOffsetMotion().isZero()
     ) {
       if (DEBUG_MOVEMENT_IGNORE) {
         System.out.println("[Intave] Movement reset ignore");
@@ -523,7 +536,7 @@ public final class MovementDispatcher extends Module {
       }
 
       // I have neither the time nor the energy for a proper fix
-      if (movement.motion().length() > 0.5 && movement.ticksPast(VEHICLE_DETACHMENT) < 2) {
+      if (movement.sentOffsetMotion().length() > 0.5 && movement.ticksPast(VEHICLE_DETACHMENT) < 2) {
         movement.setBaseMotion(Motion.newEmpty());
         movement.physicsResetMotionX = true;
         movement.physicsResetMotionZ = true;
@@ -707,7 +720,7 @@ public final class MovementDispatcher extends Module {
     }
 
     attack.tickComplete();
-    movement.tickComplete(hasMovement, hasRotation);
+    movement.tickComplete(hasMovement, hasRotation, true);
     abilities.tickComplete();
     inventory.tickComplete();
 
@@ -770,7 +783,7 @@ public final class MovementDispatcher extends Module {
   }
 
   @PacketSubscription(
-    engine = Engine.ASYNC_INTERNAL,
+    engine = Engine.INTERNAL,
     packetsOut = {
       UPDATE_HEALTH
     }
@@ -844,6 +857,28 @@ public final class MovementDispatcher extends Module {
   }
 
   @PacketSubscription(
+    packetsOut = {
+      WORLD_BORDER,
+      INITIALIZE_BORDER,
+      SET_BORDER_CENTER,
+      SET_BORDER_SIZE,
+      SET_BORDER_LERP_SIZE,
+    }
+  )
+  public void sentWorldBorderUpdate(
+    User user, PacketEvent event
+  ) {
+    user.tickFeedback(() -> {
+	    try (WorldBorderReader reader = PacketReaders.readerOf(event.getPacket())) {
+		    MovementMetadata movement = user.meta().movement();
+		    movement.setWorldBorder(reader.updated(movement.worldBorder()));
+		  } catch (Exception e) {
+		    throw new RuntimeException(e);
+	    }
+    });
+  }
+
+  @PacketSubscription(
     priority = ListenerPriority.MONITOR,
     prioritySlot = PrioritySlot.EXTERNAL,
     packetsOut = {
@@ -898,23 +933,30 @@ public final class MovementDispatcher extends Module {
       if (movementData.sneaking) {
         movementData.sneakPatchVelocity = motion.copy();
       }
-//      Motion motion = Motion.fromVector(velocity);
-      // this caused more problems than it solved
-//      if (
-//        Physics.USE_SUPERPOSITIONS && violationMetadata.physicsOffset < 0.5 &&
-//        /* on 1.19.4 we use bundles */ !MinecraftVersions.VER1_19_4.atOrAbove()
-//      ) {
-//        movementData.velocitySuperposition().stateSynchronize(
-//          event, motion, begin -> {},
-//          end -> movementData.pendingVelocityPackets.decrementAndGet()
-//        );
-//      } else {
+
       Motion finalVelocity = motion.copy();
-      user.packetTickFeedback(event, () -> {
-        receiveVelocity(player, finalVelocity);
-        movementData.pendingVelocityPackets.decrementAndGet();
-      });
-//      }
+
+      AtomicReference<VelocityUpdate> velocity = new AtomicReference<>(null);
+
+      user.doubleTickFeedback(event,
+        () -> {
+	        velocity.set(VelocityUpdate.openEnded(
+		        finalVelocity,
+		        movementData
+	        ));
+          movementData.addAmbiguousUpdate(velocity.get());
+        },
+        () -> {
+          VelocityUpdate myVelocityUpdate = velocity.get();
+          if (myVelocityUpdate != null) {
+            myVelocityUpdate.canNotRunAfterThisTick(movementData);
+          }
+          // legacy behavior
+          receiveVelocity(player, finalVelocity);
+          movementData.pendingVelocityPackets.decrementAndGet();
+        }
+      );
+
       movementData.activeTick(RECEIVED_VELOCITY_PACKET);
     }
   }
@@ -928,7 +970,7 @@ public final class MovementDispatcher extends Module {
       movementData.baseMotionXBeforeVelocity = movementData.baseMotionX;
       movementData.baseMotionYBeforeVelocity = movementData.baseMotionY;
       movementData.baseMotionZBeforeVelocity = movementData.baseMotionZ;
-      movementData.setBaseMotion(velocity);
+//      movementData.setBaseMotion(velocity);
       movementData.lastVelocity = velocity.copy();
       if (!movementData.willReceiveSetbackVelocity && !movementData.willReceiveFinalSetbackVelocity) {
         movementData.activeTick(EXTERNAL_VELOCITY);
@@ -1006,9 +1048,9 @@ public final class MovementDispatcher extends Module {
           // First off, check if the player is even affected by this
           RawVector3d directionVec = facing.directionVector();
           BoundingBox pistonCollisionArea = new BoundingBox(0, 0, 0, 1.1f, 1.1f, 1.1f);
-          int expectedPistonX = (int) directionVec.x + blockPosition.getX();
-          int expectedPistonY = (int) directionVec.y + blockPosition.getY();
-          int expectedPistonZ = (int) directionVec.z + blockPosition.getZ();
+          int expectedPistonX = (int) directionVec.x() + blockPosition.getX();
+          int expectedPistonY = (int) directionVec.y() + blockPosition.getY();
+          int expectedPistonZ = (int) directionVec.z() + blockPosition.getZ();
           BoundingBox expandingBlockArea = pistonCollisionArea.offset(expectedPistonX, expectedPistonY, expectedPistonZ);
           boolean playerAffected = expandingBlockArea.intersectsWith(user.meta().movement().boundingBox());
 
@@ -1027,13 +1069,13 @@ public final class MovementDispatcher extends Module {
             switch (facing.axis()) {
               case X_AXIS: {
                 // Magical hack to get the proper bounding box factor
-                float horizontalBoundingBoxFactor = (float) (user.meta().movement().width() / 2f * directionVec.x);
+                float horizontalBoundingBoxFactor = (float) (user.meta().movement().width() / 2f * directionVec.x());
                 movement.pistonHorizontalAllowance = xOffset + horizontalBoundingBoxFactor + 0.05f;
                 break;
               }
               case Z_AXIS: {
                 // Magical hack to get the proper bounding box factor
-                float horizontalBoundingBoxFactor = (float) (user.meta().movement().width() / 2f * directionVec.z);
+                float horizontalBoundingBoxFactor = (float) (user.meta().movement().width() / 2f * directionVec.z());
                 movement.pistonHorizontalAllowance = zOffset + horizontalBoundingBoxFactor + 0.05f;
                 break;
               }

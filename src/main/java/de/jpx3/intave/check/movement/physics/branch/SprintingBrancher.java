@@ -1,10 +1,20 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check.movement.physics.branch;
 
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
 
-import java.util.Collections;
-import java.util.Set;
+import java.util.List;
 
 import static de.jpx3.intave.check.movement.physics.MoveMetric.SPRINT_CHANGE;
 
@@ -15,22 +25,21 @@ final class SprintingBrancher extends MovementSearchBrancher {
   private static final boolean[] NEVER = new boolean[]{false};
 
   @Override
-  public Set<MovementSearchConfig> branch(MovementSearchInput input, MovementSearchConfig config) {
+  public void branch(MovementSearchInput input, MovementSearchConfig config, List<MovementSearchConfig> result) {
     SimulationEnvironment environment = input.environment();
     boolean[] selector = sprintSelector(input, environment);
 
     if (selector.length == 1) {
-      return Collections.singleton(config.withSprintingSetTo(selector[0]));
+      result.add(config.withSprintingSetTo(selector[0]));
+      return;
     }
 
-    Set<MovementSearchConfig> result = ordered();
     for (boolean sprinting : selector) {
       if (sprinting && input.user().meta().abilities().foodLevel < 6) {
         continue;
       }
       result.add(config.withSprintingSetTo(sprinting));
     }
-    return result;
   }
 
   private boolean[] sprintSelector(MovementSearchInput input, SimulationEnvironment environment) {

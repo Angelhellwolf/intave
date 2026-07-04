@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check.movement.physics.search;
 
 import de.jpx3.intave.IntavePlugin;
@@ -32,8 +43,7 @@ import static de.jpx3.intave.check.movement.physics.MoveMetric.TELEPORT;
 public final class SimpleSimulationSearch implements SimulationSearch {
   private final static Searcher<MovementSearchInput, MovementSearchConfig> SEARCHER = new Searcher<>(
     MovementSearchBranchers.normal(),
-    MovementSearchConfig::blank,
-    false
+    MovementSearchConfig::blank
   );
 
   private final boolean itemUsageReset;
@@ -45,21 +55,30 @@ public final class SimpleSimulationSearch implements SimulationSearch {
   }
 
 	@Override
-	public Simulation simulate(User user, SimulationEnvironment environment, Simulator simulator) {
-		Motion sentMotion = environment.motion();
+	public Simulation greedyNarrowSearch(User user, SimulationEnvironment environment, Simulator simulator) {
+		return greedySearch(user, environment, simulator);
+  }
+
+	@Override
+	public Simulation greedyFullSearch(User user, SimulationEnvironment environment, Simulator simulator) {
+		return greedySearch(user, environment, simulator);
+	}
+
+	private Simulation greedySearch(User user, SimulationEnvironment environment, Simulator simulator) {
+		Motion sentMotion = environment.sentOffsetMotion();
 		Simulation simulation = collectSimulations(
 			user, simulator, environment,
 			Collectors.reducing(
 				Simulation.invalid(),
 				(o, o2) -> o.select(o2, sentMotion)
-      ),
-      sim -> sim.motionDifference(sentMotion) < REQUIRED_ACCURACY_FOR_QUICK_PROC_EXIT
-    );
-    applySimulation(user, simulation);
-    return simulation;
-  }
+			),
+			sim -> sim.offsetDifference() < REQUIRED_ACCURACY_FOR_QUICK_PROC_EXIT
+		);
+		applySimulation(user, simulation);
+		return simulation;
+	}
 
-  private static final double REQUIRED_ACCURACY_FOR_QUICK_PROC_EXIT = 0.008;
+	private static final double REQUIRED_ACCURACY_FOR_QUICK_PROC_EXIT = 0.001;
 
 	private <C, R> R collectSimulations(
 		User user, Simulator simulator,
@@ -69,28 +88,34 @@ public final class SimpleSimulationSearch implements SimulationSearch {
 	) {
 		Timings.CHECK_PHYSICS_PROC_ITR.start();
 		Timings.CHECK_PHYSICS_PROC_ITR_BUILD_CONFIGS.start();
-		Set<MovementSearchConfig> configs = SEARCHER.searchConfigurationsFor(
-      MovementSearchInput.from(user, simulator, environment, detectNoSlowdown)
-    );
-    Timings.CHECK_PHYSICS_PROC_ITR_BUILD_CONFIGS.stop();
+		Set<MovementSearchConfig> possibleConfigs = SEARCHER.searchConfigurationsFor(
+			MovementSearchInput.from(user, simulator, environment, detectNoSlowdown)
+		);
+		Timings.CHECK_PHYSICS_PROC_ITR_BUILD_CONFIGS.stop();
 
-    C container = collector.supplier().get();
-    Function<C, R> finisher = collector.finisher();
-    BiConsumer<C, Simulation> accumulator = collector.accumulator();
+		C container = collector.supplier().get();
+		Function<C, R> finisher = collector.finisher();
+		BiConsumer<C, Simulation> accumulator = collector.accumulator();
 
-    for (MovementSearchConfig config : configs) {
-      Simulation simulation = simulator.simulateTick(
-        user, environment.mutableBaseMotionCopy(),
-        environment, config.moveConfig()
-      );
-      accumulator.accept(container, simulation);
-      if (earlyStop.test(simulation)) {
-        break;
-      }
-    }
-    Timings.CHECK_PHYSICS_PROC_ITR.stop();
-    return finisher.apply(container);
-  }
+		for (MovementSearchConfig config : possibleConfigs) {
+			boolean canFinishExplicitTick = config.canFinishExplicitTick();
+			SimulationEnvironment myEnv = environment.mutableView();
+			myEnv = config.applyTo(myEnv);
+			Simulation simulation = simulator.simulateTick(
+				user, myEnv.mutableBaseMotionCopy(),
+				myEnv.immutableView(), config.moveConfig()
+			);
+			simulation.setEnvironment(myEnv);
+			simulation.setCanFinishExplicitTick(canFinishExplicitTick);
+			accumulator.accept(container, simulation);
+			if (canFinishExplicitTick && earlyStop.test(simulation)) {
+				break;
+			}
+			simulation.expire();
+		}
+		Timings.CHECK_PHYSICS_PROC_ITR.stop();
+		return finisher.apply(container);
+	}
 
   private void applySimulation(User user, Simulation simulation) {
     MetadataBundle meta = user.meta();

@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.module.dispatch;
 
 import com.comphenix.protocol.events.PacketContainer;
@@ -33,6 +44,7 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.util.Vector;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -218,23 +230,34 @@ public final class TeleportController implements PacketEventSubscriber {
       }
   )
   public void clientClickUpdate(PacketEvent event) {
-    if (!IntaveControl.TELEPORT_FAR_AWAY_ON_Q_PRESS) {
-      return;
-    }
+
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     PacketContainer packet = event.getPacket();
     if (packet.getPlayerDigTypes().read(0) == DROP_ITEM && user.meta().inventory().heldItemType() == Material.AIR) {
-      Synchronizer.synchronize(() -> {
-        Location randomLocation = player.getLocation().clone().add(Math.random() * 1000 - 500, 0, Math.random() * 1000 - 500);
-        Block highestBlockAt = randomLocation.getWorld().getHighestBlockAt(randomLocation);
-        randomLocation.setY(highestBlockAt.getY());
-        player.teleport(randomLocation);
+      if (IntaveControl.TELEPORT_FAR_AWAY_ON_Q_PRESS) {
+        Synchronizer.synchronize(() -> {
+          Location randomLocation = player.getLocation().clone().add(Math.random() * 1000 - 500, 0, Math.random() * 1000 - 500);
+          Block highestBlockAt = randomLocation.getWorld().getHighestBlockAt(randomLocation);
+          randomLocation.setY(highestBlockAt.getY());
+          player.teleport(randomLocation);
 
-        if (user.receives(MessageChannel.DEBUG_TELEPORT)) {
-          player.sendMessage(IntavePlugin.prefix() + "Teleport to random " + player.getLocation().getBlockX() + " " + player.getLocation().getBlockY() + " " + player.getLocation().getBlockZ() + " " + " as " + ChatColor.RED + " it was command-requested");
-        }
-      });
+          if (user.receives(MessageChannel.DEBUG_TELEPORT)) {
+            player.sendMessage(IntavePlugin.prefix() + "Teleport to random " + player.getLocation().getBlockX() + " " + player.getLocation().getBlockY() + " " + player.getLocation().getBlockZ() + " " + " as " + ChatColor.RED + " it was command-requested");
+          }
+        });
+      }
+
+      if (IntaveControl.GIVE_VELOCITY_ON_Q_PRESS) {
+        Synchronizer.synchronize(() -> {
+          Vector randomVelocity = new Vector(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1);
+//          player.setVelocity(new Vector(0, 0.01, 0));
+          player.setVelocity(randomVelocity);
+          if (user.receives(MessageChannel.DEBUG_TELEPORT)) {
+            player.sendMessage(IntavePlugin.prefix() + "Set random velocity " + randomVelocity.getX() + " " + randomVelocity.getY() + " " + randomVelocity.getZ() + " as " + ChatColor.RED + " it was command-requested");
+          }
+        });
+      }
     }
   }
 

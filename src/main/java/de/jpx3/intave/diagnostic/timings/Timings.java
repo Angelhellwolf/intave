@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.diagnostic.timings;
 
 import com.comphenix.protocol.PacketType;
@@ -12,19 +23,13 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
-/**
- * Class generated using IntelliJ IDEA
- * Any distribution is strictly prohibited.
- * Copyright Richard Strunk 2019
- */
-
 public class Timings {
   private static final List<Timing> timingPool = new CopyOnWriteArrayList<>();
   private static final Map<String, Timing> eventTimings = Maps.newConcurrentMap();
   private static final Map<String, Timing> packetTimings = Maps.newConcurrentMap();
   private static final Map<Class<?>, String> classNameCache = Maps.newConcurrentMap();
 
-  public static final Timing CHECK_PHYSICS_PROC_TOT = Timing.of("Check/Physics/Proc", "Exe/Netty");
+  public static final Timing CHECK_PHYSICS_PROC = Timing.of("Check/Physics/Proc", "Exe/Netty");
   public static final Timing CHECK_PHYSICS_PROC_PRED_BIA = Timing.of("Check/Physics/Proc/Bia/Pred", "Check/Physics/Proc/Bia");
   public static final Timing CHECK_PHYSICS_PROC_LK_BIA = Timing.of("Check/Physics/Proc/Bia/lK", "Check/Physics/Proc/Bia");
   public static final Timing CHECK_PHYSICS_PROC_ITR = Timing.of("Check/Physics/Proc/Itr", "Check/Physics/Proc/Tot");

@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check.movement.physics.search;
 
 import de.jpx3.intave.check.movement.physics.Simulation;
@@ -5,23 +16,21 @@ import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.user.User;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collector;
 
 public final class SimulationCollector {
-	private static final int DEFAULT_MAX_FLYING_SIMULATIONS = 8;
-	private static final int MOTION_TRACKING_MAX_FLYING_SIMULATIONS = 64;
+	private static final int DEFAULT_MAX_FLYING_SIMULATIONS = 4;
 
 	private final User user;
 	private final SimulationEnvironment environment;
-	private final Motion targetMotion;
+	private final Motion targetOffsetMotion;
 	private final Position lastReportedPosition;
 	private final int maxFlyingSimulations;
 	private Simulation best = Simulation.invalid();
-	private List<Simulation> possibleFlyingSimulations = null;
+	private Map<Long, Simulation> possibleFlyingSimulationsByHash = null;
 	private int totalFlyingPacketSimulations;
 	private int simulationsDone;
 
@@ -29,13 +38,13 @@ public final class SimulationCollector {
 		User user,
 		SimulationEnvironment environment,
 		int maxFlyingSimulations,
-		Motion targetMotion,
+		Motion targetOffsetMotion,
 		Position lastReportedPosition
 	) {
 		this.user = user;
 		this.environment = environment;
 		this.maxFlyingSimulations = maxFlyingSimulations;
-		this.targetMotion = targetMotion;
+		this.targetOffsetMotion = targetOffsetMotion;
 		this.lastReportedPosition = lastReportedPosition;
 	}
 
@@ -61,7 +70,7 @@ public final class SimulationCollector {
 	}
 
 	public List<Simulation> flyingSimulations() {
-		return possibleFlyingSimulations == null ? Collections.emptyList() : possibleFlyingSimulations;
+		return possibleFlyingSimulationsByHash == null ? Collections.emptyList() : new ArrayList<>(possibleFlyingSimulationsByHash.values());
 	}
 
 	private SimulationCollector mergedWith(SimulationCollector other) {
@@ -69,24 +78,17 @@ public final class SimulationCollector {
 			user,
 			environment,
 			maxFlyingSimulations,
-			targetMotion,
+			targetOffsetMotion,
 			lastReportedPosition
 		);
-		if (tracksMotion()) {
-			merged.add(best);
-			merged.add(other.best);
-		} else {
-			merged.best = selectBest(best, other.best);
+		merged.add(best);
+		merged.add(other.best);
+
+		if (possibleFlyingSimulationsByHash != null) {
+			possibleFlyingSimulationsByHash.values().forEach(merged::add);
 		}
-		if (possibleFlyingSimulations != null) {
-			for (Simulation simulation : possibleFlyingSimulations) {
-				merged.add(simulation);
-			}
-		}
-		if (other.possibleFlyingSimulations != null) {
-			for (Simulation simulation : other.possibleFlyingSimulations) {
-				merged.add(simulation);
-			}
+		if (other.possibleFlyingSimulationsByHash != null) {
+			other.possibleFlyingSimulationsByHash.values().forEach(merged::add);
 		}
 		merged.totalFlyingPacketSimulations = totalFlyingPacketSimulations + other.totalFlyingPacketSimulations;
 		merged.simulationsDone = simulationsDone + other.simulationsDone;
@@ -94,72 +96,87 @@ public final class SimulationCollector {
 	}
 
 	private void addFlyingSimulation(Simulation simulation) {
-		if (possibleFlyingSimulations == null) {
-			possibleFlyingSimulations = new ArrayList<>(Math.min(maxFlyingSimulations, DEFAULT_MAX_FLYING_SIMULATIONS));
+		if (possibleFlyingSimulationsByHash == null) {
+			possibleFlyingSimulationsByHash = new HashMap<>();
 		}
-		for (Simulation flyingSimulation : possibleFlyingSimulations) {
-			if (flyingSimulation.result().almostIdenticalTo(simulation.result())) {
-				return;
+		long almostIdenticalHash = simulation.result().almostIdenticalHash();
+		Simulation almostIdenticalSimulation;
+		do {
+			almostIdenticalSimulation = possibleFlyingSimulationsByHash.get(almostIdenticalHash);
+			almostIdenticalHash++;
+		} while (almostIdenticalSimulation != null && !almostIdenticalSimulation.result().almostIdenticalTo(simulation.result()));
+		possibleFlyingSimulationsByHash.put(--almostIdenticalHash, simulation.reusableCopy());
+
+		if (possibleFlyingSimulationsByHash.size() > maxFlyingSimulations) {
+			Long worstKey = null;
+			Simulation worstSim = null;
+
+			for (Map.Entry<Long, Simulation> entry : possibleFlyingSimulationsByHash.entrySet()) {
+				if (worstSim == null) {
+					worstKey = entry.getKey();
+					worstSim = entry.getValue();
+				} else {
+					Simulation best = selectBestFlying(worstSim, entry.getValue(), simulation.environment().position());
+					if (best == worstSim) {
+						worstKey = entry.getKey();
+						worstSim = entry.getValue();
+					}
+				}
 			}
-		}
-		if (possibleFlyingSimulations.size() < maxFlyingSimulations) {
-			possibleFlyingSimulations.add(simulation.reusableCopy());
+			if (worstKey != null) {
+				possibleFlyingSimulationsByHash.remove(worstKey);
+			}
 		}
 	}
 
 	private boolean resultsInFlyingPacket(Simulation simulation) {
 		double flyingLimit = user.meta().protocol().flyingPacketUncertaintyRadius();
-		if (!tracksMotion()) {
-			return simulation.resultsInFlyingPacket(environment, flyingLimit);
-		}
-		Position simulatedPosition = environment.verifiedLastPosition().add(simulation.motion());
+		Position simulatedPosition = environment.verifiedLastPosition().add(simulation.offsetMotion());
 		return lastReportedPosition.distance(simulatedPosition) < flyingLimit;
 	}
 
-	private Simulation selectBest(Simulation current, Simulation simulation) {
-		if (!tracksMotion()) {
-			return current.select(
-				simulation,
-				environment.position(),
-				environment.verifiedLastPosition()
-			);
+	private Simulation selectBestFlying(Simulation a, Simulation b, Position receivedPosition) {
+		if (a == Simulation.invalid()) {
+			return b;
 		}
-		return current.select(simulation, targetMotion);
+		if (b == Simulation.invalid()) {
+			return a;
+		}
+		Position positionA = a.environment().lastPosition().add(a.result().offsetMotion());
+		Position positionB = b.environment().lastPosition().add(b.result().offsetMotion());
+		double distanceA = receivedPosition.distance(positionA);
+		double distanceB = receivedPosition.distance(positionB);
+		if (distanceA < distanceB) {
+			return a;
+		} {
+			return b;
+		}
 	}
 
-	private boolean tracksMotion() {
-		return targetMotion != null;
+	private Simulation selectBest(Simulation current, Simulation simulation) {
+		return current.select(simulation, targetOffsetMotion);
 	}
 
-	public static Collector<Simulation, SimulationCollector, SimulationCollector> positionBased(
-		User user,
-		SimulationEnvironment environment
+	public static Collector<Simulation, SimulationCollector, SimulationCollector> forEnvironment(
+		User user, SimulationEnvironment environment, int maxFlyingSimulations
 	) {
-		return Collector.of(
-			() -> new SimulationCollector(
-				user,
-				environment,
-				DEFAULT_MAX_FLYING_SIMULATIONS,
-				null,
-				null
-			),
-			SimulationCollector::add,
-			SimulationCollector::mergedWith
+		return forEnvironmentWithCustomTargets(
+			user, environment, environment.sentOffsetMotion(), environment.lastPosition(), maxFlyingSimulations
 		);
 	}
 
-	public static Collector<Simulation, SimulationCollector, SimulationCollector> offsetBased(
-		User user,
-		SimulationEnvironment environment,
-		Motion targetMotion,
-		Position lastReportedPosition
+	public static Collector<Simulation, SimulationCollector, SimulationCollector> forEnvironmentWithCustomTargets(
+		User user, SimulationEnvironment environment,
+		@NotNull Motion targetOffset,
+		@NotNull Position lastReportedPosition,
+		int maxFlyingSimulations
 	) {
 		return Collector.of(
 			() -> new SimulationCollector(
 				user,
 				environment,
-				MOTION_TRACKING_MAX_FLYING_SIMULATIONS,
-				targetMotion,
+				maxFlyingSimulations,
+				targetOffset,
 				lastReportedPosition
 			),
 			SimulationCollector::add,

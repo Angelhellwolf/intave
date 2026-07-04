@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.player.collider.complex;
 
 import de.jpx3.intave.IntaveControl;
@@ -52,7 +63,7 @@ public final class SimulationResult {
     return MathHelper.distanceOf(motion, motionVector);
   }
 
-  public Motion motion() {
+  public Motion offsetMotion() {
     return motion;
   }
 
@@ -178,13 +189,27 @@ public final class SimulationResult {
     if (!motion.almostIdentical(other.motion)) {
       return false;
     }
-    if (!Objects.equals(intermittentResult, other.intermittentResult)) {
+    if (intermittentResult != null ? !intermittentResult.almostIdentical(other.intermittentResult) : other.intermittentResult != null) {
       return false;
     }
     if (Math.abs(yStepHeight - other.yStepHeight) > 1e-6) {
       return false;
     }
     return true;
+  }
+
+  public long almostIdenticalHash() {
+    long result = motion.almostIdenticalHash();
+    result = 31 * result + (intermittentResult != null ? intermittentResult.almostIdenticalHash() : 0);
+    result = 31 * result + (onGround ? 1 : 0);
+    result = 31 * result + (collidedHorizontally ? 1 : 0);
+    result = 31 * result + (collidedVertically ? 1 : 0);
+    result = 31 * result + (resetMotionX ? 1 : 0);
+    result = 31 * result + (resetMotionZ ? 1 : 0);
+    result = 31 * result + (step ? 1 : 0);
+    result = 31 * result + (edgeSneak ? 1 : 0);
+	  result = 31 * result + Double.hashCode(yStepHeight);
+    return result;
   }
 
   public static SimulationResult invalid() {

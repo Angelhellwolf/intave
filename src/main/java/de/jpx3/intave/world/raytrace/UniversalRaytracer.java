@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.world.raytrace;
 
 import de.jpx3.intave.block.access.VolatileBlockAccess;
@@ -18,8 +29,8 @@ public class UniversalRaytracer implements Raytracer {
     if (includesInvalidCoordinate(eyeVector) || includesInvalidCoordinate(targetVector)) {
       return null;
     }
-    Position eyePosition = new Position(eyeVector.x, eyeVector.y, eyeVector.z);
-    Position targetPosition = new Position(targetVector.x, targetVector.y, targetVector.z);
+    Position eyePosition = eyeVector.toPosition();
+    Position targetPosition = targetVector.toPosition();
     return performRaytrace(player, eyePosition, targetPosition);
   }
 
@@ -150,7 +161,7 @@ public class UniversalRaytracer implements Raytracer {
   }
 
   private boolean includesInvalidCoordinate(RawVector3d rawVector3D) {
-    return Double.isNaN(rawVector3D.x) || Double.isNaN(rawVector3D.y) || Double.isNaN(rawVector3D.z);
+    return Double.isNaN(rawVector3D.x()) || Double.isNaN(rawVector3D.y()) || Double.isNaN(rawVector3D.z());
   }
 
   private boolean includesInvalidCoordinate(Position position) {

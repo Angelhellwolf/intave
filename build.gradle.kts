@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 import net.minecrell.pluginyml.bukkit.BukkitPluginDescription.Permission.Default.FALSE
 import net.minecrell.pluginyml.bukkit.BukkitPluginDescription.Permission.Default.OP
 import xyz.jpenilla.runpaper.task.RunServer
@@ -40,7 +51,7 @@ repositories {
   maven { url = uri("https://oss.sonatype.org/content/repositories/snapshots") }
   maven { url = uri("https://oss.sonatype.org/content/repositories/central") }
   maven("https://repo.opencollab.dev/maven-snapshots")
-
+  maven("https://repo.codemc.io/repository/maven-releases/")
 }
 
 dependencies {
@@ -80,6 +91,9 @@ dependencies {
   // floodgate
   compileOnly("org.geysermc.floodgate:api:2.0-SNAPSHOT")
 
+  // packetevents
+  compileOnly("com.github.retrooper:packetevents-spigot:2.13.0")
+
   testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.2")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.2")
   testRuntimeOnly("org.junit.platform:junit-platform-launcher")
@@ -109,7 +123,7 @@ bukkit {
 
   main = "de.jpx3.intave.IntavePlugin"
   apiVersion = "1.13"
-  softDepend = listOf("ProtocolLib", "ViaVersion")
+  softDepend = listOf("packetevents", "ProtocolLib", "ViaVersion")
 
   commands { register("intave") { aliases = listOf("iac") } }
 
@@ -263,7 +277,7 @@ fun dumpBuildConfig() {
 }
 
 val paperRunConfigs = mapOf(
-  Pair("1.8.8", 17),
+  Pair("1.8.8", 21),
   Pair("1.9.4", 8),
   Pair("1.12.2", 17),
   Pair("1.14.4", 11),
@@ -373,7 +387,7 @@ fun registerFoliaRunTask(serverVersion: String, javaVersion: Int) {
   runPaper.folia.registerTask({
 //    name = "run_folia_$serverVersion"
     group = simpleName
-    dependsOn("build")
+    dependsOn("shadowJar")
     pluginJars.from("build/libs/$simpleName.jar")
     minecraftVersion(serverVersion)
     runDirectory(File("runs/folia_${serverVersion}-j$javaVersion"))

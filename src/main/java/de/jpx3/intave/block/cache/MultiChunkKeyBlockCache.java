@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.block.cache;
 
 import de.jpx3.intave.IntaveControl;
@@ -15,6 +26,9 @@ import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.world.WorldHeight;
+import it.unimi.dsi.fastutil.longs.Long2ReferenceMap;
+import it.unimi.dsi.fastutil.longs.Long2ReferenceMaps;
+import it.unimi.dsi.fastutil.longs.Long2ReferenceOpenHashMap;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -31,12 +45,12 @@ import static de.jpx3.intave.IntaveControl.DISABLE_BLOCK_CACHING_ENTIRELY;
 final class MultiChunkKeyBlockCache implements BlockCache {
   private final Player player;
   private final ShapeResolverPipeline shapeResolver;
-  private final Map<Long, BlockState> blockCache = new ConcurrentHashMap<>(1024);
+  private final Long2ReferenceMap<BlockState> blockCache = Long2ReferenceMaps.synchronize(new Long2ReferenceOpenHashMap<>(96));
   private final Map<BlockPosition, BlockState> speculativeHeads = new ConcurrentHashMap<>(8);
   private final Map<BlockPosition, Integer> speculativeSequenceNumbers = new ConcurrentHashMap<>(8);
   private final HashSet<Long> speculationKeys = new HashSet<>(8);
 
-  private final BlockStateReplacementCache<Long> replacementCache;
+  private final BlockStateReplacementCache replacementCache;
   private int originChunkX, originChunkZ;
   private int chunkX, chunkZ;
 
@@ -45,7 +59,7 @@ final class MultiChunkKeyBlockCache implements BlockCache {
   ) {
     this.player = player;
     this.shapeResolver = resolver;
-    this.replacementCache = new BlockStateReplacementCache<>(MultiChunkKeyBlockCache::bigKey);
+    this.replacementCache = new BlockStateReplacementCache(MultiChunkKeyBlockCache::bigKey);
   }
 
   @Override

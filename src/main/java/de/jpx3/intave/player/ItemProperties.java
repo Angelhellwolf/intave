@@ -1,7 +1,17 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.player;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import de.jpx3.intave.adapter.MinecraftVersion;
 import de.jpx3.intave.adapter.ProtocolLibraryAdapter;
 import de.jpx3.intave.annotate.Nullable;
@@ -18,10 +28,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static de.jpx3.intave.adapter.MinecraftVersions.VER1_13_0;
@@ -31,13 +38,13 @@ import static de.jpx3.intave.player.Enchantments.tridentRiptideEnchanted;
 public final class ItemProperties {
   public static final Material ITEM_TRIDENT = materialByName("TRIDENT");
   public static final Material CROSSBOW = materialByName("CROSSBOW");
-  private static final Set<Material> materialUseItems = Sets.newHashSet();
-  private static final Set<Material> materialSwordItems = Sets.newHashSet();
-  private static final Set<Material> materialTrapdoorItems = Sets.newHashSet();
-  private static final Set<Material> materialPotionItems = Sets.newHashSet();
-  private static final Set<Material> foodLevelConstraintFoodItems = Sets.newHashSet();
-  private static final Set<Material> nonFoodLevelConstraintFoodItems = Sets.newHashSet();
-  private static final Set<Material> arrowItems = Sets.newHashSet();
+  private static final Set<Material> materialUseItems = EnumSet.noneOf(Material.class);
+  private static final Set<Material> materialSwordItems = EnumSet.noneOf(Material.class);
+  private static final Set<Material> materialTrapdoorItems = EnumSet.noneOf(Material.class);
+  private static final Set<Material> materialPotionItems = EnumSet.noneOf(Material.class);
+  private static final Set<Material> foodLevelConstraintFoodItems = EnumSet.noneOf(Material.class);
+  private static final Set<Material> nonFoodLevelConstraintFoodItems = EnumSet.noneOf(Material.class);
+  private static final Set<Material> arrowItems = EnumSet.noneOf(Material.class);
 
   public static void setup() {
     try {
@@ -68,7 +75,7 @@ public final class ItemProperties {
   }
 
   private static void materialListConvert(List<String> input, Set<? super Material> output) {
-    input.stream().map(ItemProperties::materialByName).forEach(output::add);
+    input.stream().map(ItemProperties::materialByName).filter(Objects::nonNull).forEach(output::add);
   }
 
   private static void loadArrows() {
@@ -93,7 +100,10 @@ public final class ItemProperties {
 
   private static void loadPotions() {
     materialPotionItems.add(Material.POTION);
-    materialPotionItems.add(materialByName("SPLASH_POTION"));
+    Material splashPotion = materialByName("SPLASH_POTION");
+    if (splashPotion != null) {
+      materialPotionItems.add(splashPotion);
+    }
   }
 
   public static boolean canItemBeUsed(Player player, @Nullable ItemStack itemStack) {
@@ -104,11 +114,13 @@ public final class ItemProperties {
     }
 
     // Bow check
-    boolean hasArrows = inventoryContains(player, arrowItems);
-    if (type == Material.BOW && !hasArrows) {
-      return false;
+    if (type == Material.BOW) {
+      boolean hasArrows = inventoryContains(player, arrowItems);
+      if (!hasArrows) {
+        return false;
+      }
     }
-    if (type == CROSSBOW && !hasArrows) {
+    if (type == CROSSBOW) {
       return crossbowLoaded(itemStack);
     }
     boolean useItem = materialUseItems.contains(type);

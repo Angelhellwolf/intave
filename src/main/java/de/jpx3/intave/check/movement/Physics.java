@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check.movement;
 
 import com.comphenix.protocol.PacketType;
@@ -5,7 +16,6 @@ import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
 import de.jpx3.intave.IntaveControl;
-import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.check.MitigationStrategy;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.adapter.MinecraftVersion;
@@ -81,8 +91,7 @@ public final class Physics extends Check {
   private static final long BURST_WINDOW = 8000;
   private static final long BURST_CONGESTION = 2;
 
-  private final IntavePlugin plugin;
-  private final CheckViolationLevelDecrementer decrementer;
+	private final CheckViolationLevelDecrementer decrementer;
   private final SimulationSearch simulationSearch;
   private final SimulationEvaluator simulationEvaluator;
   private final boolean highToleranceMode;
@@ -91,10 +100,9 @@ public final class Physics extends Check {
   private final boolean closeInventorySilentMode;
   private final boolean refreshNearbyBlocks;
 
-  public Physics(IntavePlugin plugin) {
+  public Physics() {
     super("Physics", "physics");
-    this.plugin = plugin;
-    this.decrementer = new CheckViolationLevelDecrementer(this, VL_DECREMENT_PER_VALID_MOVE * 20);
+	  this.decrementer = new CheckViolationLevelDecrementer(this, VL_DECREMENT_PER_VALID_MOVE * 20);
 
     CheckSettings settings = configuration().settings();
     this.highToleranceMode = settings.boolBy("high-tolerance", false);
@@ -143,7 +151,7 @@ public final class Physics extends Check {
     movementData.setBaseMotion(preTickMotion);
     movementData.treatThisFlyPacketAsMovePacket = false;
 
-    Timings.CHECK_PHYSICS_PROC_TOT.start();
+    Timings.CHECK_PHYSICS_PROC.start();
     predictFlyingPacketBeforeVelocity(user);
     // simulation
     Simulation simulation;
@@ -152,26 +160,34 @@ public final class Physics extends Check {
 
     try {
 //      simulation = simulationSearch.simulate(user, simulator, withMovement || withRotation);
-      simulation = simulationSearch.simulate(user, simulationEnvironment, simulator);
+      simulation = simulationSearch.greedyNarrowSearch(user, simulationEnvironment, simulator);
     } catch (IllegalStateException exception) {
       user.kick("Exception while simulating movement");
       exception.printStackTrace();
       return;
     }
+
+    // since the simulation-search possibly modified its mutableView(),
+    // we pull the fresh version from the best simulation and commit it to
+    // the active movementData
+    simulationEnvironment = simulation.environment();
+
     KeyPressStudy.enterKeyPressFrom(simulation.configuration());
     boolean reinterpretToMovePacket = !withMovement && simulationEnvironment.tryMoveReinterpretation(
       simulation, user.meta().protocol().flyingPacketUncertaintyRadius()
     );
     if (!withMovement && !withRotation && !reinterpretToMovePacket) {
-      Timings.CHECK_PHYSICS_PROC_TOT.stop();
+      Timings.CHECK_PHYSICS_PROC.stop();
       movementData.setBaseMotion(previousBaseMotion);
       updateOnGroundIfFlying(user);
       return;
     }
+
+    // commit happens here!
     simulationEnvironment.commitTo(movementData);
     movementData.assumeOccurred(simulation);
 
-    Timings.CHECK_PHYSICS_PROC_TOT.stop();
+    Timings.CHECK_PHYSICS_PROC.stop();
     Timings.CHECK_PHYSICS_EVAL.start();
     // evaluation
     evaluateBestSimulation(user, simulation);
@@ -342,7 +358,7 @@ public final class Physics extends Check {
     BlockCache blockStateAccess = user.blockCache();
 
     SimulationResult expectedMovement = simulation.result();
-    Motion context = expectedMovement.motion();
+    Motion context = expectedMovement.offsetMotion();
 
     int keyForward = movementData.keyForward;
     int keyStrafe = movementData.keyStrafe;
@@ -387,7 +403,7 @@ public final class Physics extends Check {
 
     double biasedDistance = MathHelper.hypot3d(differenceX, differenceY * 2, differenceZ);
     violationLevelData.physicsOffset += biasedDistance;
-    violationLevelData.physicsOffset -= movementData.receivedFlyingPacketIn(2) && movementData.motion().length() < 0.1 ? Math.min(0.03, biasedDistance) : 0;
+    violationLevelData.physicsOffset -= movementData.receivedFlyingPacketIn(2) && movementData.sentOffsetMotion().length() < 0.1 ? Math.min(0.03, biasedDistance) : 0;
     violationLevelData.physicsOffset -= violationLevelData.physicsOffset > 0.6 ? 0.002 : 0.001;
     violationLevelData.physicsOffset -= movementData.ticksPast(ELYTRA_FLYING) < 3 ? 0.025 : 0;
 
@@ -496,9 +512,9 @@ public final class Physics extends Check {
       if (IntaveControl.SETBACK_WITH_PRESSED_KEYS) {
         config = config.withKeypress(movementData.lastKeyForward, movementData.lastKeyStrafe);
       }
-      Simulation otherSimulation = simulator.simulateTick(user, motion, user.meta().movement().unmodifiable(), config);
+      Simulation otherSimulation = simulator.simulateTick(user, motion, user.meta().movement().immutableView(), config);
 
-      Motion setbackMotion = otherSimulation.motion();
+      Motion setbackMotion = otherSimulation.offsetMotion();
       /*
        * This will patch the hit-player-sneaking-on-a-block-edge bug (https://youtu.be/ONGnOwhQyac)
        */
@@ -573,7 +589,7 @@ public final class Physics extends Check {
         boolean altered = BlockTypeAccess.hasTranslation(user, BlockTypeAccess.typeAccess(block));
 
         String colliderName;
-        if (!Collision.blockInsideBorder(user, player.getWorld(), blockPositionX, blockPositionZ)) {
+        if (!Collision.blockInsideBorder(movementData, blockPositionX, blockPositionZ)) {
           colliderName = "world border";
         } else {
           String prefix = (currentlyInOverride ? "emulated " : "") + (altered ? "altered " : "");
@@ -628,7 +644,7 @@ public final class Physics extends Check {
     } else {
       if (violationLevelData.physicsInvalidMovementsInRow >= 0) {
         violationLevelData.physicsInvalidMovementsInRow *= 0.95;
-        violationLevelData.physicsInvalidMovementsInRow -= movementData.motion().horizontalLength() > 0.1 ? .15 : .05;
+        violationLevelData.physicsInvalidMovementsInRow -= movementData.sentOffsetMotion().horizontalLength() > 0.1 ? .15 : .05;
       }
       statisticApply(user, CheckStatistics::increasePasses);
     }

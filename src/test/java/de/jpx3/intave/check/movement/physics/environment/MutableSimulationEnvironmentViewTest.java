@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check.movement.physics.environment;
 
 import de.jpx3.intave.share.BoundingBox;
@@ -168,5 +179,24 @@ final class MutableSimulationEnvironmentViewTest {
     assertEquals(childBox, target.boundingBox());
     assertEquals(90.0F, target.rotationYaw(), 0.0F);
     assertFalse(target.inWater());
+  }
+
+  @Test
+  void nestedCommitToRootAppliesDelegateMutationsFirst() {
+    TestSimulationEnvironment target = new TestSimulationEnvironment();
+    SimulationEnvironment outer = target.mutableView();
+    outer.setBaseMotion(1.0, 2.0, 3.0);
+
+    SimulationEnvironment inner = outer.mutableView();
+    inner.setVerifiedLastPosition(new Position(4.0, 5.0, 6.0), "nested commit test");
+
+    inner.commitTo(target);
+
+    assertEquals(1.0, target.baseMotionX(), 0.0);
+    assertEquals(2.0, target.baseMotionY(), 0.0);
+    assertEquals(3.0, target.baseMotionZ(), 0.0);
+    assertEquals(4.0, target.verifiedLastPositionX(), 0.0);
+    assertEquals(5.0, target.verifiedLastPositionY(), 0.0);
+    assertEquals(6.0, target.verifiedLastPositionZ(), 0.0);
   }
 }

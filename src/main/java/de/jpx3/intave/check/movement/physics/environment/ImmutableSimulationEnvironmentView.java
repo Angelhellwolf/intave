@@ -1,27 +1,43 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check.movement.physics.environment;
 
 import de.jpx3.intave.block.fluid.Fluid;
 import de.jpx3.intave.check.movement.physics.MoveMetric;
 import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.check.movement.physics.Simulation;
+import de.jpx3.intave.check.movement.physics.update.TickAmbiguousUpdate;
 import de.jpx3.intave.player.collider.complex.SimulationResult;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.Position;
+import de.jpx3.intave.world.border.WorldBorder;
 import org.bukkit.Material;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 
-public final class UnmodifiableSimulationEnvironmentView implements SimulationEnvironment {
+import java.util.List;
+
+public final class ImmutableSimulationEnvironmentView implements SimulationEnvironment {
 	private final SimulationEnvironment delegate;
 
-	public UnmodifiableSimulationEnvironmentView(
+	public ImmutableSimulationEnvironmentView(
 		SimulationEnvironment delegate
 	) {
 		this.delegate = delegate;
 	}
 
-	public static UnmodifiableSimulationEnvironmentView of(SimulationEnvironment delegate) {
-		return new UnmodifiableSimulationEnvironmentView(delegate);
+	public static ImmutableSimulationEnvironmentView of(SimulationEnvironment delegate) {
+		return new ImmutableSimulationEnvironmentView(delegate);
 	}
 
 	@Override
@@ -144,8 +160,8 @@ public final class UnmodifiableSimulationEnvironmentView implements SimulationEn
 	}
 
 	@Override
-	public Motion motion() {
-		return delegate.motion();
+	public Motion sentOffsetMotion() {
+		return delegate.sentOffsetMotion();
 	}
 
 	@Override
@@ -210,6 +226,16 @@ public final class UnmodifiableSimulationEnvironmentView implements SimulationEn
 
 	@Override
 	public void resetMotionMultiplier() {
+		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
+	}
+
+	@Override
+	public WorldBorder worldBorder() {
+		return delegate.worldBorder();
+	}
+
+	@Override
+	public void setWorldBorder(@NotNull WorldBorder worldBorder) {
 		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
 	}
 
@@ -539,8 +565,28 @@ public final class UnmodifiableSimulationEnvironmentView implements SimulationEn
 	}
 
 	@Override
-	public void tickComplete(boolean hasMovement, boolean hasRotation) {
+	public void tickComplete(boolean hasMovement, boolean hasRotation, boolean isRealClientTick) {
 		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
+	}
+
+	@Override
+	public long currentTick() {
+		return delegate.currentTick();
+	}
+
+	@Override
+	public long activeSequence() {
+		return delegate.activeSequence();
+	}
+
+	@Override
+	public void setActiveSequence(long activeSequence) {
+		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
+	}
+
+	@Override
+	public List<TickAmbiguousUpdate> tickAmbiguousUpdates() {
+		return delegate.tickAmbiguousUpdates();
 	}
 
 	@Override
@@ -559,7 +605,12 @@ public final class UnmodifiableSimulationEnvironmentView implements SimulationEn
 	}
 
 	@Override
-	public SimulationEnvironment unmodifiable() {
+	public void commitTo(SimulationEnvironment other) {
+		delegate.commitTo(other);
+	}
+
+	@Override
+	public SimulationEnvironment immutableView() {
 		return this;
 	}
 }

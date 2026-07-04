@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.module.patcher;
 
 import com.comphenix.protocol.events.PacketEvent;
@@ -46,17 +57,14 @@ public final class ChunkAccessPatcher extends Module {
     packetsOut = PacketId.Server.RESPAWN
   )
   public void patchRespawnWorldType(PacketEvent event) {
-//    Bukkit.createWorld()
     if (!MinecraftVersions.VER1_16_0.atOrAbove()) {
       WorldType worldType = event.getPacket().getWorldTypeModifier().readSafely(0);
       if (worldType == null) {
         event.getPacket().getWorldTypeModifier().writeSafely(0, WorldType.NORMAL);
-//        System.out.println("Patched world type to normal");
-        System.err.println("Intave: Sent world type is null!!");
+        IntaveLogger.logger().severe("Intave: Sent world type was null!");
         Thread.dumpStack();
         return;
       }
-//      System.out.println("Worldtype: "+worldType);
     }
   }
 

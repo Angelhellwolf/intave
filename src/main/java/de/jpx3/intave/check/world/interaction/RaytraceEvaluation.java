@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check.world.interaction;
 
 import de.jpx3.intave.check.world.InteractionRaytrace;
@@ -62,9 +73,10 @@ public class RaytraceEvaluation {
 
   public boolean facingCheckFailed() {
     if (raycastResult != null && origin.hasFacing()) {
-      float f = (float) (raycastResult.hitVec.x - targetLocation.getX());
-      float f1 = (float) (raycastResult.hitVec.y - targetLocation.getY());
-      float f2 = (float) (raycastResult.hitVec.z - targetLocation.getZ());
+      RawVector3d hitVec = raycastResult.hitVec;
+      float f = (float) (hitVec.x() - targetLocation.getX());
+      float f1 = (float) (hitVec.y() - targetLocation.getY());
+      float f2 = (float) (hitVec.z() - targetLocation.getZ());
       return Math.abs(compressAndDecompress(f) - origin.facingX()) > 0.01 ||
         Math.abs(compressAndDecompress(f1) - origin.facingY()) > 0.01 ||
         Math.abs(compressAndDecompress(f2) - origin.facingZ()) > 0.01;

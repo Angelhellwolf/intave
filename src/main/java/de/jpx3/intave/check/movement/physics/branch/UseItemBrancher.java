@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check.movement.physics.branch;
 
 import de.jpx3.intave.user.meta.InventoryMetadata;
@@ -5,7 +16,7 @@ import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
 import org.bukkit.Material;
 
-import java.util.Set;
+import java.util.List;
 
 import static de.jpx3.intave.check.movement.physics.MoveMetric.ENTITY_USE;
 
@@ -14,11 +25,10 @@ final class UseItemBrancher extends MovementSearchBrancher {
   private static final boolean[] PESSIMISTIC = new boolean[]{false, true};
 
   @Override
-  public Set<MovementSearchConfig> branch(MovementSearchInput input, MovementSearchConfig config) {
+  public void branch(MovementSearchInput input, MovementSearchConfig config, List<MovementSearchConfig> result) {
     InventoryMetadata inventoryData = input.user().meta().inventory();
     ProtocolMetadata protocol = input.user().meta().protocol();
     UseItemStates useItemStates = useItemStates(input);
-    Set<MovementSearchConfig> result = ordered();
     for (boolean useItemState : inventoryData.handActive() ? OPTIMISTIC : PESSIMISTIC) {
       if (useItemStates.skip && useItemState) {
         continue;
@@ -31,16 +41,17 @@ final class UseItemBrancher extends MovementSearchBrancher {
       }
       result.add(config.withHandActive(useItemState));
     }
-    return result;
   }
 
   private UseItemStates useItemStates(MovementSearchInput input) {
     InventoryMetadata inventoryData = input.user().meta().inventory();
     MovementMetadata movementData = input.user().meta().movement();
     ProtocolMetadata protocol = input.user().meta().protocol();
-    boolean usableItemInEitherHand = input.user().hasPlayer() && inventoryData.usableItemInEitherHand();
-    boolean skipUseItem = (!protocol.sprintWhenHandActive() && movementData.sprinting && !protocol.viaVersionShieldBlockReplacement())
-      || !usableItemInEitherHand;
+    boolean hasUsableItem = inventoryData.usableItemInEitherHandOrHotbar();
+    if (!hasUsableItem) {
+      return new UseItemStates(true, false);
+    }
+    boolean skipUseItem = !protocol.sprintWhenHandActive() && movementData.sprinting && !protocol.viaVersionShieldBlockReplacement();
     boolean requireUseItem = !protocol.combatUpdate()
       && inventoryData.handActive()
       && inventoryData.pastHotBarSlotChange > 20

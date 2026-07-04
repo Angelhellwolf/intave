@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave;
 
 import de.jpx3.intave.module.nayoro.OperationalMode;
@@ -32,6 +43,7 @@ public final class IntaveControl {
   public static final boolean DEBUG_TELEPORT_CAUSE_AND_CAUSER = false;
   public static final boolean DEBUG_TELEPORT_PACKET_STACKTRACE = false;
   public static final boolean TELEPORT_FAR_AWAY_ON_Q_PRESS = false;
+  public static final boolean GIVE_VELOCITY_ON_Q_PRESS = false;
   public static final boolean DEBUG_INTAVE_TELEPORT_EVENT_CANCELS = false;
   public static final boolean DISABLE_BLOCK_CACHING_ENTIRELY = false;
   public static final boolean BLOCK_CACHE_DEBUG = false;
