@@ -612,12 +612,12 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
   }
 
   @Override
-  public void setBeforeMoveColliderResult(SimulationResult result) {
+  public void setSimulationResult(SimulationResult result) {
 
   }
 
   @Override
-  public SimulationResult beforeMoveColliderResult() {
+  public SimulationResult simulationResult() {
     return null;
   }
 

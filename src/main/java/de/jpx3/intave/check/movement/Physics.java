@@ -152,14 +152,12 @@ public final class Physics extends Check {
     movementData.treatThisFlyPacketAsMovePacket = false;
 
     Timings.CHECK_PHYSICS_PROC.start();
-    predictFlyingPacketBeforeVelocity(user);
     // simulation
     Simulation simulation;
 
     SimulationEnvironment simulationEnvironment = movementData.mutableView();
 
     try {
-//      simulation = simulationSearch.simulate(user, simulator, withMovement || withRotation);
       simulation = simulationSearch.greedyNarrowSearch(user, simulationEnvironment, simulator);
     } catch (IllegalStateException exception) {
       user.kick("Exception while simulating movement");
@@ -176,7 +174,7 @@ public final class Physics extends Check {
     boolean reinterpretToMovePacket = !withMovement && simulationEnvironment.tryMoveReinterpretation(
       simulation, user.meta().protocol().flyingPacketUncertaintyRadius()
     );
-    if (!withMovement && !withRotation && !reinterpretToMovePacket) {
+    if (!withMovement && !reinterpretToMovePacket) {
       Timings.CHECK_PHYSICS_PROC.stop();
       movementData.setBaseMotion(previousBaseMotion);
       updateOnGroundIfFlying(user);
@@ -313,6 +311,7 @@ public final class Physics extends Check {
     movementData.onGround = colliderResult.onGround();
   }
 
+  @Deprecated
   private void predictFlyingPacketBeforeVelocity(User user) {
     MovementMetadata movementData = user.meta().movement();
     if (movementData.ticksPast(VELOCITY) != 0) {

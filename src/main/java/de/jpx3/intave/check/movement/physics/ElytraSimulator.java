@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check.movement.physics;
 
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
@@ -5,6 +16,7 @@ import de.jpx3.intave.diagnostic.timings.Timings;
 import de.jpx3.intave.player.collider.Colliders;
 import de.jpx3.intave.player.collider.complex.SimulationResult;
 import de.jpx3.intave.share.Motion;
+import de.jpx3.intave.share.Position;
 import de.jpx3.intave.user.User;
 import org.bukkit.util.Vector;
 
@@ -64,9 +76,23 @@ final class ElytraSimulator extends BaseSimulator {
       user, environment, motion, environment.inWeb(),
       positionX, positionY, positionZ
     );
+
     Timings.CHECK_PHYSICS_SIMULATOR_ELYTRA.stop();
     Timings.CHECK_PHYSICS_SIMULATOR.stop();
     return Simulation.of(user, configuration, environment, collisionResult);
+  }
+
+  @Override
+  public Motion simulateAfterTick(User user, SimulationEnvironment environment, Position position, Motion motion) {
+//    if (environment.simulationResult().onGround()) {
+//      if (user.meta().movement().elytraFlying) {
+//        user.meta().movement().elytraFlying = false;
+//        if (IntaveControl.DEBUG_ELYTRA) {
+//          user.player().sendMessage(ChatColor.RED + "Deactivated elytra flying because the player is on the ground");
+//        }
+//      }
+//    }
+    return super.simulateAfterTick(user, environment, position, motion);
   }
 
   @Override

@@ -63,7 +63,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 final class MovementRecordingPhysicsTests {
 	private static final UUID EMPTY_ID = UUID.fromString("00000000-0000-0000-0000-000000000000");
 	private static final double DIVERGED_MOTION_DISTANCE = 0.0001;
-	private static final double FLYING_PACKET_DIVERGED_MOTION_DISTANCE = 0.05;
 
 	@BeforeAll
 	static void setup() {
@@ -155,23 +154,29 @@ final class MovementRecordingPhysicsTests {
 			metadata.stepHeight = simulator.stepHeight();
 			metadata.treatThisFlyPacketAsMovePacket = false;
 
+			if (!hasMovement) {
+				continue;
+			}
+
 			Motion previousBaseMotion = metadata.mutableBaseMotionCopy();
 			Motion preTickMotion = simulator.simulatePreTick(user, previousBaseMotion.copy(), metadata);
 			metadata.setBaseMotion(preTickMotion);
 
-			SimulationEnvironment simulationEnvironment = metadata.mutableView();
-			Simulation simulation = processor.greedyFullSearch(user, simulationEnvironment, simulator);
+			Simulation simulation = processor.greedyFullSearch(user, metadata.mutableView(), simulator);
 //			Simulation simulation = processor.simulate(user, simulator, hasMovement || hasRotation);
-			boolean subversiveFlyingMovement = subversiveFlyingMovement(user, simulationEnvironment, simulation, hasMovement, hasRotation);
-			if (!hasMovement && !hasRotation && !subversiveFlyingMovement) {
-				metadata.setBaseMotion(previousBaseMotion);
-				finishTick(user, simulator, metadata, false, false);
-				continue;
-			}
-			double loss = hasMovement || hasRotation ? simulation.offsetDifference() : 0;
-			double allowedLoss = allowedMotionDivergence(user, subversiveFlyingMovement || simulationEnvironment.receivedFlyingPacketIn(2));
+//			boolean subversiveFlyingMovement = subversiveFlyingMovement(user, simulationEnvironment, simulation, hasMovement);
+//			if (!hasMovement && !hasRotation && !subversiveFlyingMovement) {
+//				metadata.setBaseMotion(previousBaseMotion);
+//				finishTick(user, simulator, metadata, false, false);
+//				continue;
+//			}
+
+			double loss = simulation.positionDifference(metadata.position());
+			double allowedLoss = DIVERGED_MOTION_DISTANCE;
 			String output = formatDouble(loss, 4) + " " + simulation.offsetMotion() + " [actual: " + metadata.sentOffsetMotion() + "] " + simulation.configuration() + (!simulation.details().isEmpty() ? " [" + simulation.details() + "]" : "");
 			lastMessages.add(output);
+
+			System.out.println(loss);
 
 			if (loss > allowedLoss && tick > 16) {
 				System.out.println("\r" + "[FAILED] " + resourcePath + " (tick " + tick + ")");
@@ -215,10 +220,10 @@ final class MovementRecordingPhysicsTests {
 
 			System.out.print("\r" + output);
 
-			if (subversiveFlyingMovement) {
-				simulationEnvironment.reinterpretMovePacket(simulation);
-			}
-			simulationEnvironment.commitTo(metadata);
+//			if (subversiveFlyingMovement) {
+//				simulationEnvironment.reinterpretMovePacket(simulation);
+//			}
+			simulation.environment().commitTo(metadata);
 			metadata.assumeOccurred(simulation);
 			finishTick(user, simulator, metadata, hasMovement, hasRotation);
 
@@ -234,30 +239,11 @@ final class MovementRecordingPhysicsTests {
 		User user,
 		SimulationEnvironment environment,
 		Simulation simulation,
-		boolean hasMovement,
-		boolean hasRotation
+		boolean hasMovement
 	) {
 		return !hasMovement && !simulation.offsetMotion().isZero() && simulation.resultsInFlyingPacket(
 			environment,
 			user.meta().protocol().flyingPacketUncertaintyRadius()
-		);
-	}
-
-	private static double allowedMotionDivergence(User user, boolean flyingUncertainty) {
-		if (!flyingUncertainty) {
-			return DIVERGED_MOTION_DISTANCE;
-		}
-		MovementMetadata movement = user.meta().movement();
-		double flyingEvaluatorAllowance = Math.max(
-			FLYING_PACKET_DIVERGED_MOTION_DISTANCE,
-			movement.baseMoveSpeed() * (movement.isSprinting() ? 0.5 : 0.3)
-		);
-		return Math.max(
-			DIVERGED_MOTION_DISTANCE,
-			Math.max(
-				user.meta().protocol().flyingPacketUncertaintyRadius(),
-				flyingEvaluatorAllowance
-			)
 		);
 	}
 

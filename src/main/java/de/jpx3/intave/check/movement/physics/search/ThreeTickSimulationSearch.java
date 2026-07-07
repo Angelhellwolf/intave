@@ -70,7 +70,7 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 		Position receivedPosition = movementData.position();
 		Position lastPositionB4Flying = movementData.lastPosition();
 
-		int maxFlyingSimulations = full ? Integer.MAX_VALUE : 3;
+		int maxFlyingSimulations = Integer.MAX_VALUE;//full ? Integer.MAX_VALUE : 3;
 
 		// Go through all this-tick possibilities
 		SimulationCollector firstTickContainer = collectSimulations(
@@ -96,8 +96,18 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 				return bestSimulation;
 			}
 		}
-		double bestDistance = bestSimulation.offsetDifference();
+		
+//		if (firstTickFlyingSimulations.size() > 5) {
+////				System.out.println("[" + IntavePlugin.prefix() + "] " + user.player().getName() + " has " + firstTickFlyingSimulations.size() + " first tick flying simulations");
+////				System.out.println("<========>");
+////				for (Simulation firstTickFlyingSimulation : firstTickFlyingSimulations) {
+////					System.out.println(firstTickFlyingSimulation.result());
+////				}
+////				System.out.println("</========>");
+//			user.sendMessage("Has " + firstTickFlyingSimulations.size() + " first tick flying simulations");
+//		}
 
+		double bestDistance = bestSimulation.offsetDifference();
 		for (Simulation firstTickSimulation : firstTickFlyingSimulations) {
 			SimulationEnvironment firstTickEnvironment = firstTickSimulation.environment().mutableView();
 			simulator.simulateAround(
@@ -121,7 +131,8 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 			totalSimulationsDone += secondTickContainer.simulationsDone();
 
 			Simulation secondTickSimulation = secondTickContainer.bestSimulation();
-			secondTickSimulation.append("1f");
+			secondTickSimulation.append("1f/"+firstTickFlyingSimulations.size() + "x");
+
 			double secondTickDistance = secondTickSimulation.positionDifference(receivedPosition);
 			if (secondTickDistance < bestDistance && secondTickSimulation.canFinishExplicitTick()) {
 				bestSimulation = secondTickSimulation.reusableCopy();
@@ -161,7 +172,7 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 				totalSimulationsDone += thirdTickSimulator.simulationsDone();
 
 				Simulation thirdTickSimulation = thirdTickSimulator.bestSimulation();
-				thirdTickSimulation.append("2f");
+				thirdTickSimulation.append("2f/" + secondTickContainer.flyingSimulations().size()+"x");
 				double thirdTickDistance = thirdTickSimulation.positionDifference(receivedPosition);
 				if (thirdTickDistance < bestDistance && thirdTickSimulation.canFinishExplicitTick()) {
 					bestSimulation = thirdTickSimulation.reusableCopy();

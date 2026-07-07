@@ -475,13 +475,13 @@ public final class ImmutableSimulationEnvironmentView implements SimulationEnvir
 	}
 
 	@Override
-	public void setBeforeMoveColliderResult(SimulationResult result) {
+	public void setSimulationResult(SimulationResult result) {
 		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
 	}
 
 	@Override
-	public SimulationResult beforeMoveColliderResult() {
-		return delegate.beforeMoveColliderResult();
+	public SimulationResult simulationResult() {
+		return delegate.simulationResult();
 	}
 
 	@Override

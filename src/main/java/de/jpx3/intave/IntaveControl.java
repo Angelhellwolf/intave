@@ -36,7 +36,7 @@ public final class IntaveControl {
   public static final boolean LATENCY_PING_AS_XP_LEVEL = false;
   public static boolean DEBUG_MOVEMENT_IGNORE = false; // if SG
   public static final boolean DEBUG_MOUNTING = false;
-  public static final boolean DEBUG_ELYTRA = false;
+  public static final boolean DEBUG_ELYTRA = true;
   public static final boolean DEBUG_PLAYER_ACTIONS = false;
   public static boolean DEBUG_TELEPORT_LOCKS = false; // if SG
   public static final boolean SCAFFOLD_ACTION_DEBUG = false;

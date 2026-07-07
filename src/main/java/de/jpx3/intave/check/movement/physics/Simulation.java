@@ -99,7 +99,11 @@ public final class Simulation {
     if (this == INVALID_SIMULATION) {
       return 100_000.d;
     }
-    return distanceOf(environment.lastPosition().add(offsetMotion()), sentPosition);
+    return distanceOf(predictedPosition(), sentPosition);
+  }
+
+  public Position predictedPosition() {
+    return environment.lastPosition().add(offsetMotion());
   }
 
   public Motion offsetMotion() {

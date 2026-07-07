@@ -203,15 +203,15 @@ public final class Motion {
 	}
 
 	public boolean almostIdentical(Motion motion) {
-		return Math.abs(motionX - motion.motionX) < 1E-3 &&
-			Math.abs(motionY - motion.motionY) < 1E-3 &&
-			Math.abs(motionZ - motion.motionZ) < 1E-3;
+		return Math.abs(motionX - motion.motionX) < 1E-5 &&
+			Math.abs(motionY - motion.motionY) < 1E-5 &&
+			Math.abs(motionZ - motion.motionZ) < 1E-5;
 	}
 
 	public long almostIdenticalHash() {
-		long x = (long) (motionX * 1000);
-		long y = (long) (motionY * 1000);
-		long z = (long) (motionZ * 1000);
+		long x = (long) (motionX * 10000);
+		long y = (long) (motionY * 10000);
+		long z = (long) (motionZ * 10000);
 		return x ^ y ^ z;
 	}
 

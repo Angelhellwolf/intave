@@ -207,8 +207,8 @@ public interface SimulationEnvironment {
   void setPushedByEntity(boolean pushedByEntity);
   boolean pushedByEntity();
 
-  void setBeforeMoveColliderResult(SimulationResult result);
-  SimulationResult beforeMoveColliderResult();
+  void setSimulationResult(SimulationResult result);
+  SimulationResult simulationResult();
 
   int ticks(MoveMetric metric);
   int ticksPast(MoveMetric metric);
@@ -280,7 +280,7 @@ public interface SimulationEnvironment {
   void setTreatThisFlyPacketAsMovePacket(boolean treatThisFlyPacketAsMovePacket);
 
   default boolean tryMoveReinterpretation(Simulation simulation, double flyingLimit) {
-    if (simulation.offsetMotion().isZero() || !simulation.resultsInFlyingPacket(this, flyingLimit)) {
+    if (!simulation.resultsInFlyingPacket(this, flyingLimit)) {
       return false;
     }
     reinterpretMovePacket(simulation);

@@ -64,6 +64,7 @@ import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.*;
 import de.jpx3.intave.world.Particles;
 import de.jpx3.intave.world.WorldHeight;
+import de.jpx3.intave.world.border.WorldBorder;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -843,12 +844,11 @@ public final class MovementDispatcher extends Module {
 
     user.tickFeedback(() -> {
       movement.elytraFlying = gliding;
-      movement.updatePose();
       if (IntaveControl.DEBUG_ELYTRA) {
         if (gliding) {
-          player.sendMessage("§aActivated elytra flying (metadata)");
+          player.sendMessage("§aActivated elytra flying (metadata) [" + movement.pose() + "]");
         } else {
-          player.sendMessage("§cDeactivated elytra flying (metadata)");
+          player.sendMessage("§cDeactivated elytra flying (metadata) [" + movement.pose() + "]");
         }
       }
     });
@@ -871,7 +871,8 @@ public final class MovementDispatcher extends Module {
     user.tickFeedback(() -> {
 	    try (WorldBorderReader reader = PacketReaders.readerOf(event.getPacket())) {
 		    MovementMetadata movement = user.meta().movement();
-		    movement.setWorldBorder(reader.updated(movement.worldBorder()));
+        WorldBorder newBorder = reader.updated(movement.worldBorder());
+        movement.setWorldBorder(newBorder);
 		  } catch (Exception e) {
 		    throw new RuntimeException(e);
 	    }

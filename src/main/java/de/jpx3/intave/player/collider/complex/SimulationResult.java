@@ -212,6 +212,22 @@ public final class SimulationResult {
     return result;
   }
 
+  @Override
+  public String toString() {
+    return "SimulationResult{" +
+      "motion=" + motion +
+      ", intermittentResult=" + intermittentResult +
+      ", onGround=" + onGround +
+      ", collidedHorizontally=" + collidedHorizontally +
+      ", collidedVertically=" + collidedVertically +
+      ", resetMotionX=" + resetMotionX +
+      ", resetMotionZ=" + resetMotionZ +
+      ", step=" + step +
+      ", edgeSneak=" + edgeSneak +
+      ", yStepHeight=" + yStepHeight +
+      '}';
+  }
+
   public static SimulationResult invalid() {
     return INVALID_SIMULATION;
   }

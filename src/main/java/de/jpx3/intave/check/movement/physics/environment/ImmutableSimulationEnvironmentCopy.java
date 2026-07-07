@@ -136,7 +136,7 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 		this.fallDistance = source.fallDistance();
 		this.inVehicle = source.isInVehicle();
 		this.pushedByEntity = source.pushedByEntity();
-		this.beforeMoveCollider = copySimulationResult(source.beforeMoveColliderResult());
+		this.beforeMoveCollider = copySimulationResult(source.simulationResult());
 		this.reduceTicks = source.reduceTicks();
 		this.denyJump = source.denyJump();
 		this.height = source.height();
@@ -576,12 +576,12 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 	}
 
 	@Override
-	public void setBeforeMoveColliderResult(SimulationResult result) {
+	public void setSimulationResult(SimulationResult result) {
 		throw immutableCopyException();
 	}
 
 	@Override
-	public SimulationResult beforeMoveColliderResult() {
+	public SimulationResult simulationResult() {
 		return copySimulationResult(beforeMoveCollider);
 	}
 

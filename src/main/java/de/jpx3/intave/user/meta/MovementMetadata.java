@@ -78,7 +78,7 @@ public final class MovementMetadata implements SimulationEnvironment {
   public float stepHeight = 0.6f;
   public double stepHeightThisMove = 0d;
   public double widthRounded, heightRounded;
-  public boolean elytraFlying;
+  public volatile boolean elytraFlying;
   public int fireworkRocketsPower = 1;
   public boolean onGround, lastOnGround, step, onGroundWithRiptide;
   public boolean collidedHorizontally, collidedVertically;
@@ -183,7 +183,7 @@ public final class MovementMetadata implements SimulationEnvironment {
   private double motionX, motionY, motionZ;
   private boolean sprintingAllowed;
   private float yawSine = 0, yawCosine = 1, friction;
-  private Pose pose = Pose.STANDING;
+  private volatile Pose pose = Pose.STANDING;
   private Simulator simulator = Simulators.PLAYER;
   @Nullable
   public Position mainSupportingBlockPos = null;
@@ -755,12 +755,12 @@ public final class MovementMetadata implements SimulationEnvironment {
   }
 
   @Override
-  public void setBeforeMoveColliderResult(SimulationResult result) {
+  public void setSimulationResult(SimulationResult result) {
     this.beforeMoveCollider = result;
   }
 
   @Override
-  public SimulationResult beforeMoveColliderResult() {
+  public SimulationResult simulationResult() {
     return beforeMoveCollider;
   }
 
@@ -1056,9 +1056,9 @@ public final class MovementMetadata implements SimulationEnvironment {
     if (collider.edgeSneak()) {
       activeTick(EDGE_SNEAKING);
     }
-    if (user.meta().protocol().newBlockEntityIntersectionLogic()) {
-      setBeforeMoveColliderResult(collider);
-    }
+//    if (user.meta().protocol().newBlockEntityIntersectionLogic()) {
+//    }
+    setSimulationResult(collider);
   }
 
   @Override

@@ -85,7 +85,7 @@ public final class MutableSimulationEnvironmentViewBenchmark {
 			view.setJumpMotion(0.42D + sample * 0.0001D);
 			view.setLastOnGround((iteration & 7) == 0);
 			view.setPushedByEntity((iteration & 15) == 0);
-			view.setBeforeMoveColliderResult(state.results[sample]);
+			view.setSimulationResult(state.results[sample]);
 			view.checkSupportingBlock(state.motions[sample]);
 			view.clearSupportingBlock();
 			view.compileSpecialBlocks();

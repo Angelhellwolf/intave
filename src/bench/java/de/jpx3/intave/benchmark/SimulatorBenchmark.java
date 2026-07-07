@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.benchmark;
 
 import de.jpx3.intave.adapter.MinecraftVersion;
@@ -20,10 +31,8 @@ import de.jpx3.intave.user.UserFactory;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
-import de.jpx3.intave.world.border.MockWorldBorder;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.WorldBorder;
 import org.bukkit.entity.Player;
 
 import java.util.Locale;
@@ -60,7 +69,7 @@ public final class SimulatorBenchmark {
 		System.out.println("  ticks/s: " + format(ticksPerSecond));
 		System.out.println("  checksum: " + format(sink));
 
-		System.out.println("We can process " + format(ticksPerSecond / (20 * 100)) + " sims per player for 100 players on this netty thread w/o lag");
+		System.out.println("We can process " + format(ticksPerSecond / (20 * 100)) + " sim/s per player for 100 players on this netty thread w/o lag");
 	}
 
 	private static void setupMinecraftVersion() {
@@ -121,12 +130,10 @@ public final class SimulatorBenchmark {
 			Collider collider = Colliders.anyCollider();
 			FluidFlow waterflow = Fluids.anyWaterflow();
 			SimpleCollider simpleCollider = Colliders.anySimpleCollider();
-			WorldBorder worldBorder = MockWorldBorder.create();
 			World world = FakeWorldFactory.createWorld(
 				(methodName, _) -> switch (methodName) {
 					case "isChunkLoaded", "isChunkInUse" -> true;
 					case "isThundering", "hasStorm" -> false;
-					case "getWorldBorder" -> worldBorder;
 					default -> null;
 				}
 			);

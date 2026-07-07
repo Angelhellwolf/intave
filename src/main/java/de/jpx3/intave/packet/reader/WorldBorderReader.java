@@ -18,6 +18,8 @@ import de.jpx3.intave.share.Position;
 import de.jpx3.intave.world.border.WorldBorder;
 import org.jetbrains.annotations.NotNull;
 
+import static de.jpx3.intave.packet.reader.WorldBorderReader.UpdateType.INITIALIZE;
+
 public final class WorldBorderReader extends AbstractPacketReader {
 	public @NotNull WorldBorder updated(@NotNull WorldBorder worldBorder) {
 		if (type().updatesCenter()) {
@@ -61,7 +63,8 @@ public final class WorldBorderReader extends AbstractPacketReader {
 		UpdateType type = type();
 		if (type.updatesLerpSize()) {
 			boolean legacyPacket = packet().getType() == PacketType.Play.Server.WORLD_BORDER;
-			return (float) (double) packet().getDoubles().read(legacyPacket ? 3 : 0);
+			int initializeOffset = type() == INITIALIZE ? 2 : 0;
+			return (float) (double) packet().getDoubles().read(legacyPacket ? 3 : initializeOffset);
 		}
 		throw new IllegalStateException("Cannot get old size for update type: " + type);
 	}
@@ -70,7 +73,8 @@ public final class WorldBorderReader extends AbstractPacketReader {
 		UpdateType type = type();
 		if (type.updatesLerpSize()) {
 			boolean legacyPacket = packet().getType() == PacketType.Play.Server.WORLD_BORDER;
-			return (float) (double) packet().getDoubles().read(legacyPacket ? 2 : 1);
+			int initializeOffset = type() == INITIALIZE ? 2 : 0;
+			return (float) (double) packet().getDoubles().read(legacyPacket ? 2 : initializeOffset + 1);
 		}
 		throw new IllegalStateException("Cannot get new size for update type: " + type);
 	}
@@ -99,7 +103,7 @@ public final class WorldBorderReader extends AbstractPacketReader {
 		} else if (type == PacketType.Play.Server.SET_BORDER_LERP_SIZE) {
 			return UpdateType.LERP_SIZE;
 		} else if (type == PacketType.Play.Server.INITIALIZE_BORDER) {
-			return UpdateType.INITIALIZE;
+			return INITIALIZE;
 		} else if (type == PacketType.Play.Server.SET_BORDER_CENTER) {
 			return UpdateType.SET_CENTER;
 		} else if (type == PacketType.Play.Server.SET_BORDER_SIZE) {

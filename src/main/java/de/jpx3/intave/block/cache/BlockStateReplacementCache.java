@@ -41,7 +41,7 @@ final class BlockStateReplacementCache {
   public void insert(Position position, BlockState blockState) {
     located.put(position, blockState);
     locations.add(position);
-    indexed.put(keyer.apply(position), blockState);
+    indexed.put(keyer.apply(position).longValue(), blockState);
   }
 
   public void lock(Position position) {

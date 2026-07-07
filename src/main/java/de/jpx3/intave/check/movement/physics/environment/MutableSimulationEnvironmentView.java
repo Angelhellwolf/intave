@@ -74,8 +74,8 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
   private boolean fallDistanceOverridden;
   private double fallDistance;
   private boolean pushedByEntityOverridden, pushedByEntity;
-  private boolean beforeMoveColliderOverridden;
-  private SimulationResult beforeMoveCollider;
+  private boolean simulationResultOverriden;
+  private SimulationResult simulationResult;
   private boolean interactingFluidOverridden;
   private Fluid interactingFluid;
   private boolean inVehicleOverridden, inVehicle;
@@ -148,8 +148,8 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
     if (pushedByEntityOverridden) {
       other.setPushedByEntity(pushedByEntity);
     }
-    if (beforeMoveColliderOverridden) {
-      other.setBeforeMoveColliderResult(beforeMoveCollider);
+    if (simulationResultOverriden) {
+      other.setSimulationResult(simulationResult);
     }
   }
 
@@ -620,15 +620,15 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
   }
 
   @Override
-  public void setBeforeMoveColliderResult(SimulationResult result) {
-    beforeMoveColliderOverridden = true;
-    beforeMoveCollider = result;
-    deferredMutations.add(environment -> environment.setBeforeMoveColliderResult(result));
+  public void setSimulationResult(SimulationResult result) {
+    simulationResultOverriden = true;
+    simulationResult = result;
+    deferredMutations.add(environment -> environment.setSimulationResult(result));
   }
 
   @Override
-  public SimulationResult beforeMoveColliderResult() {
-    return beforeMoveColliderOverridden ? beforeMoveCollider : delegate.beforeMoveColliderResult();
+  public SimulationResult simulationResult() {
+    return simulationResultOverriden ? simulationResult : delegate.simulationResult();
   }
 
   @Override
@@ -882,8 +882,8 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
   }
 
   private void setBeforeMoveColliderResultOverride(SimulationResult result) {
-    beforeMoveColliderOverridden = true;
-    beforeMoveCollider = result;
+    simulationResultOverriden = true;
+    simulationResult = result;
   }
 
   private Vector vectorForRotation(float yaw, float pitch) {
