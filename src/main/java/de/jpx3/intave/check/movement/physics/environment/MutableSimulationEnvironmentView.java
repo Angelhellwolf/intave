@@ -12,11 +12,9 @@
 package de.jpx3.intave.check.movement.physics.environment;
 
 import de.jpx3.intave.block.fluid.Fluid;
-import de.jpx3.intave.check.movement.physics.MoveMetric;
-import de.jpx3.intave.check.movement.physics.MovementConfiguration;
-import de.jpx3.intave.check.movement.physics.Pose;
-import de.jpx3.intave.check.movement.physics.Simulation;
+import de.jpx3.intave.check.movement.physics.*;
 import de.jpx3.intave.check.movement.physics.update.TickAmbiguousUpdate;
+import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.player.collider.complex.SimulationResult;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
@@ -79,6 +77,9 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
   private boolean interactingFluidOverridden;
   private Fluid interactingFluid;
   private boolean inVehicleOverridden, inVehicle;
+  private boolean enforceBoatStepOverridden, enforceBoatStep;
+  private boolean physicsPacketRelinkFlyVLOverridden;
+  private int physicsPacketRelinkFlyVL;
   private WorldBorder worldBorder;
   private boolean worldBorderOverridden;
 
@@ -150,6 +151,18 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
     }
     if (simulationResultOverriden) {
       other.setSimulationResult(simulationResult);
+    }
+    if (motionXResetOverridden) {
+      other.setMotionResetX(motionXReset);
+    }
+    if (motionZResetOverridden) {
+      other.setMotionResetZ(motionZReset);
+    }
+    if (enforceBoatStepOverridden) {
+      other.setEnforceBoatStep(enforceBoatStep);
+    }
+    if (physicsPacketRelinkFlyVLOverridden) {
+      other.setPhysicsPacketRelinkFlyVL(physicsPacketRelinkFlyVL);
     }
   }
 
@@ -332,8 +345,22 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
   }
 
   @Override
+  public void setMotionResetX(boolean reset) {
+    motionXResetOverridden = true;
+    motionXReset = reset;
+    deferredMutations.add(environment -> environment.setMotionResetX(reset));
+  }
+
+  @Override
   public boolean motionZReset() {
     return motionZResetOverridden ? motionZReset : delegate.motionZReset();
+  }
+
+  @Override
+  public void setMotionResetZ(boolean reset) {
+    motionZResetOverridden = true;
+    motionZReset = reset;
+    deferredMutations.add(environment -> environment.setMotionResetZ(reset));
   }
 
   @Override
@@ -350,8 +377,8 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
   }
 
   @Override
-  public WorldBorder worldBorder() {
-    return worldBorderOverridden ? worldBorder : delegate.worldBorder();
+  public WorldBorder border() {
+    return worldBorderOverridden ? worldBorder : delegate.border();
   }
 
   @Override
@@ -601,6 +628,16 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
   }
 
   @Override
+  public Entity vehicle() {
+    return delegate.vehicle();
+  }
+
+  @Override
+  public Simulator simulator() {
+    return delegate.simulator();
+  }
+
+  @Override
   public void dismountRidingEntity(String boatSetback) {
     inVehicleOverridden = true;
     inVehicle = false;
@@ -638,7 +675,7 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
 
   @Override
   public int ticksPast(MoveMetric metric) {
-    return pastTrackerOverrides.getOrDefault(metric, delegate.ticksPast(metric));
+    return pastTrackerOverrides.computeIfAbsent(metric, delegate::ticksPast);
   }
 
   @Override
@@ -665,7 +702,113 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
 
   @Override
   public void resetPhysicsPacketRelinkFlyVL() {
+    physicsPacketRelinkFlyVLOverridden = true;
+    physicsPacketRelinkFlyVL = 0;
     deferredMutations.add(SimulationEnvironment::resetPhysicsPacketRelinkFlyVL);
+  }
+
+  @Override
+  public int physicsPacketRelinkFlyVL() {
+    return physicsPacketRelinkFlyVLOverridden ? physicsPacketRelinkFlyVL : delegate.physicsPacketRelinkFlyVL();
+  }
+
+  @Override
+  public void setPhysicsPacketRelinkFlyVL(int physicsPacketRelinkFlyVL) {
+    physicsPacketRelinkFlyVLOverridden = true;
+    this.physicsPacketRelinkFlyVL = physicsPacketRelinkFlyVL;
+    deferredMutations.add(environment -> environment.setPhysicsPacketRelinkFlyVL(physicsPacketRelinkFlyVL));
+  }
+
+  @Override
+  public double baseMoveSpeed() {
+    return delegate.baseMoveSpeed();
+  }
+
+  @Override
+  public int fireworkRocketsPower() {
+    return delegate.fireworkRocketsPower();
+  }
+
+  @Override
+  public int shulkerXToleranceRemaining() {
+    return delegate.shulkerXToleranceRemaining();
+  }
+
+  @Override
+  public int shulkerYToleranceRemaining() {
+    return delegate.shulkerYToleranceRemaining();
+  }
+
+  @Override
+  public int shulkerZToleranceRemaining() {
+    return delegate.shulkerZToleranceRemaining();
+  }
+
+  @Override
+  public int lowestShulkerY() {
+    return delegate.lowestShulkerY();
+  }
+
+  @Override
+  public int highestShulkerY() {
+    return delegate.highestShulkerY();
+  }
+
+  @Override
+  public int pistonMotionToleranceRemaining() {
+    return delegate.pistonMotionToleranceRemaining();
+  }
+
+  @Override
+  public double pistonVerticalAllowance() {
+    return delegate.pistonVerticalAllowance();
+  }
+
+  @Override
+  public double pistonHorizontalAllowance() {
+    return delegate.pistonHorizontalAllowance();
+  }
+
+  @Override
+  public BoundingBox pistonCollisionArea() {
+    return delegate.pistonCollisionArea();
+  }
+
+  @Override
+  public boolean physicsUnpredictableVelocityExpected() {
+    return delegate.physicsUnpredictableVelocityExpected();
+  }
+
+  @Override
+  public boolean enforceBoatStep() {
+    return enforceBoatStepOverridden ? enforceBoatStep : delegate.enforceBoatStep();
+  }
+
+  @Override
+  public void setEnforceBoatStep(boolean enforceBoatStep) {
+    enforceBoatStepOverridden = true;
+    this.enforceBoatStep = enforceBoatStep;
+    deferredMutations.add(environment -> environment.setEnforceBoatStep(enforceBoatStep));
+  }
+
+  @Override
+  public boolean lastSneaking() {
+    return delegate.lastSneaking();
+  }
+
+  @Override
+  public boolean currentlyInBlock() {
+    return delegate.currentlyInBlock();
+  }
+
+  @Override
+  public int highestLocalRiptideLevel() {
+    return delegate.highestLocalRiptideLevel();
+  }
+
+  @Override
+  public boolean onGroundWithRiptide() {
+    return delegate.onGroundWithRiptide();
   }
 
   @Override

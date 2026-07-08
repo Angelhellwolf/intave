@@ -18,6 +18,7 @@ import de.jpx3.intave.block.variant.BlockVariant;
 import de.jpx3.intave.block.variant.BlockVariantRegister;
 import de.jpx3.intave.cleanup.GarbageCollector;
 import de.jpx3.intave.share.BlockPosition;
+import de.jpx3.intave.share.ClientMath;
 import de.jpx3.intave.share.MutableBlockPosition;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.user.User;
@@ -279,14 +280,12 @@ public final class VolatileBlockAccess {
   }
 
   private static int floor(double value) {
-    int i = (int) value;
-    return value < (double) i ? i - 1 : i;
+	  return ClientMath.floor(value);
   }
 
   public static boolean isInLoadedChunk(World world, int x, int z) {
     int chunkX = x >> 4;
     int chunkZ = z >> 4;
-    return world.isChunkLoaded(chunkX, chunkZ) &&
-      world.isChunkInUse(chunkX, chunkZ);
+    return world.isChunkLoaded(chunkX, chunkZ);
   }
 }

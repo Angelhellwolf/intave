@@ -15,20 +15,20 @@ import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.shape.ShapeResolverPipeline;
+import de.jpx3.intave.block.store.BlockStore;
+import de.jpx3.intave.block.store.CopyOnWriteArrayLocalBlockStore;
 import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.block.variant.BlockVariantNativeAccess;
 import de.jpx3.intave.diagnostic.ShapeAccessFlowStudy;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.share.BlockPosition;
+import de.jpx3.intave.share.BlockState;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.world.WorldHeight;
-import it.unimi.dsi.fastutil.longs.Long2ReferenceMap;
-import it.unimi.dsi.fastutil.longs.Long2ReferenceMaps;
-import it.unimi.dsi.fastutil.longs.Long2ReferenceOpenHashMap;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -45,7 +45,7 @@ import static de.jpx3.intave.IntaveControl.DISABLE_BLOCK_CACHING_ENTIRELY;
 final class MultiChunkKeyBlockCache implements BlockCache {
   private final Player player;
   private final ShapeResolverPipeline shapeResolver;
-  private final Long2ReferenceMap<BlockState> blockCache = Long2ReferenceMaps.synchronize(new Long2ReferenceOpenHashMap<>(96));
+  private final BlockStore blockCache = CopyOnWriteArrayLocalBlockStore.of();
   private final Map<BlockPosition, BlockState> speculativeHeads = new ConcurrentHashMap<>(8);
   private final Map<BlockPosition, Integer> speculativeSequenceNumbers = new ConcurrentHashMap<>(8);
   private final HashSet<Long> speculationKeys = new HashSet<>(8);
@@ -85,13 +85,13 @@ final class MultiChunkKeyBlockCache implements BlockCache {
     if (blockState != null) {
       return blockState;
     }
-    blockState = blockCache.get(key);
+    blockState = blockCache.get(posX, posY, posZ);
     if (blockState == null) {
       World world = player.getWorld();
       Block block = VolatileBlockAccess.blockAccess(world, posX, posY, posZ);
       blockState = resolveStateAt(world, block, posX, posY, posZ);
       if (!DISABLE_BLOCK_CACHING_ENTIRELY && block.getY() >= WorldHeight.LOWER_WORLD_LIMIT) {
-        blockCache.put(key, blockState);
+        blockCache.put(posX, posY, posZ, blockState);
       }
     }
     return blockState;
@@ -186,7 +186,7 @@ final class MultiChunkKeyBlockCache implements BlockCache {
 
   @Override
   public void invalidateCacheAt(int posX, int posY, int posZ) {
-    blockCache.remove(bigKey(posX, posY, posZ));
+    blockCache.remove(posX, posY, posZ);
   }
 
   @Override

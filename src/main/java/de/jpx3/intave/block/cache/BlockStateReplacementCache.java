@@ -12,6 +12,7 @@
 package de.jpx3.intave.block.cache;
 
 import com.google.common.collect.Sets;
+import de.jpx3.intave.share.BlockState;
 import de.jpx3.intave.share.Position;
 import it.unimi.dsi.fastutil.longs.Long2ReferenceMap;
 import it.unimi.dsi.fastutil.longs.Long2ReferenceMaps;

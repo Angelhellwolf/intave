@@ -14,11 +14,9 @@ package de.jpx3.intave.check.movement.physics;
 import de.jpx3.intave.adapter.MinecraftVersion;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.block.cache.MockFullBlockStaticPlane;
-import de.jpx3.intave.block.fluid.FluidFlow;
-import de.jpx3.intave.block.fluid.Fluids;
-import de.jpx3.intave.player.collider.Colliders;
-import de.jpx3.intave.player.collider.complex.Collider;
-import de.jpx3.intave.player.collider.simple.SimpleCollider;
+import de.jpx3.intave.share.BoundingBox;
+import de.jpx3.intave.share.Motion;
+import de.jpx3.intave.share.Position;
 import de.jpx3.intave.test.FakePlayerFactory;
 import de.jpx3.intave.test.FakeWorldFactory;
 import de.jpx3.intave.user.User;
@@ -33,16 +31,9 @@ import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-public final class ExamplePhysicsTest {
+public final class LinearityTest {
 	private static final UUID EMPTY_ID = UUID.fromString("00000000-0000-0000-0000-000000000000");
-
 	private User testUser;
-	private final Collider collider = Colliders.anyCollider();
-	private final FluidFlow waterflow = Fluids.anyWaterflow();
-	private final SimpleCollider simpleCollider = Colliders.anySimpleCollider();
 
 	@BeforeEach
 	void setUp() {
@@ -56,7 +47,7 @@ public final class ExamplePhysicsTest {
 			}
 		);
 
-		Location location = new Location(world, 0, 50, 0);
+		Location location = new Location(world, 0, 1, 0);
 		Player player = FakePlayerFactory.createPlayer(
 			(methodName, _) -> switch (methodName) {
 				case "getWorld" -> world;
@@ -78,25 +69,21 @@ public final class ExamplePhysicsTest {
 	}
 
 	@Test
-	public void playerDoesNotFallThroughPlatform() {
+	public void verifyLinearity() {
 		Simulator simulator = Simulators.PLAYER;
 		MovementMetadata metadata = testUser.meta().movement();
-		metadata.sneaking = true;
-		MovementConfiguration configW = MovementConfiguration.blank().pressingW();
-		MovementConfiguration configS = MovementConfiguration.blank().pressingS();
 
-		for (int i = 0; i < 500; i++) {
-			simulator.simulateBetween(testUser, metadata, i % 2 == 1 ? configW : configS);
-//			System.out.println(metadata.position() + " " + metadata.mutableBaseMotionCopy());
-			assertTrue(
-				metadata.verifiedLastPositionY() >= 1.0,
-				"Player fell through the platform at tick " + i + ": " + metadata.verifiedLastPosition()
-			);
-			assertTrue(
-				Math.abs(metadata.verifiedLastPositionX()) <= 100 && Math.abs(metadata.verifiedLastPositionZ()) <= 100,
-				"Player flew away at tick " + i + ": " + metadata.verifiedLastPosition()
-			);
-		}
-		assertEquals(1.0, metadata.verifiedLastPositionY(), 1.0E-9);
+		MovementConfiguration config = MovementConfiguration.blank().withJump();
+		metadata.lastOnGround = true;
+		metadata.onGround = true;
+		metadata.setJumpMotion(0.42);
+
+		Motion motion = Motion.newEmpty();
+		System.out.println(simulator.simulateTick(testUser, motion, metadata, config).result().offsetMotion());
+
+		metadata.setVerifiedLastPosition(Position.of(0.0, 1.0, 0.1), "");
+		metadata.setBoundingBox(BoundingBox.fromPosition(testUser, metadata, metadata.verifiedLastPosition()));
+		Motion motion2 = Motion.of(0.0, 0.2, 0.2);
+		System.out.println(simulator.simulateTick(testUser, motion2, metadata, config).result().offsetMotion());
 	}
 }

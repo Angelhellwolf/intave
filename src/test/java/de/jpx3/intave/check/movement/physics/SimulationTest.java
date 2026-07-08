@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check.movement.physics;
 
 import de.jpx3.intave.check.movement.physics.environment.TestSimulationEnvironment;
@@ -12,18 +23,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 final class SimulationTest {
   @Test
-  void reusableCopyPreservesDetails() {
+  void reusableCopyPreservesBlueDetails() {
     Simulation simulation = simulation();
 
-    simulation.append("1f");
+    simulation.appendBlue("1f");
 
-    assertEquals("1f", simulation.reusableCopy().details());
+    assertEquals("1f", simulation.reusableCopy().blueDetails());
   }
 
   @Test
-  void flushClearsDetails() {
+  void flushClearsBlueDetails() {
     Simulation simulation = simulation();
-    simulation.append("1f");
+    simulation.appendBlue("1f");
 
     simulation.flush(
       MovementConfiguration.blank(),
@@ -31,7 +42,7 @@ final class SimulationTest {
       SimulationResult.untouched(Motion.newEmpty())
     );
 
-    assertEquals("", simulation.details());
+    assertEquals("", simulation.blueDetails());
   }
 
   private Simulation simulation() {

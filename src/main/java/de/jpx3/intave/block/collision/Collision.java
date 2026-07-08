@@ -25,6 +25,7 @@ import de.jpx3.intave.block.shape.resolve.ShapeResolver;
 import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.block.variant.BlockVariantNativeAccess;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
+import de.jpx3.intave.share.BlockState;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.MutableBlockPosition;
 import de.jpx3.intave.share.Position;
@@ -129,7 +130,8 @@ public final class Collision {
           if (collisionChecksRemaining-- <= 0) {
             break exit;
           }
-          Material material = stateAccess.typeAt(x, y, z);
+          BlockState blockState = stateAccess.stateAt(x, y, z);
+          Material material = blockState.type();
 
           boolean blockOutsideBorder = !blockInsideBorder(environment, x, z);
           if (blockOutsideBorder && !playerOutsideBorder(environment)) {
@@ -163,7 +165,7 @@ public final class Collision {
           }
 
           // resolve non-air block-shapes
-          BlockShape resolve = stateAccess.collisionShapeAt(x, y, z);
+          BlockShape resolve = blockState.collisionShape();
 
           if (CollisionModifiers.isModified(material)) {
             // this should not happen too often
@@ -366,7 +368,7 @@ public final class Collision {
   }
 
   public static boolean blockInsideBorder(SimulationEnvironment environment, double positionX, double positionZ) {
-    return environment.worldBorder().collisionShape().strictlyInside(positionX, 0, positionZ);
+    return environment.border().shape().strictlyInside(positionX, 0, positionZ);
   }
 
   private static boolean playerOutsideBorder(
@@ -374,7 +376,7 @@ public final class Collision {
   ) {
     double positionX = environment.verifiedLastPositionX();
     double positionZ = environment.verifiedLastPositionZ();
-    return !environment.worldBorder().collisionShape().strictlyInside(positionX, 0, positionZ);
+    return !environment.border().shape().strictlyInside(positionX, 0, positionZ);
   }
 
   public static boolean playerInImaginaryBlock(
@@ -454,12 +456,15 @@ public final class Collision {
     );
   }
 
+  private final static Collector<Boolean, ?, Boolean> SEARCH_COLLECTOR = Collectors.reducing(false, Boolean::logicalOr);
+  private final static Collector<Boolean, ?, Boolean> ENFORCEMENT_COLLECTOR = Collectors.reducing(true, Boolean::logicalAnd);
+
+
   public static boolean rasterizedSearch(
     BoundingBox boundingBox, Function<? super MutableBlockPosition, Boolean> predicate
   ) {
     return collectRasterizedCollisions(
-      boundingBox, predicate, Boolean::booleanValue,
-      Collectors.reducing(false, Boolean::logicalOr)
+      boundingBox, predicate, Boolean::booleanValue, SEARCH_COLLECTOR
     );
   }
 
@@ -467,13 +472,12 @@ public final class Collision {
     BoundingBox boundingBox, Function<? super MutableBlockPosition, Boolean> predicate
   ) {
     return collectRasterizedCollisions(
-      boundingBox, predicate, aBoolean -> !aBoolean,
-      Collectors.reducing(true, Boolean::logicalAnd)
+      boundingBox, predicate, aBoolean -> !aBoolean, ENFORCEMENT_COLLECTOR
     );
   }
 
-  private final static ThreadLocal<MutableBlockPosition> TEMPORARY_BLOCK_POSITION = ThreadLocal.withInitial(MutableBlockPosition::new);
-  private final static ThreadLocal<Boolean> reentrantPrevention = ThreadLocal.withInitial(() -> false);
+//  private final static ThreadLocal<MutableBlockPosition> TEMPORARY_BLOCK_POSITION = ThreadLocal.withInitial(MutableBlockPosition::new);
+//  private final static ThreadLocal<Boolean> reentrantPrevention = ThreadLocal.withInitial(() -> false);
 
 	public static <I, C, R> R collectRasterizedCollisions(
     BoundingBox boundingBox,
@@ -481,11 +485,11 @@ public final class Collision {
     Predicate<? super I> isFinal,
     Collector<I, C, R> collector
   ) {
-    if (reentrantPrevention.get()) {
-      throw new IllegalStateException("Reentrant rasterized collision collection is not allowed");
-    }
-    reentrantPrevention.set(true);
-    try {
+//    if (reentrantPrevention.get()) {
+//      throw new IllegalStateException("Reentrant rasterized collision collection is not allowed");
+//    }
+//    reentrantPrevention.set(true);
+//    try {
       C container = collector.supplier().get();
       BiConsumer<C, I> accumulator = collector.accumulator();
       Function<C, R> finisher = collector.finisher();
@@ -495,7 +499,7 @@ public final class Collision {
       int maxX = floor(boundingBox.maxX);
       int maxY = floor(boundingBox.maxY);
       int maxZ = floor(boundingBox.maxZ);
-      MutableBlockPosition blockPosition = TEMPORARY_BLOCK_POSITION.get();
+      MutableBlockPosition blockPosition = new MutableBlockPosition();//TEMPORARY_BLOCK_POSITION.get();
       for (int x = minX; x <= maxX; x++) {
         blockPosition.setX(x);
         for (int y = minY; y <= maxY; y++) {
@@ -511,8 +515,8 @@ public final class Collision {
         }
       }
       return finisher.apply(container);
-    } finally {
-      reentrantPrevention.set(false);
-    }
+//    } finally {
+//      reentrantPrevention.set(false);
+//    }
   }
 }

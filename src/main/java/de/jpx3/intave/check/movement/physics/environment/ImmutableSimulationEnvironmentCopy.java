@@ -15,7 +15,9 @@ import de.jpx3.intave.block.fluid.Fluid;
 import de.jpx3.intave.check.movement.physics.MoveMetric;
 import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.check.movement.physics.Simulation;
+import de.jpx3.intave.check.movement.physics.Simulator;
 import de.jpx3.intave.check.movement.physics.update.TickAmbiguousUpdate;
+import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.player.collider.complex.SimulationResult;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
@@ -59,6 +61,8 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 	private final boolean blockOnPositionSoulSpeedAffected;
 	private final double fallDistance;
 	private final boolean inVehicle;
+	private final Entity vehicle;
+	private final Simulator simulator;
 	private final boolean pushedByEntity;
 	private final SimulationResult beforeMoveCollider;
 	private final int reduceTicks;
@@ -70,6 +74,19 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 	private final double heightRounded, widthRounded;
 	private final Fluid interactingFluid;
 	private final WorldBorder worldBorder;
+	private final int fireworkRocketsPower;
+	private final int shulkerXToleranceRemaining, shulkerYToleranceRemaining, shulkerZToleranceRemaining;
+	private final int lowestShulkerY, highestShulkerY;
+	private final int pistonMotionToleranceRemaining;
+	private final double pistonVerticalAllowance, pistonHorizontalAllowance;
+	private final BoundingBox pistonCollisionArea;
+	private final boolean physicsUnpredictableVelocityExpected;
+	private final boolean enforceBoatStep;
+	private final int physicsPacketRelinkFlyVL;
+	private final boolean lastSneaking, currentlyInBlock;
+	private final int highestLocalRiptideLevel;
+	private final boolean onGroundWithRiptide;
+	private final double baseMoveSpeed;
 	private final EnumMap<MoveMetric, Integer> activeTracker;
 	private final EnumMap<MoveMetric, Integer> pastTracker;
 
@@ -135,6 +152,8 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 		this.blockOnPositionSoulSpeedAffected = source.blockOnPositionSoulSpeedAffected();
 		this.fallDistance = source.fallDistance();
 		this.inVehicle = source.isInVehicle();
+		this.vehicle = source.vehicle();
+		this.simulator = source.simulator();
 		this.pushedByEntity = source.pushedByEntity();
 		this.beforeMoveCollider = copySimulationResult(source.simulationResult());
 		this.reduceTicks = source.reduceTicks();
@@ -148,7 +167,25 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 		this.currentTick = source.currentTick();
 		this.currentSequence = source.activeSequence();
 		this.possibleMovementUpdates = new ArrayList<>(source.tickAmbiguousUpdates());
-		this.worldBorder = source.worldBorder();
+		this.worldBorder = source.border();
+		this.fireworkRocketsPower = source.fireworkRocketsPower();
+		this.shulkerXToleranceRemaining = source.shulkerXToleranceRemaining();
+		this.shulkerYToleranceRemaining = source.shulkerYToleranceRemaining();
+		this.shulkerZToleranceRemaining = source.shulkerZToleranceRemaining();
+		this.lowestShulkerY = source.lowestShulkerY();
+		this.highestShulkerY = source.highestShulkerY();
+		this.pistonMotionToleranceRemaining = source.pistonMotionToleranceRemaining();
+		this.pistonVerticalAllowance = source.pistonVerticalAllowance();
+		this.pistonHorizontalAllowance = source.pistonHorizontalAllowance();
+		this.pistonCollisionArea = copyBoundingBox(source.pistonCollisionArea());
+		this.physicsUnpredictableVelocityExpected = source.physicsUnpredictableVelocityExpected();
+		this.enforceBoatStep = source.enforceBoatStep();
+		this.physicsPacketRelinkFlyVL = source.physicsPacketRelinkFlyVL();
+		this.lastSneaking = source.lastSneaking();
+		this.currentlyInBlock = source.currentlyInBlock();
+		this.highestLocalRiptideLevel = source.highestLocalRiptideLevel();
+		this.onGroundWithRiptide = source.onGroundWithRiptide();
+		this.baseMoveSpeed = source.baseMoveSpeed();
 
 		this.activeTracker = new EnumMap<>(MoveMetric.class);
 		this.pastTracker = new EnumMap<>(MoveMetric.class);
@@ -310,8 +347,18 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 	}
 
 	@Override
+	public void setMotionResetX(boolean reset) {
+		throw immutableCopyException();
+	}
+
+	@Override
 	public boolean motionZReset() {
 		return motionZReset;
+	}
+
+	@Override
+	public void setMotionResetZ(boolean reset) {
+		throw immutableCopyException();
 	}
 
 	@Override
@@ -325,7 +372,7 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 	}
 
 	@Override
-	public WorldBorder worldBorder() {
+	public WorldBorder border() {
 		return worldBorder;
 	}
 
@@ -561,6 +608,16 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 	}
 
 	@Override
+	public Entity vehicle() {
+		return vehicle;
+	}
+
+	@Override
+	public Simulator simulator() {
+		return simulator;
+	}
+
+	@Override
 	public void dismountRidingEntity(String boatSetback) {
 		throw immutableCopyException();
 	}
@@ -620,6 +677,106 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 	@Override
 	public void resetPhysicsPacketRelinkFlyVL() {
 		throw immutableCopyException();
+	}
+
+	@Override
+	public int physicsPacketRelinkFlyVL() {
+		return physicsPacketRelinkFlyVL;
+	}
+
+	@Override
+	public void setPhysicsPacketRelinkFlyVL(int physicsPacketRelinkFlyVL) {
+		throw immutableCopyException();
+	}
+
+	@Override
+	public double baseMoveSpeed() {
+		return baseMoveSpeed;
+	}
+
+	@Override
+	public int fireworkRocketsPower() {
+		return fireworkRocketsPower;
+	}
+
+	@Override
+	public int shulkerXToleranceRemaining() {
+		return shulkerXToleranceRemaining;
+	}
+
+	@Override
+	public int shulkerYToleranceRemaining() {
+		return shulkerYToleranceRemaining;
+	}
+
+	@Override
+	public int shulkerZToleranceRemaining() {
+		return shulkerZToleranceRemaining;
+	}
+
+	@Override
+	public int lowestShulkerY() {
+		return lowestShulkerY;
+	}
+
+	@Override
+	public int highestShulkerY() {
+		return highestShulkerY;
+	}
+
+	@Override
+	public int pistonMotionToleranceRemaining() {
+		return pistonMotionToleranceRemaining;
+	}
+
+	@Override
+	public double pistonVerticalAllowance() {
+		return pistonVerticalAllowance;
+	}
+
+	@Override
+	public double pistonHorizontalAllowance() {
+		return pistonHorizontalAllowance;
+	}
+
+	@Override
+	public BoundingBox pistonCollisionArea() {
+		return copyBoundingBox(pistonCollisionArea);
+	}
+
+	@Override
+	public boolean physicsUnpredictableVelocityExpected() {
+		return physicsUnpredictableVelocityExpected;
+	}
+
+	@Override
+	public boolean enforceBoatStep() {
+		return enforceBoatStep;
+	}
+
+	@Override
+	public void setEnforceBoatStep(boolean enforceBoatStep) {
+		throw immutableCopyException();
+	}
+
+	@Override
+	public boolean lastSneaking() {
+		return lastSneaking;
+	}
+
+	@Override
+	public boolean currentlyInBlock() {
+		return currentlyInBlock;
+	}
+
+	@Override
+	public int highestLocalRiptideLevel() {
+		return highestLocalRiptideLevel;
+	}
+
+	@Override
+	public boolean onGroundWithRiptide() {
+		return onGroundWithRiptide;
 	}
 
 	@Override
@@ -689,7 +846,7 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 
 	@Override
 	public List<TickAmbiguousUpdate> tickAmbiguousUpdates() {
-		return possibleMovementUpdates;
+		return new ArrayList<>(possibleMovementUpdates);
 	}
 
 	@Override
@@ -709,7 +866,78 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 
 	@Override
 	public void commitTo(SimulationEnvironment other) {
-		throw new UnsupportedOperationException("Cannot commit to another environment from an immutable copy (yet)");
+		if (other == this) {
+			return;
+		}
+		other.setVerifiedLastPosition(
+			new Position(verifiedLastPositionX, verifiedLastPositionY, verifiedLastPositionZ),
+			"immutable-copy"
+		);
+		other.updateMovement(
+			positionX, positionY, positionZ,
+			rotationYaw, rotationPitch,
+			true, true
+		);
+		other.setLastPosition(lastPositionX, lastPositionY, lastPositionZ);
+		other.setLastRotation(lastRotationYaw, lastRotationPitch);
+		other.setBoundingBox(copyBoundingBox(boundingBox));
+		other.setWorldBorder(worldBorder);
+		other.setBaseMotion(baseMotionX, baseMotionY, baseMotionZ);
+		if (motionMultiplier == null) {
+			other.resetMotionMultiplier();
+		}
+		other.setJumpMotion(jumpMotion);
+		other.setInWater(inWater);
+		if (!inLava) {
+			other.aquaticUpdateLavaReset();
+		}
+		if (!inWeb) {
+			other.resetInWeb();
+		}
+		other.setLastOnGround(lastOnGround);
+		applyFallDistanceTo(other);
+		other.setPushedByEntity(pushedByEntity);
+		other.setSimulationResult(copySimulationResult(beforeMoveCollider));
+		other.setActiveSequence(currentSequence);
+		other.setMotionResetX(motionXReset);
+		other.setMotionResetZ(motionZReset);
+		other.setEnforceBoatStep(enforceBoatStep);
+		other.setPhysicsPacketRelinkFlyVL(physicsPacketRelinkFlyVL);
+		applyMetricsTo(other);
+	}
+
+	private void applyFallDistanceTo(SimulationEnvironment other) {
+		double currentFallDistance = other.fallDistance();
+		if (fallDistance == 0.0) {
+			other.resetFallDistance();
+		} else if (fallDistance != currentFallDistance) {
+			other.addFallDistance(fallDistance - currentFallDistance);
+		}
+	}
+
+	private void applyMetricsTo(SimulationEnvironment other) {
+		for (MoveMetric metric : MoveMetric.values()) {
+			applyMetricTo(other, metric);
+		}
+	}
+
+	private void applyMetricTo(SimulationEnvironment other, MoveMetric metric) {
+		int activeTicks = ticks(metric);
+		int pastTicks = ticksPast(metric);
+		if (other.ticks(metric) == activeTicks && other.ticksPast(metric) == pastTicks) {
+			return;
+		}
+		if (activeTicks > 0 && pastTicks == 0) {
+			other.inactiveTick(metric);
+			for (int i = 0; i < activeTicks; i++) {
+				other.activeTick(metric);
+			}
+		} else if (activeTicks == 0 && pastTicks > 0) {
+			other.activeTick(metric);
+			for (int i = 0; i < pastTicks; i++) {
+				other.inactiveTick(metric);
+			}
+		}
 	}
 
 	private static boolean useClientFlyingPacketTicks(

@@ -466,7 +466,7 @@ class BaseSimulator extends Simulator {
     // EntityCollidedWithBlock
     if (environment.onGround() && !environment.isSneaking()) {
       Motion collisionVector =
-        BlockPhysics.stepOn(user, block, motion.motionX, motion.motionY, motion.motionZ);
+        BlockPhysics.stepOn(user, block, environment, motion.motionX, motion.motionY, motion.motionZ);
       if (collisionVector != null) {
         motion.setTo(collisionVector);
       }

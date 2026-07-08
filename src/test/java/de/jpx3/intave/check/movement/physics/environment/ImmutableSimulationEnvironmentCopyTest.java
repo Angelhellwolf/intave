@@ -13,6 +13,7 @@ package de.jpx3.intave.check.movement.physics.environment;
 
 import de.jpx3.intave.check.movement.physics.MoveMetric;
 import de.jpx3.intave.share.BoundingBox;
+import de.jpx3.intave.share.Position;
 import org.bukkit.util.Vector;
 import org.junit.jupiter.api.Test;
 
@@ -101,5 +102,50 @@ final class ImmutableSimulationEnvironmentCopyTest {
 
     assertSame(copy, copy.immutableCopy());
     assertSame(copy, copy.immutableView());
+  }
+
+  @Test
+  void commitToCopiesFrozenSnapshotToTarget() {
+    TestSimulationEnvironment source = new TestSimulationEnvironment();
+    source.setPositionX(1.0);
+    source.setPositionY(2.0);
+    source.setPositionZ(3.0);
+    source.setVerifiedLastPosition(new Position(0.5, 1.5, 2.5), "source");
+    source.setLastPosition(0.0, 1.0, 2.0);
+    source.setRotation(45.0F, 20.0F);
+    source.setLastRotation(30.0F, 10.0F);
+    source.setMotionX(0.5);
+    source.setMotionY(0.5);
+    source.setMotionZ(0.5);
+    source.setBaseMotion(0.1, 0.2, 0.3);
+    source.setBoundingBox(BoundingBox.fromBounds(1.0, 2.0, 3.0, 4.0, 5.0, 6.0));
+    source.setInWater(true);
+    source.setInLava(true);
+    source.setInWeb(true);
+    source.setOnGround(true);
+    source.addFallDistance(4.0);
+    source.activeTick(MoveMetric.ALIVE);
+
+    SimulationEnvironment copy = source.immutableCopy();
+
+    source.setPositionX(9.0);
+    source.setBaseMotion(9.0, 9.0, 9.0);
+    source.inactiveTick(MoveMetric.ALIVE);
+
+    TestSimulationEnvironment target = new TestSimulationEnvironment();
+    copy.commitTo(target);
+
+    assertEquals(1.0, target.positionX(), 0.0);
+    assertEquals(2.0, target.positionY(), 0.0);
+    assertEquals(3.0, target.positionZ(), 0.0);
+    assertEquals(0.5, target.verifiedLastPositionX(), 0.0);
+    assertEquals(0.0, target.lastPositionX(), 0.0);
+    assertEquals(45.0F, target.rotationYaw(), 0.0F);
+    assertEquals(30.0F, target.lastRotationYaw(), 0.0F);
+    assertEquals(0.2, target.baseMotionY(), 0.0);
+    assertTrue(target.inWater());
+    assertEquals(4.0, target.fallDistance(), 0.0);
+    assertEquals(1, target.ticks(MoveMetric.ALIVE));
+    assertEquals(0, target.ticksPast(MoveMetric.ALIVE));
   }
 }

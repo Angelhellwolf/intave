@@ -173,7 +173,7 @@ final class MovementRecordingPhysicsTests {
 
 			double loss = simulation.positionDifference(metadata.position());
 			double allowedLoss = DIVERGED_MOTION_DISTANCE;
-			String output = formatDouble(loss, 4) + " " + simulation.offsetMotion() + " [actual: " + metadata.sentOffsetMotion() + "] " + simulation.configuration() + (!simulation.details().isEmpty() ? " [" + simulation.details() + "]" : "");
+			String output = formatDouble(loss, 4) + " " + simulation.offsetMotion() + " [actual: " + metadata.sentOffsetMotion() + "] " + simulation.configuration() + (!simulation.blueDetails().isEmpty() ? " [" + simulation.blueDetails() + "]" : "");
 			lastMessages.add(output);
 
 			System.out.println(loss);

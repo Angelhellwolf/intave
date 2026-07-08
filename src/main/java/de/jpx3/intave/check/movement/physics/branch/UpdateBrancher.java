@@ -86,15 +86,12 @@ public final class UpdateBrancher extends MovementSearchBrancher {
 			optionDebug.add("Complete " + update);
 		}
 
-//		input.user().sendMessage("Branching on " + options.size() + " update options");
-
-		for (int i = 0; i < options.size(); i++) {
+		for (int i = options.size() - 1; i >= 0; i--) {
 			UnaryOperator<SimulationEnvironment> movementUpdate = options.get(i);
 			boolean thisCanFinishTick = canFinishTick.get(i);
 			MovementSearchConfig cfg = config;
 			cfg = cfg.withEnvironmentModifier(movementUpdate);
 			cfg = cfg.withExplicitTickFinishAllow(thisCanFinishTick);
-//			input.user().sendMessage(" - " + optionDebug.get(i) + " " + thisCanFinishTick);
 			result.add(cfg);
 		}
 	}

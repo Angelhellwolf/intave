@@ -53,6 +53,9 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
   private boolean inWater, inLava;
   private boolean sprinting, sneaking;
   private boolean collidedHorizontally, collidedVertically;
+  private boolean motionXReset, motionZReset;
+  private boolean enforceBoatStep;
+  private int physicsPacketRelinkFlyVL;
 	private final float frictionPosSubtraction = 1;
   private double fallDistance;
   private boolean inWeb;
@@ -358,12 +361,22 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
 
   @Override
   public boolean motionXReset() {
-    return false;
+    return motionXReset;
+  }
+
+  @Override
+  public void setMotionResetX(boolean reset) {
+    motionXReset = reset;
   }
 
   @Override
   public boolean motionZReset() {
-    return false;
+    return motionZReset;
+  }
+
+  @Override
+  public void setMotionResetZ(boolean reset) {
+    motionZReset = reset;
   }
 
   @Override
@@ -377,7 +390,7 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
   }
 
   @Override
-  public WorldBorder worldBorder() {
+  public WorldBorder border() {
     return worldBorder;
   }
 
@@ -645,7 +658,27 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
 
   @Override
   public void resetPhysicsPacketRelinkFlyVL() {
+    physicsPacketRelinkFlyVL = 0;
+  }
 
+  @Override
+  public int physicsPacketRelinkFlyVL() {
+    return physicsPacketRelinkFlyVL;
+  }
+
+  @Override
+  public void setPhysicsPacketRelinkFlyVL(int physicsPacketRelinkFlyVL) {
+    this.physicsPacketRelinkFlyVL = physicsPacketRelinkFlyVL;
+  }
+
+  @Override
+  public boolean enforceBoatStep() {
+    return enforceBoatStep;
+  }
+
+  @Override
+  public void setEnforceBoatStep(boolean enforceBoatStep) {
+    this.enforceBoatStep = enforceBoatStep;
   }
 
   @Override

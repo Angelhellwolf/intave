@@ -13,7 +13,6 @@ package de.jpx3.intave.player.collider.complex;
 
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
-import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.share.Motion;
 
 import java.util.Collections;
@@ -57,10 +56,6 @@ public final class SimulationResult {
     this.step = step;
     this.edgeSneak = edgeSneak;
     this.yStepHeight = yStepHeight;
-  }
-
-  public double accuracy(Motion motionVector) {
-    return MathHelper.distanceOf(motion, motionVector);
   }
 
   public Motion offsetMotion() {

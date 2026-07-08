@@ -17,6 +17,16 @@ import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.user.User;
 
 public interface SimulationSearch {
-  Simulation greedyNarrowSearch(User user, SimulationEnvironment environment, Simulator simulator);
-  Simulation greedyFullSearch(User user, SimulationEnvironment environment, Simulator simulator);
+  default Simulation greedyFuzzySearch(User user, SimulationEnvironment environment, Simulator simulator) {
+    return search(user, environment, simulator, SimulationSearchOptions.GREEDY_FUZZY);
+  }
+
+  default Simulation greedyFullSearch(User user, SimulationEnvironment environment, Simulator simulator) {
+    return search(user, environment, simulator, SimulationSearchOptions.GREEDY_EXACT);
+  }
+
+  Simulation search(
+	  User user, SimulationEnvironment movementData,
+	  Simulator simulator, SimulationSearchOptions options
+  );
 }

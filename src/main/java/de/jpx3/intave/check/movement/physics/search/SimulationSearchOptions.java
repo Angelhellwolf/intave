@@ -9,30 +9,15 @@
  *   https://polyformproject.org/licenses/perimeter/1.0.0/
  */
 
-package de.jpx3.intave.check.movement.physics;
+package de.jpx3.intave.check.movement.physics.search;
 
-
-public enum EvaluationTag {
-	ATTACH,
-	BOAT,
-	COLLISION,
-	FIREWORK,
-	FLYING,
-	FLYING_ON_GROUND,
-	LADDER,
-	PISTON,
-	REDUCING,
-	RIPTIDE,
-	SHULKER,
-	SNEAKING,
-	CHUNK_LOADING,
-	WEB,
-	CROUCHING_BOX,
-	ENTITY_PUSH,
-	ELYTRA,
-	SLIME,
-	VELOCITY_FLYING,
-	WATERFLOW,
-	WATER_FLY
+public enum SimulationSearchOptions {
+	GREEDY_FUZZY,
+	GREEDY_EXACT,
+	EXHAUSTIVE,
 	;
+
+	public boolean allowFuzziness() {
+		return this == GREEDY_FUZZY;
+	}
 }

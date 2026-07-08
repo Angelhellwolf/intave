@@ -18,8 +18,8 @@ import de.jpx3.intave.block.cache.MockFullBlockStaticPlane;
 import de.jpx3.intave.block.shape.resolve.DrillResolver;
 import de.jpx3.intave.block.shape.resolve.MockShapeResolverPipeline;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
+import de.jpx3.intave.check.movement.physics.search.NTickSimulationSearch;
 import de.jpx3.intave.check.movement.physics.search.SimulationSearch;
-import de.jpx3.intave.check.movement.physics.search.ThreeTickSimulationSearch;
 import de.jpx3.intave.player.collider.complex.SimulationResult;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
@@ -58,7 +58,7 @@ final class NTickSimulationSearchTest {
 	void threeTickSearchReconstructsMovementAcrossTwoFilteredFlyingPacketsWithRotationChange() {
 		Simulator simulator = new SlowHorizontalTestSimulator();
 		reconstructsMovementAcrossFilteredFlyingPackets(
-			new ThreeTickSimulationSearch(false, false),
+			new NTickSimulationSearch(3, false, false),
 			simulator,
 			exampleSlowHorizontalFlyingPacketScenario(simulator, 500),
 			2,
@@ -70,7 +70,7 @@ final class NTickSimulationSearchTest {
 	void threeTickSearchKeepsLastReportedPositionAcrossNestedFlyingPackets() {
 		Simulator simulator = new ReversingVerticalTestSimulator();
 		reconstructsMovementAcrossFilteredFlyingPackets(
-			new ThreeTickSimulationSearch(false, false),
+			new NTickSimulationSearch(3, false, false),
 			simulator,
 			exampleReversingVerticalFlyingPacketScenario(simulator),
 			2,
@@ -123,10 +123,10 @@ final class NTickSimulationSearchTest {
 			Motion preTickMotion = simulator.simulatePreTick(user, motion, movement);
 			movement.setBaseMotion(preTickMotion);
 
-			Simulation simulate = search.greedyNarrowSearch(
+			Simulation simulate = search.greedyFuzzySearch(
 				user, movement, simulator
 			);
-			if (!foundRequiredDetail && simulate.details().contains(requiredDetail)) {
+			if (!foundRequiredDetail && simulate.blueDetails().contains(requiredDetail)) {
 				foundRequiredDetail = true;
 			}
 
@@ -137,7 +137,7 @@ final class NTickSimulationSearchTest {
 					", expected=" + movement.sentOffsetMotion() +
 					", simulated=" + simulate.offsetMotion() +
 					", configuration=" + simulate.configuration() +
-					", details=" + simulate.details());
+					", details=" + simulate.blueDetails());
 			}
 
 			movement.assumeOccurred(simulate);

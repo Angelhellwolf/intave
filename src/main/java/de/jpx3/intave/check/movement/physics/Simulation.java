@@ -29,10 +29,12 @@ public final class Simulation {
   private MovementConfiguration configuration;
   private SimulationResult simulationResult;
   private SimulationEnvironment environment;
-  private String details = "";
+  private String blueDetails = "";
+  private String purpleDetails = "";
 
 	private final boolean mustBeCopied;
   private boolean canFinishExplicitTick;
+  private boolean fromExhaustiveSearch;
 
 	private Simulation() {
     this.mustBeCopied = true;
@@ -57,7 +59,8 @@ public final class Simulation {
     this.configuration = configuration;
     this.environment = environment;
     this.simulationResult = simulationResult;
-    this.details = "";
+    this.blueDetails = "";
+    this.purpleDetails = "";
   }
 
   public void expire() {
@@ -65,7 +68,8 @@ public final class Simulation {
     this.environment = SimulationEnvironment.invalid();
     this.simulationResult = SimulationResult.invalid();
     this.canFinishExplicitTick = false;
-    this.details = "";
+    this.blueDetails = "";
+    this.purpleDetails = "";
   }
 
   public void setEnvironment(SimulationEnvironment myEnv) {
@@ -110,12 +114,28 @@ public final class Simulation {
     return simulationResult.offsetMotion();
   }
 
-  public void append(String details) {
-    this.details += details;
+  public void appendBlue(String details) {
+    this.blueDetails += details;
   }
 
-  public String details() {
-    return details;
+  public void appendPurple(String details) {
+    this.purpleDetails += details;
+  }
+
+  public void setWasFromExhaustiveSearch() {
+    this.fromExhaustiveSearch = true;
+  }
+
+  public boolean isFromExhaustiveSearch() {
+    return fromExhaustiveSearch;
+  }
+
+  public String blueDetails() {
+    return blueDetails;
+  }
+
+  public String purpleDetails() {
+    return purpleDetails;
   }
 
   public boolean resultsInFlyingPacket(
@@ -137,7 +157,7 @@ public final class Simulation {
 
   public Simulation reusableCopy() {
     Simulation copy = new Simulation(configuration, environment, simulationResult);
-    copy.details = details;
+    copy.blueDetails = blueDetails;
     copy.canFinishExplicitTick = canFinishExplicitTick;
     return copy;
   }

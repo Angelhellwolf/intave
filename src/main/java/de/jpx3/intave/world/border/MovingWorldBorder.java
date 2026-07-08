@@ -44,7 +44,7 @@ public final class MovingWorldBorder implements WorldBorder {
 	private BlockShape collisionShape;
 
 	@Override
-	public BlockShape collisionShape() {
+	public BlockShape shape() {
 		if (collisionShape == null) {
 			double radius = size() / 2.0;
 			double minX = MathHelper.minmax(-absoluteMaxSize, center.getX() - radius - 1, absoluteMaxSize);

@@ -54,17 +54,7 @@ public final class SimpleSimulationSearch implements SimulationSearch {
     this.detectNoSlowdown = detectNoSlowdown;
   }
 
-	@Override
-	public Simulation greedyNarrowSearch(User user, SimulationEnvironment environment, Simulator simulator) {
-		return greedySearch(user, environment, simulator);
-  }
-
-	@Override
-	public Simulation greedyFullSearch(User user, SimulationEnvironment environment, Simulator simulator) {
-		return greedySearch(user, environment, simulator);
-	}
-
-	private Simulation greedySearch(User user, SimulationEnvironment environment, Simulator simulator) {
+	public Simulation search(User user, SimulationEnvironment environment, Simulator simulator, SimulationSearchOptions options) {
 		Motion sentMotion = environment.sentOffsetMotion();
 		Simulation simulation = collectSimulations(
 			user, simulator, environment,

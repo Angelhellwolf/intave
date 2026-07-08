@@ -22,15 +22,13 @@ import java.util.*;
 import java.util.stream.Collector;
 
 public final class SimulationCollector {
-	private static final int DEFAULT_MAX_FLYING_SIMULATIONS = 4;
-
 	private final User user;
 	private final SimulationEnvironment environment;
 	private final Motion targetOffsetMotion;
 	private final Position lastReportedPosition;
 	private final int maxFlyingSimulations;
 	private Simulation best = Simulation.invalid();
-	private Map<Long, Simulation> possibleFlyingSimulationsByHash = null;
+	private Set<Simulation> possibleFlyingSimulations = null;
 	private int totalFlyingPacketSimulations;
 	private int simulationsDone;
 
@@ -70,7 +68,7 @@ public final class SimulationCollector {
 	}
 
 	public List<Simulation> flyingSimulations() {
-		return possibleFlyingSimulationsByHash == null ? Collections.emptyList() : new ArrayList<>(possibleFlyingSimulationsByHash.values());
+		return possibleFlyingSimulations == null ? Collections.emptyList() : new ArrayList<>(possibleFlyingSimulations);
 	}
 
 	private SimulationCollector mergedWith(SimulationCollector other) {
@@ -84,11 +82,11 @@ public final class SimulationCollector {
 		merged.add(best);
 		merged.add(other.best);
 
-		if (possibleFlyingSimulationsByHash != null) {
-			possibleFlyingSimulationsByHash.values().forEach(merged::add);
+		if (possibleFlyingSimulations != null) {
+			possibleFlyingSimulations.forEach(merged::add);
 		}
-		if (other.possibleFlyingSimulationsByHash != null) {
-			other.possibleFlyingSimulationsByHash.values().forEach(merged::add);
+		if (other.possibleFlyingSimulations != null) {
+			other.possibleFlyingSimulations.forEach(merged::add);
 		}
 		merged.totalFlyingPacketSimulations = totalFlyingPacketSimulations + other.totalFlyingPacketSimulations;
 		merged.simulationsDone = simulationsDone + other.simulationsDone;
@@ -96,36 +94,16 @@ public final class SimulationCollector {
 	}
 
 	private void addFlyingSimulation(Simulation simulation) {
-		if (possibleFlyingSimulationsByHash == null) {
-			possibleFlyingSimulationsByHash = new HashMap<>();
+		if (possibleFlyingSimulations == null) {
+			possibleFlyingSimulations = new HashSet<>();
 		}
-		long almostIdenticalHash = simulation.result().almostIdenticalHash();
-		Simulation almostIdenticalSimulation;
-		do {
-			almostIdenticalSimulation = possibleFlyingSimulationsByHash.get(almostIdenticalHash);
-			almostIdenticalHash++;
-		} while (almostIdenticalSimulation != null && !almostIdenticalSimulation.result().almostIdenticalTo(simulation.result()));
-		possibleFlyingSimulationsByHash.put(--almostIdenticalHash, simulation.reusableCopy());
-
-		if (possibleFlyingSimulationsByHash.size() > maxFlyingSimulations) {
-			Long worstKey = null;
-			Simulation worstSim = null;
-
-			for (Map.Entry<Long, Simulation> entry : possibleFlyingSimulationsByHash.entrySet()) {
-				if (worstSim == null) {
-					worstKey = entry.getKey();
-					worstSim = entry.getValue();
-				} else {
-					Simulation best = selectBestFlying(worstSim, entry.getValue(), simulation.environment().position());
-					if (best == worstSim) {
-						worstKey = entry.getKey();
-						worstSim = entry.getValue();
-					}
-				}
+		possibleFlyingSimulations.add(simulation.reusableCopy());
+		if (possibleFlyingSimulations.size() > maxFlyingSimulations) {
+			Simulation worstFlying = Simulation.invalid();
+			for (Simulation sim : possibleFlyingSimulations) {
+				worstFlying = selectWorseFlying(worstFlying, sim, lastReportedPosition);
 			}
-			if (worstKey != null) {
-				possibleFlyingSimulationsByHash.remove(worstKey);
-			}
+			possibleFlyingSimulations.remove(worstFlying);
 		}
 	}
 
@@ -151,6 +129,16 @@ public final class SimulationCollector {
 		} {
 			return b;
 		}
+	}
+
+	private Simulation selectWorseFlying(Simulation a, Simulation b, Position receivedPosition) {
+		if (a == Simulation.invalid()) {
+			return b;
+		}
+		if (b == Simulation.invalid()) {
+			return a;
+		}
+		return selectBestFlying(a, b, receivedPosition) == a ? b : a;
 	}
 
 	private Simulation selectBest(Simulation current, Simulation simulation) {

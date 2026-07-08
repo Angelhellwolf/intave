@@ -19,18 +19,19 @@ import java.util.Objects;
 import java.util.function.UnaryOperator;
 
 public final class MovementSearchConfig {
+	private final static MovementSearchConfig BLANK = new MovementSearchConfig(MovementConfiguration.blank(), env -> env, true);
 	private final MovementConfiguration configuration;
 	private final UnaryOperator<SimulationEnvironment> environmentModifier;
 	private final boolean canFinishExplicitTick;
 
 	private MovementSearchConfig(MovementConfiguration configuration, UnaryOperator<SimulationEnvironment> environmentModifier, boolean canFinishExplicitTick) {
-		this.configuration = Objects.requireNonNull(configuration, "configuration");
-		this.environmentModifier = Objects.requireNonNull(environmentModifier, "environmentModifier");
+		this.configuration = configuration;
+		this.environmentModifier = environmentModifier;
 		this.canFinishExplicitTick = canFinishExplicitTick;
 	}
 
 	public static MovementSearchConfig blank(MovementSearchInput input) {
-		return new MovementSearchConfig(MovementConfiguration.blank(), env -> env, true);
+		return BLANK;
 	}
 
 	public MovementConfiguration moveConfig() {

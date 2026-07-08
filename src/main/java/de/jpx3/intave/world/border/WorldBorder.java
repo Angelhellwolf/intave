@@ -15,7 +15,7 @@ import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.share.Position;
 
 public interface WorldBorder {
-	BlockShape collisionShape();
+	BlockShape shape();
 	void tick();
 
 	WorldBorder withCenterAt(

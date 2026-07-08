@@ -22,13 +22,13 @@ public final class MovementSearchBranchers {
 
   public static List<SearchBrancher<MovementSearchInput, MovementSearchConfig>> normal() {
     return Arrays.asList(
-      new UpdateBrancher(),
       new KeypressBrancher(),
       new RotationBrancher(),
       new SprintingBrancher(),
       new UseItemBrancher(),
       new AttackReduceBrancher(),
-      new JumpBrancher()
+      new JumpBrancher(),
+      new UpdateBrancher()
     );
   }
 }

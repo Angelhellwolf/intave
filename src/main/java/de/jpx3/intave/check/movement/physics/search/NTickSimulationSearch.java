@@ -26,6 +26,7 @@ import de.jpx3.intave.player.ItemProperties;
 import de.jpx3.intave.search.Searcher;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.Position;
+import de.jpx3.intave.share.Rotation;
 import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.InventoryMetadata;
@@ -33,6 +34,8 @@ import de.jpx3.intave.user.meta.MetadataBundle;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import org.bukkit.ChatColor;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -43,7 +46,7 @@ import java.util.stream.Collector;
 import static de.jpx3.intave.check.movement.physics.MoveMetric.TELEPORT;
 import static de.jpx3.intave.math.MathHelper.formatDouble;
 
-public final class ThreeTickSimulationSearch implements SimulationSearch {
+public final class NTickSimulationSearch implements SimulationSearch {
 	private final static double STRICT_ACCURACY = 0.0001;
 
 	private final static Searcher<MovementSearchInput, MovementSearchConfig> SEARCHER = new Searcher<>(
@@ -51,10 +54,15 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 		MovementSearchConfig::blank
 	);
 
+	private final int ticks;
 	private final boolean itemUsageReset;
 	private final boolean detectNoSlowdown;
 
-	public ThreeTickSimulationSearch(boolean itemUsageReset, boolean detectNoSlowdown) {
+	public NTickSimulationSearch(int ticks, boolean itemUsageReset, boolean detectNoSlowdown) {
+		if (ticks < 1) {
+			throw new IllegalArgumentException("ticks must be at least 1");
+		}
+		this.ticks = ticks;
 		this.itemUsageReset = itemUsageReset;
 		this.detectNoSlowdown = detectNoSlowdown;
 	}
@@ -66,149 +74,139 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 	) {
 		Position receivedPosition = movementData.position();
 		Position lastPositionB4Flying = movementData.lastPosition();
+		Rotation receivedRotation = movementData.rotation();
 
 		boolean likelyInaccurate = likelyInaccurate(movementData);
 		boolean allowFuzziness = options.allowFuzziness();
-		double requiredAccuracyFirstTick = likelyInaccurate && allowFuzziness ? 0.001 : STRICT_ACCURACY;
-		double requiredAccuracySecondTick = likelyInaccurate && allowFuzziness ? 0.03 : STRICT_ACCURACY;
-		double requiredAccuracyThirdTick = likelyInaccurate && allowFuzziness ? 0.04 : STRICT_ACCURACY;
+		double requiredAccuracyFirstTick = requiredAccuracyForTick(1, likelyInaccurate, allowFuzziness);
 
 		RateLimiter ratelimiter = user.meta().movement().simulationRateLimiter;
+		boolean rateLimited = ratelimiter.isOverLimit();
+		int maxFlyingSimulations = rateLimited ? 4 : 36;
 
-		int maxFlyingSimulations = ratelimiter.isOverLimit() ? 4 : 36;
-		int firstFlyingTickLimit = ratelimiter.isOverLimit() ? 256 : 512;
-		int secondFlyingTickLimit = ratelimiter.isOverLimit() ? 0 : 256;
-
-		// Go through all this-tick possibilities
 		SimulationCollector firstTickContainer = collectSimulations(
 			user, simulator, movementData,
 			SimulationCollector.forEnvironment(user, movementData, maxFlyingSimulations),
-		 sim -> sim.offsetDifference() < requiredAccuracyFirstTick
+			sim -> sim.offsetDifference() < requiredAccuracyFirstTick
 		);
 
 		int totalSimulationsDone = firstTickContainer.simulationsDone();
 		long start = System.nanoTime();
+		Simulation bestSimulation = firstTickContainer.bestSimulation();
+		double bestDistance = bestSimulation.offsetDifference();
 
 		List<Simulation> firstTickFlyingSimulations = firstTickContainer.flyingSimulations();
-		Simulation bestSimulation = firstTickContainer.bestSimulation();
-
-		if (firstTickFlyingSimulations.isEmpty() || bestSimulation.offsetDifference() < requiredAccuracyFirstTick) {
-			if (bestSimulation.canFinishExplicitTick()) {
-				if (totalSimulationsDone > 1) {
-					bestSimulation.appendBlue(totalSimulationsDone + "as");
-				}
-				double durationMs = ((double)System.nanoTime() - start) / 1_000_000d;
-				if (durationMs > 0.1) {
-					bestSimulation.appendBlue(formatDouble(durationMs, 4) + "ms");
-				}
-				applySimulation(user, bestSimulation);
-				if (firstTickFlyingSimulations.isEmpty()) {
-					bestSimulation.setWasFromExhaustiveSearch();
-				}
-				ratelimiter.noteAcquired(totalSimulationsDone);
-				return bestSimulation;
-			}
+		if ((firstTickFlyingSimulations.isEmpty() || bestDistance < requiredAccuracyFirstTick) && bestSimulation.canFinishExplicitTick()) {
+			return finishSearch(
+				user, ratelimiter, bestSimulation, totalSimulationsDone, start, firstTickFlyingSimulations.isEmpty(),
+				searchSuffixForCompletedTicks(1)
+			);
 		}
 
-		double bestDistance = bestSimulation.offsetDifference();
-		for (Simulation firstTickSimulation : firstTickFlyingSimulations) {
-			// If simulating take too long, we can not search that deep
-			if (totalSimulationsDone > firstFlyingTickLimit) {
-				continue;
-			}
-			SimulationEnvironment firstTickEnvironment = firstTickSimulation.environment().mutableView();
-			simulator.simulateAround(
-				user, firstTickEnvironment, firstTickSimulation,
-				receivedPosition, movementData.rotation()
-			);
+		List<Simulation> flyingCandidates = firstTickFlyingSimulations;
+		List<Integer> flyingCandidateCounts = new ArrayList<>(
+			Collections.nCopies(firstTickFlyingSimulations.size(), firstTickFlyingSimulations.size())
+		);
+		int flyingDepth = 1;
+		while (flyingDepth < ticks && !flyingCandidates.isEmpty()) {
+			List<Simulation> nextFlyingCandidates = new ArrayList<>();
+			List<Integer> nextFlyingCandidateCounts = new ArrayList<>();
 
-			Motion secondTickRemainingMotion = firstTickEnvironment.sentOffsetMotion();
-			SimulationCollector secondTickContainer = collectSimulations(
-				user, simulator, firstTickEnvironment,
-				SimulationCollector.forEnvironmentWithCustomTargets(
-					user, firstTickEnvironment, secondTickRemainingMotion, lastPositionB4Flying, maxFlyingSimulations
-				),
-				sim -> sim.positionDifference(receivedPosition) < requiredAccuracySecondTick
-			);
-			totalSimulationsDone += secondTickContainer.simulationsDone();
-
-			Simulation secondTickSimulation = secondTickContainer.bestSimulation();
-			secondTickSimulation.appendBlue("1f/"+firstTickFlyingSimulations.size() + "x");
-
-			double secondTickDistance = secondTickSimulation.positionDifference(receivedPosition);
-			if (secondTickDistance < bestDistance && secondTickSimulation.canFinishExplicitTick()) {
-				bestSimulation = secondTickSimulation.reusableCopy();
-				bestDistance = secondTickDistance;
-			}
-
-			if (bestDistance < requiredAccuracyThirdTick) {
-				if (totalSimulationsDone > 1) {
-					bestSimulation.appendBlue(totalSimulationsDone + "bs");
-				}
-				double durationMs = ((double)System.nanoTime() - start) / 1_000_000d;
-				if (durationMs > 0.1) {
-					bestSimulation.appendBlue(formatDouble(durationMs, 4) + "ms");
-				}
-				applySimulation(user, bestSimulation);
-				ratelimiter.noteAcquired(totalSimulationsDone);
-				return bestSimulation;
-			}
-
-			List<Simulation> secondTickFlyingCandidates = secondTickContainer.flyingSimulations();
-
-			for (Simulation secondTickFlyingSimulation : secondTickFlyingCandidates) {
-				// If simulating take too long, we can not search that deep
-				if (totalSimulationsDone > secondFlyingTickLimit) {
+			for (int i = 0; i < flyingCandidates.size(); i++) {
+				Simulation flyingSimulation = flyingCandidates.get(i);
+				if (totalSimulationsDone > simulationLimitForFlyingDepth(flyingDepth, rateLimited)) {
 					continue;
 				}
 
-				SimulationEnvironment secondTickEnvironment = secondTickFlyingSimulation.environment().mutableView();
+				SimulationEnvironment tickEnvironment = flyingSimulation.environment().mutableView();
 				simulator.simulateAround(
-					user, secondTickEnvironment, secondTickFlyingSimulation,
-					receivedPosition, movementData.rotation()
+					user, tickEnvironment, flyingSimulation,
+					receivedPosition, receivedRotation
 				);
 
-				Motion thirdTickRemainingMotion = secondTickEnvironment.sentOffsetMotion();
-				SimulationCollector thirdTickSimulator = collectSimulations(
-					user, simulator, secondTickEnvironment,
+				int completedTicks = flyingDepth + 1;
+				Motion remainingMotion = tickEnvironment.sentOffsetMotion();
+				double requiredAccuracy = requiredAccuracyForTick(completedTicks, likelyInaccurate, allowFuzziness);
+				SimulationCollector tickContainer = collectSimulations(
+					user, simulator, tickEnvironment,
 					SimulationCollector.forEnvironmentWithCustomTargets(
-						user, secondTickEnvironment, thirdTickRemainingMotion, lastPositionB4Flying, maxFlyingSimulations
+						user, tickEnvironment, remainingMotion, lastPositionB4Flying, maxFlyingSimulations
 					),
-					sim -> sim.positionDifference(receivedPosition) < requiredAccuracyThirdTick
+					sim -> sim.offsetDifference() < requiredAccuracy
 				);
-				totalSimulationsDone += thirdTickSimulator.simulationsDone();
+				totalSimulationsDone += tickContainer.simulationsDone();
 
-				Simulation thirdTickSimulation = thirdTickSimulator.bestSimulation();
-				thirdTickSimulation.appendBlue("2f/" + secondTickFlyingCandidates.size()+"x");
-				double thirdTickDistance = thirdTickSimulation.positionDifference(receivedPosition);
-				if (thirdTickDistance < bestDistance && thirdTickSimulation.canFinishExplicitTick()) {
-					bestSimulation = thirdTickSimulation.reusableCopy();
-					bestDistance = thirdTickDistance;
+				Simulation tickSimulation = tickContainer.bestSimulation();
+				tickSimulation.appendBlue(flyingDepth + "f/" + flyingCandidateCounts.get(i) + "x");
+				double tickDistance = tickSimulation.offsetDifference();
+				if (tickDistance < bestDistance && tickSimulation.canFinishExplicitTick()) {
+					bestSimulation = tickSimulation.reusableCopy();
+					bestDistance = tickDistance;
 				}
 
-				if (bestDistance < requiredAccuracyThirdTick) {
-					if (totalSimulationsDone > 1) {
-						bestSimulation.appendBlue(totalSimulationsDone + "cs");
-					}
-					double durationMs = ((double)System.nanoTime() - start) / 1_000_000d;
-					if (durationMs > 0.1) {
-						bestSimulation.appendBlue(formatDouble(durationMs, 4) + "ms");
-					}
-					applySimulation(user, bestSimulation);
-					ratelimiter.noteAcquired(totalSimulationsDone);
-					return bestSimulation;
+				if (bestDistance < STRICT_ACCURACY) {
+					return finishSearch(
+						user, ratelimiter, bestSimulation, totalSimulationsDone, start, false,
+						searchSuffixForCompletedTicks(completedTicks)
+					);
+				}
+
+				if (completedTicks < ticks) {
+					List<Simulation> hiddenTickCandidates = tickContainer.flyingSimulations();
+					nextFlyingCandidates.addAll(hiddenTickCandidates);
+					nextFlyingCandidateCounts.addAll(
+						Collections.nCopies(hiddenTickCandidates.size(), hiddenTickCandidates.size())
+					);
 				}
 			}
+
+			flyingCandidates = nextFlyingCandidates;
+			flyingCandidateCounts = nextFlyingCandidateCounts;
+			flyingDepth++;
 		}
+
+		return finishSearch(
+			user, ratelimiter, bestSimulation, totalSimulationsDone, start, true,
+			searchSuffixForCompletedTicks(ticks + 1)
+		);
+	}
+
+	private Simulation finishSearch(
+		User user,
+		RateLimiter ratelimiter,
+		Simulation bestSimulation,
+		int totalSimulationsDone,
+		long start,
+		boolean exhaustive,
+		String simulationCountSuffix
+	) {
 		if (totalSimulationsDone > 1) {
-			bestSimulation.appendBlue(totalSimulationsDone + "ds");
+			bestSimulation.appendBlue(totalSimulationsDone + simulationCountSuffix + "s");
 		}
 		double durationMs = ((double)System.nanoTime() - start) / 1_000_000d;
 		bestSimulation.appendBlue(formatDouble(durationMs, 4) + "ms");
-		bestSimulation.setWasFromExhaustiveSearch();
+		if (exhaustive) {
+			bestSimulation.setWasFromExhaustiveSearch();
+		}
 		applySimulation(user, bestSimulation);
 		ratelimiter.noteAcquired(totalSimulationsDone);
 		return bestSimulation;
+	}
+
+	private double requiredAccuracyForTick(int tick, boolean likelyInaccurate, boolean allowFuzziness) {
+		if (!likelyInaccurate || !allowFuzziness) {
+			return STRICT_ACCURACY;
+		}
+		return tick == 1 ? 0.001 : tick == 2 ? 0.03 : 0.04;
+	}
+
+	private int simulationLimitForFlyingDepth(int flyingDepth, boolean rateLimited) {
+		return flyingDepth == 1 ? (rateLimited ? 256 : 512) : (rateLimited ? 0 : 256);
+	}
+
+	private String searchSuffixForCompletedTicks(int completedTicks) {
+		int suffixOffset = Math.max(0, Math.min(25, completedTicks - 1));
+		return Character.toString((char)('a' + suffixOffset));
 	}
 
 	private void applySimulation(User user, Simulation simulation) {

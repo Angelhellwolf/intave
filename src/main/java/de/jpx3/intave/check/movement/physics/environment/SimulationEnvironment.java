@@ -13,11 +13,10 @@ package de.jpx3.intave.check.movement.physics.environment;
 
 import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.block.fluid.Fluid;
-import de.jpx3.intave.check.movement.physics.MoveMetric;
-import de.jpx3.intave.check.movement.physics.Pose;
-import de.jpx3.intave.check.movement.physics.Simulation;
+import de.jpx3.intave.check.movement.physics.*;
 import de.jpx3.intave.check.movement.physics.update.CausalConstraint;
 import de.jpx3.intave.check.movement.physics.update.TickAmbiguousUpdate;
+import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.player.collider.complex.SimulationResult;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
@@ -139,7 +138,7 @@ public interface SimulationEnvironment {
   Vector motionMultiplier();
   void resetMotionMultiplier();
 
-  WorldBorder worldBorder();
+  WorldBorder border();
   void setWorldBorder(@NotNull WorldBorder worldBorder);
 
   default Rotation rotation() {
@@ -204,6 +203,14 @@ public interface SimulationEnvironment {
   boolean isInVehicle();
   void dismountRidingEntity(String boatSetback);
 
+  default Entity vehicle() {
+    return null;
+  }
+
+  default Simulator simulator() {
+    return Simulators.PLAYER;
+  }
+
   void setPushedByEntity(boolean pushedByEntity);
   boolean pushedByEntity();
 
@@ -245,6 +252,102 @@ public interface SimulationEnvironment {
   boolean denyJump();
 
   void resetPhysicsPacketRelinkFlyVL();
+
+  default int physicsPacketRelinkFlyVL() {
+    return 0;
+  }
+
+  default void setPhysicsPacketRelinkFlyVL(int physicsPacketRelinkFlyVL) {
+    throw new UnsupportedOperationException("setPhysicsPacketRelinkFlyVL is not supported for this SimulationEnvironment");
+  }
+
+  default boolean motionResetX() {
+    return motionXReset();
+  }
+
+  default void setMotionResetX(boolean reset) {
+    throw new UnsupportedOperationException("setMotionResetX is not supported for this SimulationEnvironment");
+  }
+
+  default boolean motionResetZ() {
+    return motionZReset();
+  }
+
+  default void setMotionResetZ(boolean reset) {
+    throw new UnsupportedOperationException("setMotionResetZ is not supported for this SimulationEnvironment");
+  }
+
+  default double baseMoveSpeed() {
+    return 0.271;
+  }
+
+  default int fireworkRocketsPower() {
+    return 1;
+  }
+
+  default int shulkerXToleranceRemaining() {
+    return 0;
+  }
+
+  default int shulkerYToleranceRemaining() {
+    return 0;
+  }
+
+  default int shulkerZToleranceRemaining() {
+    return 0;
+  }
+
+  default int lowestShulkerY() {
+    return Integer.MAX_VALUE;
+  }
+
+  default int highestShulkerY() {
+    return Integer.MIN_VALUE;
+  }
+
+  default int pistonMotionToleranceRemaining() {
+    return 0;
+  }
+
+  default double pistonVerticalAllowance() {
+    return 0.0;
+  }
+
+  default double pistonHorizontalAllowance() {
+    return 0.0;
+  }
+
+  default BoundingBox pistonCollisionArea() {
+    return null;
+  }
+
+  default boolean physicsUnpredictableVelocityExpected() {
+    return false;
+  }
+
+  default boolean enforceBoatStep() {
+    return false;
+  }
+
+  default void setEnforceBoatStep(boolean enforceBoatStep) {
+    throw new UnsupportedOperationException("setEnforceBoatStep is not supported for this SimulationEnvironment");
+  }
+
+  default boolean lastSneaking() {
+    return false;
+  }
+
+  default boolean currentlyInBlock() {
+    return false;
+  }
+
+  default int highestLocalRiptideLevel() {
+    return 0;
+  }
+
+  default boolean onGroundWithRiptide() {
+    return false;
+  }
 
   void updateEyesInWater();
   void aquaticUpdateLavaReset();

@@ -209,6 +209,7 @@ public final class MovementMetadata implements SimulationEnvironment {
   public boolean criticalFlyingDisallowWasTeleported;
   public double criticalEnterPosX, criticalEnterPosY, criticalEnterPosZ;
   public final RateLimiter criticalTeleportRateLimiter = new RateLimiter(10, 2, TimeUnit.SECONDS);
+  public final RateLimiter simulationRateLimiter = new RateLimiter(100_000, 1_000, TimeUnit.SECONDS);
   private volatile Location verifiedLocation;
   public Input input = Input.none();
   public Input lastInput = Input.none();
@@ -997,7 +998,7 @@ public final class MovementMetadata implements SimulationEnvironment {
 
 	@Override
   public int ticksPast(MoveMetric metric) {
-    return pastTracker.getOrDefault(metric, metric.pastDefault());
+    return pastTracker.computeIfAbsent(metric, MoveMetric::pastDefault);
   }
 
 	public void setPast(MoveMetric metric, int ticks) {
@@ -1055,6 +1056,10 @@ public final class MovementMetadata implements SimulationEnvironment {
     }
     if (collider.edgeSneak()) {
       activeTick(EDGE_SNEAKING);
+    }
+    double physicsUncertainty = user.meta().protocol().flyingPacketUncertaintyRadius();
+    if (simulation.resultsInFlyingPacket(this, physicsUncertainty)) {
+      activeTick(FLYING_PACKET_ACCURATE);
     }
 //    if (user.meta().protocol().newBlockEntityIntersectionLogic()) {
 //    }
@@ -1309,8 +1314,18 @@ public final class MovementMetadata implements SimulationEnvironment {
   }
 
   @Override
+  public void setMotionResetX(boolean reset) {
+    physicsResetMotionX = reset;
+  }
+
+  @Override
   public boolean motionZReset() {
     return physicsResetMotionZ;
+  }
+
+  @Override
+  public void setMotionResetZ(boolean reset) {
+    physicsResetMotionZ = reset;
   }
 
   public Motion sentOffsetMotion() {
@@ -1323,6 +1338,101 @@ public final class MovementMetadata implements SimulationEnvironment {
 
   public double resetMotion() {
     return resetMotion;
+  }
+
+  @Override
+  public int fireworkRocketsPower() {
+    return fireworkRocketsPower;
+  }
+
+  @Override
+  public int shulkerXToleranceRemaining() {
+    return shulkerXToleranceRemaining;
+  }
+
+  @Override
+  public int shulkerYToleranceRemaining() {
+    return shulkerYToleranceRemaining;
+  }
+
+  @Override
+  public int shulkerZToleranceRemaining() {
+    return shulkerZToleranceRemaining;
+  }
+
+  @Override
+  public int lowestShulkerY() {
+    return lowestShulkerY;
+  }
+
+  @Override
+  public int highestShulkerY() {
+    return highestShulkerY;
+  }
+
+  @Override
+  public int pistonMotionToleranceRemaining() {
+    return pistonMotionToleranceRemaining;
+  }
+
+  @Override
+  public double pistonVerticalAllowance() {
+    return pistonVerticalAllowance;
+  }
+
+  @Override
+  public double pistonHorizontalAllowance() {
+    return pistonHorizontalAllowance;
+  }
+
+  @Override
+  public BoundingBox pistonCollisionArea() {
+    return pistonCollisionArea;
+  }
+
+  @Override
+  public boolean physicsUnpredictableVelocityExpected() {
+    return physicsUnpredictableVelocityExpected;
+  }
+
+  @Override
+  public boolean enforceBoatStep() {
+    return enforceBoatStep;
+  }
+
+  @Override
+  public void setEnforceBoatStep(boolean enforceBoatStep) {
+    this.enforceBoatStep = enforceBoatStep;
+  }
+
+  @Override
+  public int physicsPacketRelinkFlyVL() {
+    return physicsPacketRelinkFlyVL;
+  }
+
+  @Override
+  public void setPhysicsPacketRelinkFlyVL(int physicsPacketRelinkFlyVL) {
+    this.physicsPacketRelinkFlyVL = physicsPacketRelinkFlyVL;
+  }
+
+  @Override
+  public boolean lastSneaking() {
+    return lastSneaking;
+  }
+
+  @Override
+  public boolean currentlyInBlock() {
+    return currentlyInBlock;
+  }
+
+  @Override
+  public int highestLocalRiptideLevel() {
+    return highestLocalRiptideLevel;
+  }
+
+  @Override
+  public boolean onGroundWithRiptide() {
+    return onGroundWithRiptide;
   }
 
   public double jumpMotion() {
@@ -1555,7 +1665,7 @@ public final class MovementMetadata implements SimulationEnvironment {
   }
 
   @Override
-  public @NotNull WorldBorder worldBorder() {
+  public @NotNull WorldBorder border() {
     return worldBorder;
   }
 

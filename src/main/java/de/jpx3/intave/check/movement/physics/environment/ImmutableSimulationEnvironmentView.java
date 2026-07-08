@@ -15,7 +15,9 @@ import de.jpx3.intave.block.fluid.Fluid;
 import de.jpx3.intave.check.movement.physics.MoveMetric;
 import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.check.movement.physics.Simulation;
+import de.jpx3.intave.check.movement.physics.Simulator;
 import de.jpx3.intave.check.movement.physics.update.TickAmbiguousUpdate;
+import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.player.collider.complex.SimulationResult;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
@@ -215,8 +217,18 @@ public final class ImmutableSimulationEnvironmentView implements SimulationEnvir
 	}
 
 	@Override
+	public void setMotionResetX(boolean reset) {
+		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
+	}
+
+	@Override
 	public boolean motionZReset() {
 		return delegate.motionZReset();
+	}
+
+	@Override
+	public void setMotionResetZ(boolean reset) {
+		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
 	}
 
 	@Override
@@ -230,8 +242,8 @@ public final class ImmutableSimulationEnvironmentView implements SimulationEnvir
 	}
 
 	@Override
-	public WorldBorder worldBorder() {
-		return delegate.worldBorder();
+	public WorldBorder border() {
+		return delegate.border();
 	}
 
 	@Override
@@ -460,6 +472,16 @@ public final class ImmutableSimulationEnvironmentView implements SimulationEnvir
 	}
 
 	@Override
+	public Entity vehicle() {
+		return delegate.vehicle();
+	}
+
+	@Override
+	public Simulator simulator() {
+		return delegate.simulator();
+	}
+
+	@Override
 	public void dismountRidingEntity(String boatSetback) {
 		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
 	}
@@ -517,6 +539,106 @@ public final class ImmutableSimulationEnvironmentView implements SimulationEnvir
 	@Override
 	public void resetPhysicsPacketRelinkFlyVL() {
 		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
+	}
+
+	@Override
+	public int physicsPacketRelinkFlyVL() {
+		return delegate.physicsPacketRelinkFlyVL();
+	}
+
+	@Override
+	public void setPhysicsPacketRelinkFlyVL(int physicsPacketRelinkFlyVL) {
+		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
+	}
+
+	@Override
+	public double baseMoveSpeed() {
+		return delegate.baseMoveSpeed();
+	}
+
+	@Override
+	public int fireworkRocketsPower() {
+		return delegate.fireworkRocketsPower();
+	}
+
+	@Override
+	public int shulkerXToleranceRemaining() {
+		return delegate.shulkerXToleranceRemaining();
+	}
+
+	@Override
+	public int shulkerYToleranceRemaining() {
+		return delegate.shulkerYToleranceRemaining();
+	}
+
+	@Override
+	public int shulkerZToleranceRemaining() {
+		return delegate.shulkerZToleranceRemaining();
+	}
+
+	@Override
+	public int lowestShulkerY() {
+		return delegate.lowestShulkerY();
+	}
+
+	@Override
+	public int highestShulkerY() {
+		return delegate.highestShulkerY();
+	}
+
+	@Override
+	public int pistonMotionToleranceRemaining() {
+		return delegate.pistonMotionToleranceRemaining();
+	}
+
+	@Override
+	public double pistonVerticalAllowance() {
+		return delegate.pistonVerticalAllowance();
+	}
+
+	@Override
+	public double pistonHorizontalAllowance() {
+		return delegate.pistonHorizontalAllowance();
+	}
+
+	@Override
+	public BoundingBox pistonCollisionArea() {
+		return delegate.pistonCollisionArea();
+	}
+
+	@Override
+	public boolean physicsUnpredictableVelocityExpected() {
+		return delegate.physicsUnpredictableVelocityExpected();
+	}
+
+	@Override
+	public boolean enforceBoatStep() {
+		return delegate.enforceBoatStep();
+	}
+
+	@Override
+	public void setEnforceBoatStep(boolean enforceBoatStep) {
+		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
+	}
+
+	@Override
+	public boolean lastSneaking() {
+		return delegate.lastSneaking();
+	}
+
+	@Override
+	public boolean currentlyInBlock() {
+		return delegate.currentlyInBlock();
+	}
+
+	@Override
+	public int highestLocalRiptideLevel() {
+		return delegate.highestLocalRiptideLevel();
+	}
+
+	@Override
+	public boolean onGroundWithRiptide() {
+		return delegate.onGroundWithRiptide();
 	}
 
 	@Override
