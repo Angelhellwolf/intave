@@ -9,7 +9,7 @@
  *   https://polyformproject.org/licenses/perimeter/1.0.0/
  */
 
-package de.jpx3.intave.check.movement.physics.search;
+package de.jpx3.intave.check.movement.physics.search.collector;
 
 import de.jpx3.intave.check.movement.physics.Simulation;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
@@ -21,7 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 import java.util.stream.Collector;
 
-public final class SimulationCollector {
+public final class MergingSimulationCollector {
 	private final User user;
 	private final SimulationEnvironment environment;
 	private final Motion targetOffsetMotion;
@@ -29,10 +29,9 @@ public final class SimulationCollector {
 	private final int maxFlyingSimulations;
 	private Simulation best = Simulation.invalid();
 	private Set<Simulation> possibleFlyingSimulations = null;
-	private int totalFlyingPacketSimulations;
 	private int simulationsDone;
 
-	private SimulationCollector(
+	private MergingSimulationCollector(
 		User user,
 		SimulationEnvironment environment,
 		int maxFlyingSimulations,
@@ -49,14 +48,9 @@ public final class SimulationCollector {
 	private void add(Simulation simulation) {
 		if (resultsInFlyingPacket(simulation)) {
 			addFlyingSimulation(simulation);
-			totalFlyingPacketSimulations++;
 		}
 		best = selectBest(best, simulation);
 		simulationsDone++;
-	}
-
-	public int flyingPacketSimulations() {
-		return totalFlyingPacketSimulations;
 	}
 
 	public int simulationsDone() {
@@ -71,8 +65,8 @@ public final class SimulationCollector {
 		return possibleFlyingSimulations == null ? Collections.emptyList() : new ArrayList<>(possibleFlyingSimulations);
 	}
 
-	private SimulationCollector mergedWith(SimulationCollector other) {
-		SimulationCollector merged = new SimulationCollector(
+	private MergingSimulationCollector mergedWith(MergingSimulationCollector other) {
+		MergingSimulationCollector merged = new MergingSimulationCollector(
 			user,
 			environment,
 			maxFlyingSimulations,
@@ -88,7 +82,6 @@ public final class SimulationCollector {
 		if (other.possibleFlyingSimulations != null) {
 			other.possibleFlyingSimulations.forEach(merged::add);
 		}
-		merged.totalFlyingPacketSimulations = totalFlyingPacketSimulations + other.totalFlyingPacketSimulations;
 		merged.simulationsDone = simulationsDone + other.simulationsDone;
 		return merged;
 	}
@@ -142,10 +135,10 @@ public final class SimulationCollector {
 	}
 
 	private Simulation selectBest(Simulation current, Simulation simulation) {
-		return current.select(simulation, targetOffsetMotion);
+		return current.select(simulation);
 	}
 
-	public static Collector<Simulation, SimulationCollector, SimulationCollector> forEnvironment(
+	public static Collector<Simulation, MergingSimulationCollector, MergingSimulationCollector> forEnvironment(
 		User user, SimulationEnvironment environment, int maxFlyingSimulations
 	) {
 		return forEnvironmentWithCustomTargets(
@@ -153,22 +146,22 @@ public final class SimulationCollector {
 		);
 	}
 
-	public static Collector<Simulation, SimulationCollector, SimulationCollector> forEnvironmentWithCustomTargets(
+	public static Collector<Simulation, MergingSimulationCollector, MergingSimulationCollector> forEnvironmentWithCustomTargets(
 		User user, SimulationEnvironment environment,
 		@NotNull Motion targetOffset,
 		@NotNull Position lastReportedPosition,
 		int maxFlyingSimulations
 	) {
 		return Collector.of(
-			() -> new SimulationCollector(
+			() -> new MergingSimulationCollector(
 				user,
 				environment,
 				maxFlyingSimulations,
 				targetOffset,
 				lastReportedPosition
 			),
-			SimulationCollector::add,
-			SimulationCollector::mergedWith
+			MergingSimulationCollector::add,
+			MergingSimulationCollector::mergedWith
 		);
 	}
 }

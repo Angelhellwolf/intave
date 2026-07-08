@@ -232,6 +232,8 @@ public final class MovementMetadata implements SimulationEnvironment {
     }
   }
 
+  public SimulationEnvironment beforePreviousTickEnvironment;
+
   public MovementMetadata(Player player, User user) {
     this.player = player;
     this.user = user;

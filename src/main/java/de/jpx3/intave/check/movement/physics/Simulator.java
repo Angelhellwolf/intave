@@ -50,7 +50,7 @@ public abstract class Simulator {
      * Post-tick
      */
     Motion afterPostTickMotion = simulateAfterTick(
-      user, metadata, metadata.position(), afterSimulationMotion
+      user, metadata, metadata.position(), simulation.actualMotion()
     );
     metadata.setBaseMotion(afterPostTickMotion);
     metadata.lastOnGround = metadata.onGround;
@@ -66,14 +66,15 @@ public abstract class Simulator {
   ) {
     // assume received
     Position verifiedLastPosition = environment.verifiedLastPosition();
-    Motion motionOfSimulation = simulation.offsetMotion();
-    Position firstTickPosition = verifiedLastPosition.add(motionOfSimulation);
+    Motion actualMotion = simulation.actualMotion();
+    Motion offsetMotion = simulation.offsetMotion();
+    Position firstTickPosition = verifiedLastPosition.add(offsetMotion);
     environment.updateMovement(firstTickPosition, null);
     environment.setLastPosition(verifiedLastPosition);
     environment.assumeOccurred(simulation);
 
     // after tick
-    Motion afterTickMotion = simulateAfterTick(user, environment, firstTickPosition, motionOfSimulation);
+    Motion afterTickMotion = simulateAfterTick(user, environment, firstTickPosition, actualMotion);
     environment.setBaseMotion(afterTickMotion);
     environment.setLastOnGround(environment.onGround());
     environment.activeTick(FLYING_PACKET_ACCURATE);

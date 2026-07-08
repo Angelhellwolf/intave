@@ -197,9 +197,9 @@ public final class Motion {
 		if (this == obj) return true;
 		if (obj == null || getClass() != obj.getClass()) return false;
 		Motion other = (Motion) obj;
-		return Double.compare(other.motionX, motionX) == 0 &&
-			Double.compare(other.motionY, motionY) == 0 &&
-			Double.compare(other.motionZ, motionZ) == 0;
+		return Math.abs(motionX - other.motionX) < 1E-10 &&
+			Math.abs(motionY - other.motionY) < 1E-10 &&
+			Math.abs(motionZ - other.motionZ) < 1E-10;
 	}
 
 	public boolean almostIdentical(Motion motion) {

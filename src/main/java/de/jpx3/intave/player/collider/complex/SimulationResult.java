@@ -21,32 +21,48 @@ import java.util.Map;
 import java.util.Objects;
 
 public final class SimulationResult {
-  private static final SimulationResult INVALID_SIMULATION = new SimulationResult(
-    new Motion(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE), null, false, false, false, false, false, false, false, 0);
+  private static final SimulationResult INVALID_SIMULATION = new SimulationResult();
 
-  private final Motion motion;
+  private final Motion offsetMotion;
   private final Motion intermittentResult;
   private final boolean onGround, collidedHorizontally, collidedVertically;
   private final boolean resetMotionX, resetMotionZ;
   private final boolean step, edgeSneak;
 
   private final double yStepHeight;
+  private final Motion actualMotion;
 
   private final Map<String, Double> debugData = IntaveControl.ENABLE_MOVEMENT_DEBUGGER_COLLECTOR ? new HashMap<>() : Collections.emptyMap();
 
+  private SimulationResult() {
+    this.offsetMotion = null;
+    this.intermittentResult = null;
+    this.onGround = false;
+    this.collidedHorizontally = false;
+    this.collidedVertically = false;
+    this.resetMotionX = false;
+    this.resetMotionZ = false;
+    this.step = false;
+    this.edgeSneak = false;
+    this.yStepHeight = 0;
+    this.actualMotion = null;
+  }
+
   public SimulationResult(
-    Motion motion,
-    Motion intermittentResult,
-    boolean onGround,
-    boolean collidedHorizontally, boolean collidedVertically,
-    boolean resetMotionX, boolean resetMotionZ,
-    boolean step, boolean edgeSneak,
-    double yStepHeight
+    Motion actualMotion,
+	  Motion offsetMotion,
+	  Motion intermittentResult,
+	  boolean onGround,
+	  boolean collidedHorizontally, boolean collidedVertically,
+	  boolean resetMotionX, boolean resetMotionZ,
+	  boolean step, boolean edgeSneak,
+	  double yStepHeight
   ) {
-    if (motion == null) {
+	  if (offsetMotion == null) {
       throw new IllegalArgumentException("Context cannot be null");
     }
-    this.motion = motion;
+    this.actualMotion = actualMotion;
+    this.offsetMotion = offsetMotion;
     this.intermittentResult = intermittentResult;
     this.onGround = onGround;
     this.collidedHorizontally = collidedHorizontally;
@@ -58,8 +74,19 @@ public final class SimulationResult {
     this.yStepHeight = yStepHeight;
   }
 
+  public Motion actualMotion() {
+    return actualMotion;
+  }
+
   public Motion offsetMotion() {
-    return motion;
+    return offsetMotion;
+  }
+
+  public boolean offsetMotionDiffersFromActualMotion() {
+    if (actualMotion == null) {
+      return false;
+    }
+    return !actualMotion().equals(offsetMotion());
   }
 
   public Motion intermittentResult() {
@@ -94,6 +121,10 @@ public final class SimulationResult {
     return edgeSneak;
   }
 
+  public Motion edgeSneakMotion() {
+    return actualMotion;
+  }
+
   public double stepHeightThisMove() {
     return yStepHeight;
   }
@@ -118,7 +149,7 @@ public final class SimulationResult {
 
   @Override
   public int hashCode() {
-    int result = motion.hashCode();
+    int result = offsetMotion.hashCode();
     result = 31 * result + (intermittentResult != null ? intermittentResult.hashCode() : 0);
     result = 31 * result + (onGround ? 1 : 0);
     result = 31 * result + (collidedHorizontally ? 1 : 0);
@@ -147,7 +178,7 @@ public final class SimulationResult {
     if (step != that.step) return false;
     if (edgeSneak != that.edgeSneak) return false;
     if (Double.compare(that.yStepHeight, yStepHeight) != 0) return false;
-    if (!motion.equals(that.motion)) return false;
+    if (!offsetMotion.equals(that.offsetMotion)) return false;
     return Objects.equals(intermittentResult, that.intermittentResult);
   }
 
@@ -181,7 +212,7 @@ public final class SimulationResult {
     if (edgeSneak != other.edgeSneak) {
       return false;
     }
-    if (!motion.almostIdentical(other.motion)) {
+    if (!offsetMotion.almostIdentical(other.offsetMotion)) {
       return false;
     }
     if (intermittentResult != null ? !intermittentResult.almostIdentical(other.intermittentResult) : other.intermittentResult != null) {
@@ -194,7 +225,7 @@ public final class SimulationResult {
   }
 
   public long almostIdenticalHash() {
-    long result = motion.almostIdenticalHash();
+    long result = offsetMotion.almostIdenticalHash();
     result = 31 * result + (intermittentResult != null ? intermittentResult.almostIdenticalHash() : 0);
     result = 31 * result + (onGround ? 1 : 0);
     result = 31 * result + (collidedHorizontally ? 1 : 0);
@@ -210,7 +241,7 @@ public final class SimulationResult {
   @Override
   public String toString() {
     return "SimulationResult{" +
-      "motion=" + motion +
+      "motion=" + offsetMotion +
       ", intermittentResult=" + intermittentResult +
       ", onGround=" + onGround +
       ", collidedHorizontally=" + collidedHorizontally +
@@ -227,11 +258,11 @@ public final class SimulationResult {
     return INVALID_SIMULATION;
   }
 
-  public static SimulationResult untouched(Motion motion) {
-    return new SimulationResult(motion, null,false, false, false, false, false, false, false, 0);
+  public static SimulationResult untouched(Motion offsetMotion) {
+    return new SimulationResult(null, offsetMotion, null, false, false, false, false, false, false, false, 0);
   }
 
 	public SimulationResult copy() {
-    return new SimulationResult(motion, intermittentResult, onGround, collidedHorizontally, collidedVertically, resetMotionX, resetMotionZ, step, edgeSneak, yStepHeight);
+    return new SimulationResult(actualMotion, offsetMotion, intermittentResult, onGround, collidedHorizontally, collidedVertically, resetMotionX, resetMotionZ, step, edgeSneak, yStepHeight);
 	}
 }

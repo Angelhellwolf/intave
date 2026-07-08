@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check.movement.physics;
 
 import de.jpx3.intave.block.access.VolatileBlockAccess;
@@ -13,7 +24,6 @@ import de.jpx3.intave.user.meta.EffectMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.entity.Player;
 
 import static de.jpx3.intave.block.collision.Collision.rasterizedLiquidPresentSearch;
 import static de.jpx3.intave.share.ClientMath.floor;
@@ -83,15 +93,14 @@ public final class MovementCharacteristics {
   }
 
   public static boolean onClimbable(User user, double positionX, double positionY, double positionZ) {
-    Player player = user.player();
-    ProtocolMetadata clientData = user.meta().protocol();
+    ProtocolMetadata protocol = user.meta().protocol();
     Material type = VolatileBlockAccess.typeAccess(
-      user, player.getWorld(),
+      user,
       floor(positionX),
       floor(positionY),
       floor(positionZ)
     );
-    if (clientData.combatUpdate() && ItemProperties.isTrapdoor(type) && canGoThroughTrapDoorOnLadder(user, positionX, positionY, positionZ)) {
+    if (protocol.combatUpdate() && ItemProperties.isTrapdoor(type) && canGoThroughTrapDoorOnLadder(user, positionX, positionY, positionZ)) {
       return true;
     }
     return BlockProperties.of(type).climbable();

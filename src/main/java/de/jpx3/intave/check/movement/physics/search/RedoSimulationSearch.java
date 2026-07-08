@@ -22,13 +22,18 @@ import de.jpx3.intave.user.User;
 import java.util.HashSet;
 import java.util.Set;
 
-public final class TryFuzzyFirstSimulationSearch implements SimulationSearch {
+public final class RedoSimulationSearch implements SimulationSearch {
 	private final SimulationSearch delegate;
 	private final SimulationEvaluator evaluator;
 
-	public TryFuzzyFirstSimulationSearch(SimulationSearch delegate, SimulationEvaluator evaluator) {
+	public RedoSimulationSearch(SimulationSearch delegate, SimulationEvaluator evaluator) {
 		this.delegate = delegate;
 		this.evaluator = evaluator;
+	}
+
+	@Override
+	public Set<Simulation> exhaustiveSearch(User user, SimulationEnvironment environment, Simulator simulator) {
+		return delegate.exhaustiveSearch(user, environment, simulator);
 	}
 
 	@Override
@@ -67,5 +72,9 @@ public final class TryFuzzyFirstSimulationSearch implements SimulationSearch {
 			return simulation;
 		}
 		return firstSimulation;
+	}
+
+	public static SimulationSearch of(SimulationSearch search, SimulationEvaluator simulationEvaluator) {
+		return new RedoSimulationSearch(search, simulationEvaluator);
 	}
 }

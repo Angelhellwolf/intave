@@ -114,6 +114,10 @@ public final class Simulation {
     return simulationResult.offsetMotion();
   }
 
+  public Motion actualMotion() {
+    return simulationResult.actualMotion();
+  }
+
   public void appendBlue(String details) {
     this.blueDetails += details;
   }
@@ -162,7 +166,7 @@ public final class Simulation {
     return copy;
   }
 
-  public Simulation select(Simulation other, Motion sentMotion) {
+  public Simulation select(Simulation other) {
     if (this == INVALID_SIMULATION) {
       return other.reusableCopy();
     }
@@ -183,7 +187,7 @@ public final class Simulation {
     return selectedSimulation;
   }
 
-  public Simulation select(Simulation other, Position sentPosition, Position lastPosition) {
+  public Simulation select(Simulation other, Position sentPosition) {
     if (this == INVALID_SIMULATION) {
       return other.reusableCopy();
     }
@@ -218,6 +222,10 @@ public final class Simulation {
   @Override
   public int hashCode() {
     return Objects.hash(configuration, simulationResult, canFinishExplicitTick);
+  }
+
+  public boolean offsetMotionDiffersFromActualMotion() {
+    return simulationResult.offsetMotionDiffersFromActualMotion();
   }
 
   static Simulation of(User user, MovementConfiguration configuration, SimulationEnvironment environment, SimulationResult simulationResult) {

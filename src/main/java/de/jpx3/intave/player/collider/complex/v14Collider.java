@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.player.collider.complex;
 
 import de.jpx3.intave.block.collision.Collision;
@@ -14,7 +25,7 @@ public final class v14Collider implements Collider {
   public SimulationResult collide(
     User user,
     SimulationEnvironment environment,
-    Motion motion,
+    Motion offsetMotion,
     double positionX,
     double positionY,
     double positionZ,
@@ -22,33 +33,36 @@ public final class v14Collider implements Collider {
   ) {
     // webs
     if (inWeb) {
-      motion.motionX *= 0.25D;
-      motion.motionY *= 0.05f;
-      motion.motionZ *= 0.25D;
+      offsetMotion.motionX *= 0.25D;
+      offsetMotion.motionY *= 0.05f;
+      offsetMotion.motionZ *= 0.25D;
     }
+
+    Motion actualMotion = Motion.copyFrom(offsetMotion);
 
     // "maybeBackOffFromEdge"
     boolean edgeSneak = false;
     if (environment.onGround() && environment.isSneaking()) {
-      edgeSneak = calculateBackOffFromEdge(user, environment, environment.stepHeight(), motion);
+      edgeSneak = calculateBackOffFromEdge(user, environment, environment.stepHeight(), offsetMotion);
     }
 
     // "collide"
-    double initialX = motion.motionX;
-    double initialY = motion.motionY;
-    double initialZ = motion.motionZ;
+    double initialX = offsetMotion.motionX;
+    double initialY = offsetMotion.motionY;
+    double initialZ = offsetMotion.motionZ;
 
     boolean[] stepped = new boolean[1];
-    motion.setTo(motionAfterCollision(user, environment, motion, stepped));
+    offsetMotion.setTo(motionAfterCollision(user, environment, offsetMotion, stepped));
 
-    boolean collidedVertically = initialY != motion.motionY;
-    boolean collidedHorizontally = initialX != motion.motionX || initialZ != motion.motionZ;
-    boolean onGround = initialY != motion.motionY && initialY < 0.0;
-    boolean moveResetX = initialX != motion.motionX;
-    boolean moveResetZ = initialZ != motion.motionZ;
+    boolean collidedVertically = initialY != offsetMotion.motionY;
+    boolean collidedHorizontally = initialX != offsetMotion.motionX || initialZ != offsetMotion.motionZ;
+    boolean onGround = initialY != offsetMotion.motionY && initialY < 0.0;
+    boolean moveResetX = initialX != offsetMotion.motionX;
+    boolean moveResetZ = initialZ != offsetMotion.motionZ;
 
     return new SimulationResult(
-      Motion.copyFrom(motion),
+      Motion.copyFrom(actualMotion),
+      Motion.copyFrom(offsetMotion),
       null,
       onGround,
       collidedHorizontally,

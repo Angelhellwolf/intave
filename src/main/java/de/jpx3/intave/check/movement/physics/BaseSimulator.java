@@ -334,6 +334,12 @@ class BaseSimulator extends Simulator {
     Position position, Motion motion
   ) {
     motion = motion.copy();
+//    SimulationResult beforeMoveCollider = environment.simulationResult();
+//    Motion actualMotion = beforeMoveCollider == null ? null : beforeMoveCollider.actualMotion();
+//    if (actualMotion != null) {
+//      motion.motionX = actualMotion.motionX();
+//      motion.motionZ = actualMotion.motionZ();
+//    }
     Player player = user.player();
     MetadataBundle meta = user.meta();
     ProtocolMetadata clientData = meta.protocol();
@@ -652,6 +658,18 @@ class BaseSimulator extends Simulator {
     Motion motion, double gravity, double slipperiness
   ) {
     Player player = user.player();
+
+    if (environment.collidedHorizontally() || environment.hasJumpedInTick()) {
+      boolean climbable = MovementCharacteristics.onClimbable(
+        user,
+        environment.positionX(),
+        environment.positionY(),
+        environment.positionZ()
+      );
+      if (climbable) {
+        motion.motionY = Math.max(motion.motionY, 0.2D);
+      }
+    }
 
     if (Effects.levitationEffectActive(player)) {
       int levitationAmplifier = Effects.effectAmplifier(player, Effects.EFFECT_LEVITATION);

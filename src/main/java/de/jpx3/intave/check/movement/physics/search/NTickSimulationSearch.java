@@ -19,6 +19,7 @@ import de.jpx3.intave.check.movement.physics.branch.MovementSearchBranchers;
 import de.jpx3.intave.check.movement.physics.branch.MovementSearchConfig;
 import de.jpx3.intave.check.movement.physics.branch.MovementSearchInput;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
+import de.jpx3.intave.check.movement.physics.search.collector.MergingSimulationCollector;
 import de.jpx3.intave.diagnostic.timings.Timings;
 import de.jpx3.intave.executor.RateLimiter;
 import de.jpx3.intave.math.Hypot;
@@ -46,6 +47,7 @@ import java.util.stream.Collector;
 import static de.jpx3.intave.check.movement.physics.MoveMetric.TELEPORT;
 import static de.jpx3.intave.math.MathHelper.formatDouble;
 
+// untested
 public final class NTickSimulationSearch implements SimulationSearch {
 	private final static double STRICT_ACCURACY = 0.0001;
 
@@ -68,6 +70,11 @@ public final class NTickSimulationSearch implements SimulationSearch {
 	}
 
 	@Override
+	public Set<Simulation> exhaustiveSearch(User user, SimulationEnvironment environment, Simulator simulator) {
+		return Collections.emptySortedSet();
+	}
+
+	@Override
 	public Simulation search(
 		User user, SimulationEnvironment movementData,
 		Simulator simulator, SimulationSearchOptions options
@@ -84,9 +91,9 @@ public final class NTickSimulationSearch implements SimulationSearch {
 		boolean rateLimited = ratelimiter.isOverLimit();
 		int maxFlyingSimulations = rateLimited ? 4 : 36;
 
-		SimulationCollector firstTickContainer = collectSimulations(
+		MergingSimulationCollector firstTickContainer = collectSimulations(
 			user, simulator, movementData,
-			SimulationCollector.forEnvironment(user, movementData, maxFlyingSimulations),
+			MergingSimulationCollector.forEnvironment(user, movementData, maxFlyingSimulations),
 			sim -> sim.offsetDifference() < requiredAccuracyFirstTick
 		);
 
@@ -127,9 +134,9 @@ public final class NTickSimulationSearch implements SimulationSearch {
 				int completedTicks = flyingDepth + 1;
 				Motion remainingMotion = tickEnvironment.sentOffsetMotion();
 				double requiredAccuracy = requiredAccuracyForTick(completedTicks, likelyInaccurate, allowFuzziness);
-				SimulationCollector tickContainer = collectSimulations(
+				MergingSimulationCollector tickContainer = collectSimulations(
 					user, simulator, tickEnvironment,
-					SimulationCollector.forEnvironmentWithCustomTargets(
+					MergingSimulationCollector.forEnvironmentWithCustomTargets(
 						user, tickEnvironment, remainingMotion, lastPositionB4Flying, maxFlyingSimulations
 					),
 					sim -> sim.offsetDifference() < requiredAccuracy

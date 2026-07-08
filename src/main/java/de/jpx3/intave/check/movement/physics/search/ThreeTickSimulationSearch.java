@@ -19,6 +19,9 @@ import de.jpx3.intave.check.movement.physics.branch.MovementSearchBranchers;
 import de.jpx3.intave.check.movement.physics.branch.MovementSearchConfig;
 import de.jpx3.intave.check.movement.physics.branch.MovementSearchInput;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
+import de.jpx3.intave.check.movement.physics.search.collector.BestSimulationSet;
+import de.jpx3.intave.check.movement.physics.search.collector.ExhaustiveSimulationCollector;
+import de.jpx3.intave.check.movement.physics.search.collector.MergingSimulationCollector;
 import de.jpx3.intave.diagnostic.timings.Timings;
 import de.jpx3.intave.executor.RateLimiter;
 import de.jpx3.intave.math.Hypot;
@@ -60,6 +63,73 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 	}
 
 	@Override
+	public Set<Simulation> exhaustiveSearch(
+		User user, SimulationEnvironment environment, Simulator simulator
+	) {
+		Position receivedPosition = environment.position();
+		Position lastPositionB4Flying = environment.lastPosition();
+
+		RateLimiter ratelimiter = user.meta().movement().simulationRateLimiter;
+		int maxFlyingSimulations = ratelimiter.isOverLimit() ? 4 : 36;
+		int firstFlyingTickLimit = ratelimiter.isOverLimit() ? 256 : 512;
+		int secondFlyingTickLimit = ratelimiter.isOverLimit() ? 0 : 256;
+
+		BestSimulationSet bestSimulations = new BestSimulationSet();
+		ExhaustiveSimulationCollector firstTickContainer = collectSimulations(
+			user, simulator, environment,
+			ExhaustiveSimulationCollector.forEnvironment(
+				user, environment, lastPositionB4Flying, maxFlyingSimulations,
+				bestSimulations, Simulation::offsetDifference
+			),
+			sim -> false
+		);
+		int totalSimulationsDone = firstTickContainer.simulationsDone();
+
+		for (Simulation firstTickSimulation : firstTickContainer.flyingSimulations()) {
+			if (totalSimulationsDone > firstFlyingTickLimit) {
+				continue;
+			}
+			SimulationEnvironment firstTickEnvironment = firstTickSimulation.environment().mutableView();
+			simulator.simulateAround(
+				user, firstTickEnvironment, firstTickSimulation,
+				receivedPosition, environment.rotation()
+			);
+
+			ExhaustiveSimulationCollector secondTickContainer = collectSimulations(
+				user, simulator, firstTickEnvironment,
+				ExhaustiveSimulationCollector.forEnvironment(
+					user, firstTickEnvironment, lastPositionB4Flying, maxFlyingSimulations,
+					bestSimulations, sim -> sim.positionDifference(receivedPosition)
+				),
+				sim -> false
+			);
+			totalSimulationsDone += secondTickContainer.simulationsDone();
+
+			for (Simulation secondTickFlyingSimulation : secondTickContainer.flyingSimulations()) {
+				if (totalSimulationsDone > secondFlyingTickLimit) {
+					continue;
+				}
+				SimulationEnvironment secondTickEnvironment = secondTickFlyingSimulation.environment().mutableView();
+				simulator.simulateAround(
+					user, secondTickEnvironment, secondTickFlyingSimulation,
+					receivedPosition, environment.rotation()
+				);
+
+				ExhaustiveSimulationCollector thirdTickContainer = collectSimulations(
+					user, simulator, secondTickEnvironment,
+					ExhaustiveSimulationCollector.forEnvironment(
+						user, secondTickEnvironment, lastPositionB4Flying, maxFlyingSimulations,
+						bestSimulations, sim -> sim.positionDifference(receivedPosition)
+					),
+					sim -> false
+				);
+				totalSimulationsDone += thirdTickContainer.simulationsDone();
+			}
+		}
+		return bestSimulations.simulations();
+	}
+
+	@Override
 	public Simulation search(
 		User user, SimulationEnvironment movementData,
 		Simulator simulator, SimulationSearchOptions options
@@ -80,9 +150,9 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 		int secondFlyingTickLimit = ratelimiter.isOverLimit() ? 0 : 256;
 
 		// Go through all this-tick possibilities
-		SimulationCollector firstTickContainer = collectSimulations(
+		MergingSimulationCollector firstTickContainer = collectSimulations(
 			user, simulator, movementData,
-			SimulationCollector.forEnvironment(user, movementData, maxFlyingSimulations),
+			MergingSimulationCollector.forEnvironment(user, movementData, maxFlyingSimulations),
 		 sim -> sim.offsetDifference() < requiredAccuracyFirstTick
 		);
 
@@ -123,9 +193,9 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 			);
 
 			Motion secondTickRemainingMotion = firstTickEnvironment.sentOffsetMotion();
-			SimulationCollector secondTickContainer = collectSimulations(
+			MergingSimulationCollector secondTickContainer = collectSimulations(
 				user, simulator, firstTickEnvironment,
-				SimulationCollector.forEnvironmentWithCustomTargets(
+				MergingSimulationCollector.forEnvironmentWithCustomTargets(
 					user, firstTickEnvironment, secondTickRemainingMotion, lastPositionB4Flying, maxFlyingSimulations
 				),
 				sim -> sim.positionDifference(receivedPosition) < requiredAccuracySecondTick
@@ -169,9 +239,9 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 				);
 
 				Motion thirdTickRemainingMotion = secondTickEnvironment.sentOffsetMotion();
-				SimulationCollector thirdTickSimulator = collectSimulations(
+				MergingSimulationCollector thirdTickSimulator = collectSimulations(
 					user, simulator, secondTickEnvironment,
-					SimulationCollector.forEnvironmentWithCustomTargets(
+					MergingSimulationCollector.forEnvironmentWithCustomTargets(
 						user, secondTickEnvironment, thirdTickRemainingMotion, lastPositionB4Flying, maxFlyingSimulations
 					),
 					sim -> sim.positionDifference(receivedPosition) < requiredAccuracyThirdTick

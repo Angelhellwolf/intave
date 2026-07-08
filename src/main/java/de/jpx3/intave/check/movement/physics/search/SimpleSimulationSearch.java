@@ -23,7 +23,6 @@ import de.jpx3.intave.diagnostic.timings.Timings;
 import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.player.ItemProperties;
 import de.jpx3.intave.search.Searcher;
-import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.InventoryMetadata;
@@ -54,13 +53,21 @@ public final class SimpleSimulationSearch implements SimulationSearch {
     this.detectNoSlowdown = detectNoSlowdown;
   }
 
+	@Override
+	public Set<Simulation> exhaustiveSearch(User user, SimulationEnvironment environment, Simulator simulator) {
+		return collectSimulations(
+			user, simulator, environment,
+			Collectors.toSet(),
+			sim -> sim.offsetDifference() < REQUIRED_ACCURACY_FOR_QUICK_PROC_EXIT
+		);
+	}
+
 	public Simulation search(User user, SimulationEnvironment environment, Simulator simulator, SimulationSearchOptions options) {
-		Motion sentMotion = environment.sentOffsetMotion();
 		Simulation simulation = collectSimulations(
 			user, simulator, environment,
 			Collectors.reducing(
 				Simulation.invalid(),
-				(o, o2) -> o.select(o2, sentMotion)
+				Simulation::select
 			),
 			sim -> sim.offsetDifference() < REQUIRED_ACCURACY_FOR_QUICK_PROC_EXIT
 		);

@@ -36,9 +36,10 @@ import de.jpx3.intave.check.CheckStatistics;
 import de.jpx3.intave.check.CheckViolationLevelDecrementer;
 import de.jpx3.intave.check.movement.physics.*;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
+import de.jpx3.intave.check.movement.physics.search.RedoSimulationSearch;
+import de.jpx3.intave.check.movement.physics.search.RollbackSimulationSearch;
 import de.jpx3.intave.check.movement.physics.search.SimulationSearch;
 import de.jpx3.intave.check.movement.physics.search.ThreeTickSimulationSearch;
-import de.jpx3.intave.check.movement.physics.search.TryFuzzyFirstSimulationSearch;
 import de.jpx3.intave.diagnostic.KeyPressStudy;
 import de.jpx3.intave.diagnostic.message.DebugBroadcast;
 import de.jpx3.intave.diagnostic.message.MessageSeverity;
@@ -132,10 +133,13 @@ public final class Physics extends Check {
     }
 
     boolean detectNoSlowdown = settings.boolBy("enforce-item-slowdown", true);
-//    this.simulationSearch = new SimpleSimulationSearch(resetItemUsage, detectNoSlowdown);
-//    this.simulationSearch = new TwoTickSimulationSearch(resetItemUsage, detectNoSlowdown);
     this.simulationEvaluator = new SimulationEvaluator();
-    this.simulationSearch = new TryFuzzyFirstSimulationSearch(new ThreeTickSimulationSearch(resetItemUsage, detectNoSlowdown), simulationEvaluator);
+
+    SimulationSearch search = new ThreeTickSimulationSearch(resetItemUsage, detectNoSlowdown);
+    search = RedoSimulationSearch.of(search, simulationEvaluator);
+    search = RollbackSimulationSearch.of(search, simulationEvaluator);
+    this.simulationSearch = search;
+
     setDefaultMitigationStrategy(MitigationStrategy.CAREFUL);
   }
 
@@ -226,9 +230,14 @@ public final class Physics extends Check {
 	  MovementMetadata movementData = user.meta().movement();
     ViolationMetadata violationMetadata = user.meta().violationLevel();
 
-    double motionX = !Double.isNaN(movementData.endMotionXOverride) ? movementData.endMotionXOverride : movementData.motionX();
-    double motionY = !Double.isNaN(movementData.endMotionYOverride) ? movementData.endMotionYOverride : movementData.motionY();
-    double motionZ = !Double.isNaN(movementData.endMotionZOverride) ? movementData.endMotionZOverride : movementData.motionZ();
+    SimulationResult lastSimulationResult = movementData.simulationResult();
+    Motion actualMotion = movementData.sentOffsetMotion();
+    if (lastSimulationResult != null && lastSimulationResult.offsetMotionDiffersFromActualMotion()) {
+      actualMotion = lastSimulationResult.actualMotion();
+    }
+    double motionX = !Double.isNaN(movementData.endMotionXOverride) ? movementData.endMotionXOverride : actualMotion.motionX();
+    double motionY = !Double.isNaN(movementData.endMotionYOverride) ? movementData.endMotionYOverride : actualMotion.motionY();
+    double motionZ = !Double.isNaN(movementData.endMotionZOverride) ? movementData.endMotionZOverride : actualMotion.motionZ();
 
     Simulator simulator = movementData.simulator();
     if (hasMovement) {
