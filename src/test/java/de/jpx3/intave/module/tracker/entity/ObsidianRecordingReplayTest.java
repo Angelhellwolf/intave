@@ -39,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * before that the server (and therefore Intave) has no idea where the entity actually is.
  */
 class ObsidianRecordingReplayTest {
-  private static final Path RECORDING = Path.of("src/main/resources/obsidian/reach/recording-20260710-210601.json.gz");
+  private static final Path RECORDING = Path.of("src/main/resources/obsidian/reach/recording-20260711-004144.json.gz");
   private static final Pattern SYNC_POSITION = Pattern.compile(
     "position=\\(([-0-9.EeE]+), ([-0-9.EeE]+), ([-0-9.EeE]+)\\)"
   );
@@ -63,6 +63,7 @@ class ObsidianRecordingReplayTest {
     int seedIndex = firstPositionSyncIndex(frames, targetEntityId);
     Frame seedFrame = frames.get(seedIndex);
     Position seedPosition = positionSyncOf(seedFrame, targetEntityId);
+    int comparisonStartIndex = firstComparableIndex(frames, targetEntityId, seedIndex);
 
     Entity entity = new Entity(
       targetEntityId,
@@ -83,6 +84,9 @@ class ObsidianRecordingReplayTest {
       }
       entity.onUpdate();
 
+      if (i < comparisonStartIndex) {
+        continue;
+      }
       if (frame.attackedEntity != null && frame.attackedEntity.entityId == targetEntityId) {
         comparisons++;
         if (closestSimulatedDistance(entity, frame.attackedEntity.position) <= MATCH_TOLERANCE_BLOCKS) {
@@ -112,6 +116,7 @@ class ObsidianRecordingReplayTest {
     int seedIndex = firstPositionSyncIndex(frames, targetEntityId);
     Frame seedFrame = frames.get(seedIndex);
     Position seedPosition = positionSyncOf(seedFrame, targetEntityId);
+    int comparisonStartIndex = firstComparableIndex(frames, targetEntityId, seedIndex);
 
     Entity entity = new Entity(
       targetEntityId,
@@ -132,6 +137,9 @@ class ObsidianRecordingReplayTest {
       }
       entity.onUpdate();
 
+      if (i < comparisonStartIndex) {
+        continue;
+      }
       if (
         frame.attackReachDistance != null && frame.player != null
           && frame.attackedEntity != null && frame.attackedEntity.entityId == targetEntityId
@@ -255,6 +263,29 @@ class ObsidianRecordingReplayTest {
       }
     }
     throw new IllegalStateException("recording never syncs the position of entity " + targetEntityId);
+  }
+
+  /**
+   * Intave has no idea where an entity is before its position has been established by a real server packet,
+   * and reach comparisons are meaningless before the first attack - so comparisons only start once both have
+   * happened. Ticks are still simulated from {@code seedIndex} onward regardless, to keep the entity's tracked
+   * state correct once comparisons begin.
+   */
+  private static int firstComparableIndex(List<Frame> frames, int targetEntityId, int seedIndex) {
+    return Math.max(seedIndex, firstAttackIndex(frames, targetEntityId));
+  }
+
+  private static int firstAttackIndex(List<Frame> frames, int targetEntityId) {
+    for (int i = 0; i < frames.size(); i++) {
+      Frame frame = frames.get(i);
+      if (
+        frame.attackReachDistance != null && frame.attackedEntity != null
+          && frame.attackedEntity.entityId == targetEntityId
+      ) {
+        return i;
+      }
+    }
+    throw new IllegalStateException("recording never attacks entity " + targetEntityId);
   }
 
   private static Position positionSyncOf(Frame frame, int targetEntityId) {
