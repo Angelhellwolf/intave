@@ -9,7 +9,7 @@
  *   https://polyformproject.org/licenses/perimeter/1.0.0/
  */
 
-package de.jpx3.intave.check.movement.physics;
+package de.jpx3.intave.check.movement.physics.simulator;
 
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.adapter.MinecraftVersions;
@@ -17,6 +17,9 @@ import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.fluid.Fluids;
 import de.jpx3.intave.block.physics.BlockPhysics;
 import de.jpx3.intave.block.physics.BlockProperties;
+import de.jpx3.intave.check.movement.physics.MovementCharacteristics;
+import de.jpx3.intave.check.movement.physics.Pose;
+import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.diagnostic.timings.Timings;
 import de.jpx3.intave.executor.Synchronizer;
@@ -61,14 +64,14 @@ class BaseSimulator extends Simulator {
 
   private void handleSneakInWater(User user, Motion motion, SimulationEnvironment environment) {
     ProtocolMetadata protocol = user.meta().protocol();
-    if (protocol.waterUpdate() && environment.isSneaking() && environment.inWater()) {
+    if (protocol.aquaticUpdate() && environment.isSneaking() && environment.inWater()) {
       motion.motionY -= 0.04F;
     }
   }
 
   private void updateAquatics(User user, Motion baseMotion, SimulationEnvironment environment) {
     updateInWater(user, baseMotion, environment);
-    updateInLava(user, environment);
+    updateInLava(environment);
     environment.updateEyesInWater();
   }
 
@@ -76,14 +79,14 @@ class BaseSimulator extends Simulator {
     MetadataBundle meta = user.meta();
     ProtocolMetadata clientData = meta.protocol();
     BoundingBox boundingBox = environment.boundingBox();
-    if (!clientData.waterUpdate()) {
+    if (!clientData.aquaticUpdate()) {
       boundingBox = boundingBox.grow(0.0D, -0.4000000059604645D, 0.0D);
     }
     boundingBox = boundingBox.shrink(0.001D);
     environment.setInWater(user.waterflow().applyFlowTo(user, environment, baseMotion, boundingBox));
   }
 
-  private void updateInLava(User user, SimulationEnvironment environment) {
+  private void updateInLava(SimulationEnvironment environment) {
     if (environment.inLava()) {
       environment.activeTick(IN_LAVA);
     }
@@ -103,9 +106,11 @@ class BaseSimulator extends Simulator {
     } else {
       if (Math.abs(baseMotion.motionX) < resetMotion) {
         baseMotion.motionX = 0.0;
+//        user.sendMessage("Motion X "+(baseMotion.motionX)+" clamped to 0.0 due to reset motion threshold: " + resetMotion);
       }
       if (Math.abs(baseMotion.motionZ) < resetMotion) {
         baseMotion.motionZ = 0.0;
+//        user.sendMessage("Motion Z "+(baseMotion.motionZ)+" clamped to 0.0 due to reset motion threshold: " + resetMotion);
       }
     }
 
@@ -146,7 +151,7 @@ class BaseSimulator extends Simulator {
     boolean inLava = environment.inLava();
 	  boolean swimming = pose == Pose.SWIMMING;
     boolean crouching = pose == Pose.CROUCHING;
-    boolean waterUpdate = protocol.waterUpdate();
+    boolean waterUpdate = protocol.aquaticUpdate();
 
     motion = motion.copy();
 
@@ -187,8 +192,8 @@ class BaseSimulator extends Simulator {
     if (jumped) {
       boolean allowJumpInLiquid = false;
       if (
-        protocol.waterUpdate() && inWater &&
-        environment.onGround() && environment.pose().height(user) >= 0.4
+        protocol.aquaticUpdate() && inWater &&
+        environment.onGround() && environment.pose().height(user, environment) >= 0.4
       ) {
         Position lastPosition = environment.lastPosition();
         double fluidDepth = user.waterflow().fluidDepthAt(
@@ -331,6 +336,7 @@ class BaseSimulator extends Simulator {
   public Motion simulateAfterTick(
     User user,
     SimulationEnvironment environment,
+    MovementConfiguration configuration,
     Position position, Motion motion
   ) {
     motion = motion.copy();
@@ -353,8 +359,7 @@ class BaseSimulator extends Simulator {
     boolean elytraFlying = pose == Pose.FALL_FLYING;
     boolean inWater = environment.inWater();
     boolean inLava = environment.inLava();
-    boolean collidedHorizontally = environment.collidedHorizontally();
-    double gravity = environment.gravity();
+	  double gravity = environment.gravity();
     double slipperiness;
 
     if (environment.lastOnGround()) {
@@ -375,10 +380,10 @@ class BaseSimulator extends Simulator {
     }
 
     if (environment.motionXReset()) {
-      motion.motionX = 0.0;
+      motion.setMotionX(0.0);
     }
     if (environment.motionZReset()) {
-      motion.motionZ = 0.0;
+      motion.setMotionZ(0.0);
     }
 
     // Update supporting block if on-ground
@@ -391,15 +396,15 @@ class BaseSimulator extends Simulator {
       environment.compileSpecialBlocks();
     }
 
-    updateFallStateAfter(user, environment, motion.motionY, environment.onGround());
+    updateFallStateAfter(user, environment, motion, environment.onGround());
     simulateMovementOfCollidedBlocksAfter(user, environment, motion, boundingBox);
 
     if (inWater) {
-      simulateWaterAfter(user, environment, motion, gravity);
+      simulateWaterAfter(user, environment, configuration, motion, gravity);
     } else if (inLava) {
-      simulateLavaAfter(user, environment, motion, boundingBox, collidedHorizontally);
+      simulateLavaAfter(user, environment, motion);
     } else if (!elytraFlying) {
-      simulateNormalAfter(user, environment, motion, gravity, slipperiness);
+      simulateNormalAfter(user, environment, configuration, motion, gravity, slipperiness);
     }
 
     if (user.meta().protocol().newBlockEntityIntersectionLogic()) {
@@ -416,22 +421,21 @@ class BaseSimulator extends Simulator {
 
   private void updateFallStateAfter(
     User user, SimulationEnvironment environment,
-    double motionY, boolean onGround
+    Motion motion, boolean onGround
   ) {
     if (!environment.inWater()) {
-      Motion baseMotion = environment.mutableBaseMotionCopy();
-      updateAquatics(user, baseMotion, environment);
-      environment.setBaseMotion(baseMotion);
+      updateAquatics(user, motion, environment);
     }
     if (onGround) {
       environment.resetFallDistance();
-    } else if (motionY < 0.0D) {
-      environment.addFallDistance(-motionY);
+    } else if (motion.motionY() < 0.0D) {
+      environment.addFallDistance(-motion.motionY());
     }
   }
 
   private void simulateMovementOfCollidedBlocksAfter(
-    User user, SimulationEnvironment environment, Motion motion, BoundingBox entityBoundingBox
+    User user, SimulationEnvironment environment,
+    Motion motion, BoundingBox entityBoundingBox
   ) {
     Player player = user.player();
     World world = player.getWorld();
@@ -527,10 +531,9 @@ class BaseSimulator extends Simulator {
     Motion move = from.motionTo(to);
 
     SimulationResult simulationResult = environment.simulationResult();
-    if (simulationResult == null) {
+    if (simulationResult == null || simulationResult.isValid()) {
       return;
     }
-
     Motion crazyMotion = simulationResult.intermittentResult();
 
     LongSet visitedBlocks = new LongOpenHashSet();
@@ -569,15 +572,16 @@ class BaseSimulator extends Simulator {
   private void simulateWaterAfter(
     User user,
     SimulationEnvironment environment,
+    MovementConfiguration configuration,
     Motion motion,
     double gravity
   ) {
     Player player = user.player();
     MetadataBundle meta = user.meta();
-    ProtocolMetadata clientData = meta.protocol();
+    ProtocolMetadata protocol = meta.protocol();
 	  float motionXZMultiplier;
-    if (clientData.waterUpdate()) {
-      motionXZMultiplier = environment.isSprinting() ? 0.9f : 0.8f;
+    if (protocol.aquaticUpdate()) {
+      motionXZMultiplier = environment.pose() == Pose.SWIMMING || configuration.isSprinting() ? 0.9f : 0.8f;
     } else {
       motionXZMultiplier = 0.8f;
     }
@@ -594,14 +598,15 @@ class BaseSimulator extends Simulator {
     motion.motionX *= motionXZMultiplier;
     motion.motionY *= 0.8f;
     motion.motionZ *= motionXZMultiplier;
-    if (!clientData.waterUpdate()) {
+    if (!protocol.aquaticUpdate()) {
       motion.motionY -= 0.02D;
     }
     // todo check if it is not movementconfig sprinting
-    if (clientData.waterUpdate() && !environment.isSprinting()) {
+    if (protocol.aquaticUpdate() && environment.pose() != Pose.SWIMMING && !configuration.isSprinting()) {
       if (motion.motionY <= 0.0D
         && Math.abs(motion.motionY - 0.005D) >= 0.003D
-        && Math.abs(motion.motionY - gravity / 16.0D) < 0.003D) {
+        && Math.abs(motion.motionY - gravity / 16.0D) < 0.003D
+      ) {
         motion.motionY = -0.003D;
       } else {
         motion.motionY -= gravity / 16.0D;
@@ -610,7 +615,7 @@ class BaseSimulator extends Simulator {
 
     if (environment.collidedHorizontally()) {
       double liquidMotionY;
-      if (user.meta().protocol().waterUpdate()) {
+      if (user.meta().protocol().aquaticUpdate()) {
         liquidMotionY = motion.motionY + 0.6f - environment.positionY() + environment.verifiedLastPositionY();
       } else {
         liquidMotionY = motion.motionY + 0.3f;
@@ -625,11 +630,8 @@ class BaseSimulator extends Simulator {
   }
 
   private void simulateLavaAfter(
-    User user,
-    SimulationEnvironment environment,
-    Motion context,
-    BoundingBox boundingBox,
-    boolean collidedHorizontally
+    User user, SimulationEnvironment environment,
+    Motion context
   ) {
     context.motionX *= 0.5D;
     context.motionY *= 0.5D;
@@ -638,7 +640,7 @@ class BaseSimulator extends Simulator {
 
     if (environment.collidedHorizontally()) {
       double liquidMotionY;
-      if (user.meta().protocol().waterUpdate()) {
+      if (user.meta().protocol().aquaticUpdate()) {
         liquidMotionY = context.motionY + 0.6f - environment.positionY() + environment.verifiedLastPositionY();
       } else {
         liquidMotionY = context.motionY + 0.3f;
@@ -655,19 +657,22 @@ class BaseSimulator extends Simulator {
   private void simulateNormalAfter(
     User user,
     SimulationEnvironment environment,
+    MovementConfiguration configuration,
     Motion motion, double gravity, double slipperiness
   ) {
     Player player = user.player();
 
-    if (environment.collidedHorizontally() || environment.hasJumpedInTick()) {
-      boolean climbable = MovementCharacteristics.onClimbable(
-        user,
-        environment.positionX(),
-        environment.positionY(),
-        environment.positionZ()
-      );
-      if (climbable) {
-        motion.motionY = Math.max(motion.motionY, 0.2D);
+    boolean climbable = MovementCharacteristics.onClimbable(
+      user,
+      environment.positionX(),
+      environment.positionY(),
+      environment.positionZ()
+    );
+    if (climbable) {
+      // calling isJumping will cause a recompute
+      if (environment.collidedHorizontally() || configuration.isJumping()) {
+//        motion.motionY = Math.max(motion.motionY, 0.2D);
+        motion.motionY = 0.2;
       }
     }
 
@@ -690,7 +695,6 @@ class BaseSimulator extends Simulator {
     for (Entity entity : entities) {
       if (
         !entity.tracingEnabled() ||
-        !entity.clientSynchronized ||
         (!entity.hasTypeData() || entity.typeData().isArmorStand())
       ) {
         continue;

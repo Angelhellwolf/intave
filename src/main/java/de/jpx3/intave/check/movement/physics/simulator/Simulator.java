@@ -9,53 +9,58 @@
  *   https://polyformproject.org/licenses/perimeter/1.0.0/
  */
 
-package de.jpx3.intave.check.movement.physics;
+package de.jpx3.intave.check.movement.physics.simulator;
 
 import de.jpx3.intave.annotate.Immutable;
 import de.jpx3.intave.annotate.Mutable;
+import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.share.Rotation;
 import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.meta.MovementMetadata;
 
 import static de.jpx3.intave.check.movement.physics.MoveMetric.FLYING_PACKET_ACCURATE;
 
 public abstract class Simulator {
   public void simulateBetween(
-    User user, MovementMetadata metadata,
+    User user, SimulationEnvironment environment,
     MovementConfiguration config
   ) {
-    metadata.stepHeight = stepHeight();
+    environment.setStepHeight(stepHeight());
 
     /*
      * Pre-tick
      */
-    Motion lastMotion = metadata.mutableBaseMotionCopy();
-    Motion afterPreTickMotion = simulatePreTick(user, lastMotion, metadata);
+    Motion lastMotion = environment.mutableBaseMotionCopy();
+    Motion afterPreTickMotion = simulatePreTick(user, lastMotion, environment);
 
     /*
      * Tick
      */
     Simulation simulation = simulateTick(
-      user, afterPreTickMotion.copy(), metadata.immutableView(), config
+      user, afterPreTickMotion.copy(), environment.immutableView(), config
     );
-    metadata.assumeOccurred(simulation);
-    Motion afterSimulationMotion = simulation.offsetMotion().copy();
-    Position newPosition = metadata.verifiedLastPosition().add(afterSimulationMotion);
-    metadata.updateMovement(newPosition, Rotation.zero());
+    environment.assumeOccurred(simulation);
+
+    Motion offsetMotion = simulation.offsetMotion().copy();
+    Position newPosition = environment.verifiedLastPosition().add(offsetMotion);
+    environment.updateMovement(newPosition, Rotation.zero());
 
     /*
      * Post-tick
      */
     Motion afterPostTickMotion = simulateAfterTick(
-      user, metadata, metadata.position(), simulation.actualMotion()
+      user, environment,
+      config,
+      environment.position(), simulation.actualMotion()
     );
-    metadata.setBaseMotion(afterPostTickMotion);
-    metadata.lastOnGround = metadata.onGround;
-    metadata.setVerifiedLastPosition(
-      metadata.position(), "AUTOACCEPT"
+    environment.clearPostTickMotionCandidates();
+
+    environment.setBaseMotion(afterPostTickMotion);
+    environment.setLastOnGround(environment.onGround());
+    environment.setVerifiedLastPosition(
+      environment.position(), "AUTOACCEPT"
     );
   }
 
@@ -74,7 +79,12 @@ public abstract class Simulator {
     environment.assumeOccurred(simulation);
 
     // after tick
-    Motion afterTickMotion = simulateAfterTick(user, environment, firstTickPosition, actualMotion);
+    Motion afterTickMotion = simulateAfterTick(
+      user, environment,
+      simulation.configuration(),
+      firstTickPosition, actualMotion
+    );
+    environment.clearPostTickMotionCandidates();
     environment.setBaseMotion(afterTickMotion);
     environment.setLastOnGround(environment.onGround());
     environment.activeTick(FLYING_PACKET_ACCURATE);
@@ -83,10 +93,15 @@ public abstract class Simulator {
 
     // receive new packet
     environment.updateMovement(sentPosition, sentRotation);
+
+    environment.setStepHeight(stepHeight());
     Motion afterPreTick = simulatePreTick(user, environment.mutableBaseMotionCopy(), environment);
     environment.setBaseMotion(afterPreTick);
   }
 
+  /**
+   * Simulate the movement before any inputs are used.
+   */
   public abstract Motion simulatePreTick(
     User user,
     @Immutable Motion baseMotion,
@@ -105,9 +120,15 @@ public abstract class Simulator {
     @Immutable MovementConfiguration configuration
   );
 
+  /**
+   * Simulate all motion calculations that happen after the position-send.
+   * The motion input can be either an offset motion or an actual motion, depending on the context.
+   * A sent-offset-motion should be used as motion when no checking is performed, since this prevents simulation errors propagating.
+   */
   public abstract Motion simulateAfterTick(
     User user,
     @Mutable SimulationEnvironment environment,
+    @Immutable MovementConfiguration configuration,
     @Immutable Position position,
     @Immutable Motion motion
   );

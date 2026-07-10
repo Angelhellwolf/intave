@@ -11,7 +11,7 @@
 
 package de.jpx3.intave.check.movement.physics.search.collector;
 
-import de.jpx3.intave.check.movement.physics.Simulation;
+import de.jpx3.intave.check.movement.physics.simulator.Simulation;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -26,13 +26,13 @@ public final class BestSimulationSet {
 		boolean canFinishExplicitTick = simulation.canFinishExplicitTick();
 		if (simulations.isEmpty()
 			|| (canFinishExplicitTick && !bestCanFinishExplicitTick)
-			|| (canFinishExplicitTick == bestCanFinishExplicitTick && Math.abs(distance - bestDistance) < 1e-6)
+			|| (canFinishExplicitTick == bestCanFinishExplicitTick && (distance < bestDistance) )
 		) {
 			simulations.clear();
 			bestDistance = distance;
 			bestCanFinishExplicitTick = canFinishExplicitTick;
 			simulations.add(simulation.reusableCopy());
-		} else if (canFinishExplicitTick == bestCanFinishExplicitTick) {
+		} else if (canFinishExplicitTick == bestCanFinishExplicitTick && Math.abs(distance - bestDistance) < 1e-6) {
 			simulations.add(simulation.reusableCopy());
 		}
 	}

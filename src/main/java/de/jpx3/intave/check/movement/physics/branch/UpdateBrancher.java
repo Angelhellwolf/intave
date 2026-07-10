@@ -22,23 +22,16 @@ import java.util.function.UnaryOperator;
 
 public final class UpdateBrancher extends MovementSearchBrancher {
 	@Override
-	public void branch(MovementSearchInput input, MovementSearchConfig config, List<MovementSearchConfig> result) {
+	public void branch(MovementSearchInput input, MovementSearchBranch inputBranch, List<MovementSearchBranch> outputBranches) {
 		SimulationEnvironment environment = input.environment();
 
-		List<TickAmbiguousUpdate> updates = environment.currentlyPossibleTickAmbiguousUpdates();
+		List<TickAmbiguousUpdate> updates = environment.possibleTickAmbiguousUpdates();
 		if (updates.isEmpty()) {
-			result.add(config);
+			outputBranches.add(inputBranch);
 			return;
 		}
 		// sort by sequenceKey
 		Collections.sort(updates);
-
-//		input.user().sendMessage("Branching on " + updates.size() + " updates: " + updates + " " + environment.currentSequence());
-//		input.user().sendMessage("CurrentTick " + environment.currentTick());
-//		input.user().sendMessage("ActiveSequenceKey " + environment.activeSequence());
-//		for (TickAmbiguousUpdate update : updates) {
-//			input.user().sendMessage(" - " + update);
-//		}
 
 		// Some updates MUST happen in this tick, so we enforce them and all before to happen now
 		long lastVerifiedCompleteUpdate = Long.MIN_VALUE;
@@ -52,7 +45,7 @@ public final class UpdateBrancher extends MovementSearchBrancher {
 		UnaryOperator<SimulationEnvironment> environmentUpdater = UnaryOperator.identity();
 		List<UnaryOperator<SimulationEnvironment>> options = new ArrayList<>();
 		List<Boolean> canFinishTick = new ArrayList<>();
-		List<String> optionDebug = new ArrayList<>();
+//		List<String> optionDebug = new ArrayList<>();
 
 		/*
 		 *   UUUU (T) UUUL T IUUU
@@ -75,7 +68,7 @@ public final class UpdateBrancher extends MovementSearchBrancher {
 
 			options.add(environmentUpdater);
 			canFinishTick.add(postponeAllowed);
-			optionDebug.add("Postpone " + update);
+//			optionDebug.add("Postpone " + update);
 			environmentUpdater = andThen(environmentUpdater, env -> {
 				update.applyTo(env);
 				env.setActiveSequence(constraint.sequenceNumber());
@@ -83,17 +76,19 @@ public final class UpdateBrancher extends MovementSearchBrancher {
 			});
 			options.add(environmentUpdater);
 			canFinishTick.add(completeAllowed);
-			optionDebug.add("Complete " + update);
+//			optionDebug.add("Complete " + update);
 		}
 
 		for (int i = options.size() - 1; i >= 0; i--) {
-			UnaryOperator<SimulationEnvironment> movementUpdate = options.get(i);
+			UnaryOperator<SimulationEnvironment> envUpdate = options.get(i);
 			boolean thisCanFinishTick = canFinishTick.get(i);
-			MovementSearchConfig cfg = config;
-			cfg = cfg.withEnvironmentModifier(movementUpdate);
+			MovementSearchBranch cfg = inputBranch;
+			cfg = cfg.modifyAfter(envUpdate);
 			cfg = cfg.withExplicitTickFinishAllow(thisCanFinishTick);
-			result.add(cfg);
+			outputBranches.add(cfg);
+//			input.user().sendMessage("Branching option: " + optionDebug.get(i) + " (canFinishTick=" + thisCanFinishTick + ")");
 		}
+//		input.user().sendMessage("Branching " + options.size() + " options");
 	}
 
 	private static <T> UnaryOperator<T> andThen(UnaryOperator<T> first, UnaryOperator<T> second) {

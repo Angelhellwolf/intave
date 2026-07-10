@@ -96,7 +96,7 @@ public final class Fluids {
   }
 
   public static FluidFlow suitableWaterflowFor(User user) {
-    return user.meta().protocol().waterUpdate() ? v13Waterflow : v8Waterflow;
+    return user.meta().protocol().aquaticUpdate() ? v13Waterflow : v8Waterflow;
   }
 
   public static FluidFlow anyWaterflow() {

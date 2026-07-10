@@ -11,7 +11,9 @@
 
 package de.jpx3.intave.check.movement.physics;
 
-import de.jpx3.intave.check.movement.physics.environment.TestSimulationEnvironment;
+import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
+import de.jpx3.intave.check.movement.physics.environment.MockSimulationEnvironment;
+import de.jpx3.intave.check.movement.physics.simulator.Simulation;
 import de.jpx3.intave.player.collider.complex.SimulationResult;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.user.User;
@@ -38,7 +40,7 @@ final class SimulationTest {
 
     simulation.flush(
       MovementConfiguration.blank(),
-      new TestSimulationEnvironment(),
+      new MockSimulationEnvironment(),
       SimulationResult.untouched(Motion.newEmpty())
     );
 
@@ -49,7 +51,7 @@ final class SimulationTest {
     return Simulation.of(
       userWithoutPlayer(),
       MovementConfiguration.blank(),
-      new TestSimulationEnvironment(),
+      new MockSimulationEnvironment(),
       SimulationResult.untouched(Motion.newEmpty())
     );
   }

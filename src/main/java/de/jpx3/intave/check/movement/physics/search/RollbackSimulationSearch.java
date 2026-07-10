@@ -11,16 +11,18 @@
 
 package de.jpx3.intave.check.movement.physics.search;
 
-import de.jpx3.intave.check.movement.physics.EvaluationTag;
-import de.jpx3.intave.check.movement.physics.Simulation;
-import de.jpx3.intave.check.movement.physics.SimulationEvaluator;
-import de.jpx3.intave.check.movement.physics.Simulator;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
+import de.jpx3.intave.check.movement.physics.evaluation.EvaluationTag;
+import de.jpx3.intave.check.movement.physics.evaluation.SimulationEvaluator;
+import de.jpx3.intave.check.movement.physics.simulator.Simulation;
+import de.jpx3.intave.check.movement.physics.simulator.Simulator;
 import de.jpx3.intave.share.Motion;
+import de.jpx3.intave.share.Position;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.MovementMetadata;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public final class RollbackSimulationSearch implements SimulationSearch {
@@ -33,16 +35,11 @@ public final class RollbackSimulationSearch implements SimulationSearch {
 	}
 
 	@Override
-	public Set<Simulation> exhaustiveSearch(User user, SimulationEnvironment environment, Simulator simulator) {
-		return delegate.exhaustiveSearch(user, environment, simulator);
-	}
-
-	@Override
-	public Simulation search(
+	public Simulation tickSearch(
 		User user, SimulationEnvironment currentEnvironment,
 		Simulator simulator, SimulationSearchOptions options
 	) {
-		Simulation firstSimulation = delegate.search(user, currentEnvironment, simulator, options);
+		Simulation firstSimulation = delegate.tickSearch(user, currentEnvironment, simulator, options);
 		MovementMetadata movement = user.meta().movement();
 		SimulationEnvironment rollbackEnvironment = movement.beforePreviousTickEnvironment;
 
@@ -51,11 +48,20 @@ public final class RollbackSimulationSearch implements SimulationSearch {
 			return firstSimulation;
 		}
 
-		Set<Simulation> simulations = delegate.exhaustiveSearch(user, rollbackEnvironment, simulator);
-		if (simulations.size() <= 1) {
+		Set<Simulation> simulations = delegate.exhaustiveTickSearch(user, rollbackEnvironment, simulator);
+		if (simulations.isEmpty()) {
+			user.sendMessage("Exhaustive did not yield any simulations");
 			storeRollbackEnvironment(movement, firstSimulation);
 			return firstSimulation;
 		}
+
+		if (simulations.size() == 1) {
+			user.sendMessage("Exhaustive yielded 1 simulation, skipping search. " + simulations.iterator().next().actualMotion());
+			storeRollbackEnvironment(movement, firstSimulation);
+			return firstSimulation;
+		}
+
+		user.sendMessage("Exhaustive yielded " + simulations.size() + " simulations, searching for best rollback simulation");
 
 		Simulation bestSimulation = firstSimulation;
 		Set<Motion> bestOffsetMotions = new HashSet<>();
@@ -73,7 +79,7 @@ public final class RollbackSimulationSearch implements SimulationSearch {
 				continue;
 			}
 			bestOffsetMotions.add(outputMotion);
-			Simulation nextSimulation = delegate.search(
+			Simulation nextSimulation = delegate.tickSearch(
 				user, firstTickEnvironment, simulator, options
 			);
 			bestSimulation = nextSimulation.select(bestSimulation);
@@ -82,15 +88,25 @@ public final class RollbackSimulationSearch implements SimulationSearch {
 				return bestSimulation;
 			}
 		}
+		if (!bestOffsetMotions.isEmpty()) {
+			user.player().sendMessage("Rollbacked ("+bestOffsetMotions.size()+") simulation search: " + bestSimulation.offsetDifference() + " vs " + firstSimulation.offsetDifference());
+		}
 		if (bestOffsetMotions.size() == 1) {
 			storeRollbackEnvironment(movement, firstSimulation);
 			return firstSimulation;
 		}
-		if (!bestOffsetMotions.isEmpty()) {
-			user.player().sendMessage("Rollbacked ("+bestOffsetMotions.size()+") simulation search: " + bestSimulation.offsetDifference() + " vs " + firstSimulation.offsetDifference());
-		}
 		storeRollbackEnvironment(movement, bestSimulation);
 		return bestSimulation;
+	}
+
+	@Override
+	public Set<Simulation> exhaustiveTickSearch(User user, SimulationEnvironment environment, Simulator simulator) {
+		return delegate.exhaustiveTickSearch(user, environment, simulator);
+	}
+
+	@Override
+	public List<Motion> afterTickMotionCandidates(User user, SimulationEnvironment environment, Simulator simulator, Position newPosition, PostTickMotionType motionType) {
+		return delegate.afterTickMotionCandidates(user, environment, simulator, newPosition, motionType);
 	}
 
 	private void storeRollbackEnvironment(MovementMetadata movement, Simulation simulation) {

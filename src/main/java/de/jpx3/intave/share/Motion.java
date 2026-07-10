@@ -11,7 +11,6 @@
 
 package de.jpx3.intave.share;
 
-import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.math.Hypot;
@@ -72,6 +71,18 @@ public final class Motion {
 
 	public double motionZ() {
 		return motionZ;
+	}
+
+	public Motion copiedOverrideIfNotNaN(
+		double newMotionX,
+		double newMotionY,
+		double newMotionZ
+	) {
+		return new Motion(
+			Double.isNaN(newMotionX) ? this.motionX : newMotionX,
+			Double.isNaN(newMotionY) ? this.motionY : newMotionY,
+			Double.isNaN(newMotionZ) ? this.motionZ : newMotionZ
+		);
 	}
 
 	public Motion multiply(double factor) {
@@ -162,10 +173,6 @@ public final class Motion {
 
 	public void setTo(Motion motion) {
 		setTo(motion.motionX, motion.motionY, motion.motionZ);
-	}
-
-	public void setToBaseMotionFrom(SimulationEnvironment data) {
-		setTo(data.baseMotionX(), data.baseMotionY(), data.baseMotionZ());
 	}
 
 	public double length() {

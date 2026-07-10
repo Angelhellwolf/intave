@@ -14,27 +14,28 @@ package de.jpx3.intave.check.movement.physics.environment;
 import de.jpx3.intave.block.fluid.Fluid;
 import de.jpx3.intave.check.movement.physics.MoveMetric;
 import de.jpx3.intave.check.movement.physics.Pose;
-import de.jpx3.intave.check.movement.physics.Simulation;
+import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
+import de.jpx3.intave.check.movement.physics.simulator.Simulation;
+import de.jpx3.intave.check.movement.physics.simulator.Simulator;
+import de.jpx3.intave.check.movement.physics.simulator.Simulators;
 import de.jpx3.intave.check.movement.physics.update.TickAmbiguousUpdate;
 import de.jpx3.intave.player.collider.complex.SimulationResult;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.Position;
+import de.jpx3.intave.user.User;
 import de.jpx3.intave.world.border.WorldBorder;
 import org.bukkit.Material;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static de.jpx3.intave.share.ClientMath.cos;
 import static de.jpx3.intave.share.ClientMath.sin;
 
 @Deprecated
-public final class TestSimulationEnvironment implements SimulationEnvironment {
+public final class MockSimulationEnvironment implements SimulationEnvironment {
   private double positionX, positionY, positionZ;
   private double verifiedPositionX, verifiedPositionY, verifiedPositionZ;
   private double lastPositionX, lastPositionY, lastPositionZ;
@@ -52,6 +53,7 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
   private float stepHeight = 0.6F;
   private boolean inWater, inLava;
   private boolean sprinting, sneaking;
+  private boolean lastSprinting, lastSneaking;
   private boolean collidedHorizontally, collidedVertically;
   private boolean motionXReset, motionZReset;
   private boolean enforceBoatStep;
@@ -78,6 +80,15 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
     }
   }
 
+  private final User user;
+
+  public MockSimulationEnvironment(User user) {
+    this.user = user;
+  }
+
+  public MockSimulationEnvironment() {
+    this.user = null;
+  }
 
   public void copyPositionToLastPosition() {
     lastPositionX = positionX;
@@ -185,6 +196,11 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
     this.sneaking = sneaking;
   }
 
+  @Override
+  public void setLastSprinting(boolean lastSprinting) {
+    this.lastSprinting = lastSprinting;
+  }
+
   public void setInWeb(boolean inWeb) {
     this.inWeb = inWeb;
   }
@@ -200,6 +216,11 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
   @Override
   public Pose pose() {
     return Pose.STANDING;
+  }
+
+  @Override
+  public void setPose(Pose pose) {
+
   }
 
   @Override
@@ -234,6 +255,11 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
     pitch = newRotationPitch;
     lastYaw = newRotationYaw;
     lastPitch = newRotationPitch;
+  }
+
+  @Override
+  public User user() {
+    return user;
   }
 
   @Override
@@ -323,18 +349,28 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
   }
 
   @Override
-  public double motionX() {
+  public double offsetMotionX() {
     return motionX;
   }
 
   @Override
-  public double motionY() {
+  public double offsetMotionY() {
     return motionY;
   }
 
   @Override
-  public double motionZ() {
+  public double offsetMotionZ() {
     return motionZ;
+  }
+
+  @Override
+  public List<Motion> postTickMotionCandidates() {
+    return Collections.emptyList();
+  }
+
+  @Override
+  public void setPostTickMotionCandidates(@NotNull List<Motion> postTickMotionCandidates) {
+
   }
 
   @Override
@@ -425,6 +461,11 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
   }
 
   @Override
+  public boolean shouldHaveFallFlyingPose() {
+    return false;
+  }
+
+  @Override
   public float friction(boolean sprinting) {
     return friction;
   }
@@ -450,7 +491,7 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
   }
 
   @Override
-  public boolean hasJumpedInTick() {
+  public boolean isJumping() {
     return false;
   }
 
@@ -477,6 +518,11 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
   @Override
   public boolean isSprinting() {
     return sprinting;
+  }
+
+  @Override
+  public boolean lastSprinting() {
+    return lastSprinting;
   }
 
   @Override
@@ -615,6 +661,18 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
   }
 
   @Override
+  public Simulator simulator() {
+    return Simulators.PLAYER;
+  }
+
+  @Override
+  public void setSimulator(Simulator simulator) {
+    if (simulator != Simulators.PLAYER) {
+      throw new UnsupportedOperationException("TestSimulationEnvironment only supports PLAYER simulator");
+    }
+  }
+
+  @Override
   public void setPushedByEntity(boolean pushedByEntity) {
 
   }
@@ -632,6 +690,16 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
   @Override
   public SimulationResult simulationResult() {
     return null;
+  }
+
+  @Override
+  public void setLastMovementConfiguration(MovementConfiguration configuration) {
+
+  }
+
+  @Override
+  public MovementConfiguration lastMovementConfiguration() {
+    return MovementConfiguration.blank();
   }
 
   @Override
@@ -654,6 +722,21 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
   @Override
   public boolean denyJump() {
     return false;
+  }
+
+  @Override
+  public void setEyesInWater(boolean eyesInWater) {
+
+  }
+
+  @Override
+  public boolean areEyesInWater() {
+    return false;
+  }
+
+  @Override
+  public void setInteractingFluid(Fluid interactingFluid) {
+
   }
 
   @Override
@@ -707,8 +790,18 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
   }
 
   @Override
+  public void setHeight(float height) {
+
+  }
+
+  @Override
   public float width() {
     return width;
+  }
+
+  @Override
+  public void setWidth(float width) {
+
   }
 
   @Override
@@ -757,7 +850,7 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
   }
 
   @Override
-  public List<TickAmbiguousUpdate> tickAmbiguousUpdates() {
+  public List<TickAmbiguousUpdate> allTickAmbiguousUpdates() {
     return new ArrayList<>();
   }
 

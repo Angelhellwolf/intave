@@ -47,6 +47,7 @@ public final class AbilityMetadata {
 	private final AtomicReference<Map<String, Attribute>> attributes = new AtomicReference<>(new HashMap<>());
   private final AtomicReference<Map<String, List<AttributeModifier>>> attributeModifiers = new AtomicReference<>(new HashMap<>());
   private double scaleCache = Double.NEGATIVE_INFINITY;
+  private double jumpStrengthCache = Double.NEGATIVE_INFINITY;
 
   public float unsynchronizedHealth;
   public float health;
@@ -119,11 +120,16 @@ public final class AbilityMetadata {
         newMap.put(finalName, new CopyOnWriteArrayList<>());
         return newMap;
       });
-      scaleCache = Double.NEGATIVE_INFINITY;
+      clearAttributeCaches();
     } catch (Exception e) {
       IntaveLogger.logger().error("Unable to setup attribute " + name + " for player " + player.getName());
       e.printStackTrace();
     }
+  }
+
+  private void clearAttributeCaches() {
+    scaleCache = Double.NEGATIVE_INFINITY;
+    jumpStrengthCache = Double.NEGATIVE_INFINITY;
   }
 
   public double scale() {
@@ -133,6 +139,15 @@ public final class AbilityMetadata {
       return newScaleCache;
     }
     return scaleCache;
+  }
+
+  public double jumpStrength() {
+    if (Double.isInfinite(jumpStrengthCache)) {
+      double newJumpStrengthCache = attributeValue("generic.jump_strength");
+      jumpStrengthCache = newJumpStrengthCache;
+      return newJumpStrengthCache;
+    }
+    return jumpStrengthCache;
   }
 
   public double attributeValue(String key) {

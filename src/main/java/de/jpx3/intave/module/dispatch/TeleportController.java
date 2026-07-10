@@ -250,9 +250,12 @@ public final class TeleportController implements PacketEventSubscriber {
 
       if (IntaveControl.GIVE_VELOCITY_ON_Q_PRESS) {
         Synchronizer.synchronize(() -> {
-          Vector randomVelocity = new Vector(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1);
-//          player.setVelocity(new Vector(0, 0.01, 0));
+//          Vector randomVelocity = new Vector(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1);
+//          player.setVelocity(new Vector(3, 0.4, 0.3));
+          Vector randomVelocity = player.getLocation().getDirection().clone();
+          randomVelocity.setY(0.4);
           player.setVelocity(randomVelocity);
+          player.setFallDistance(0.0f);
           if (user.receives(MessageChannel.DEBUG_TELEPORT)) {
             player.sendMessage(IntavePlugin.prefix() + "Set random velocity " + randomVelocity.getX() + " " + randomVelocity.getY() + " " + randomVelocity.getZ() + " as " + ChatColor.RED + " it was command-requested");
           }
@@ -461,6 +464,7 @@ public final class TeleportController implements PacketEventSubscriber {
       Motion keepMotion = movementData.mutableBaseMotionCopy().filtered(teleportRelatives);
       Motion newMotion = keepMotion.add(teleportMotionModify);
       movementData.setBaseMotion(newMotion);
+      movementData.clearPostTickMotionCandidates();
       movementData.teleportMotion.setNull();
       movementData.teleportRelatives.clear();
     }

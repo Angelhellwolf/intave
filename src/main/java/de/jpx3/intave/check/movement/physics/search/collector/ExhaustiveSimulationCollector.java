@@ -11,8 +11,8 @@
 
 package de.jpx3.intave.check.movement.physics.search.collector;
 
-import de.jpx3.intave.check.movement.physics.Simulation;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
+import de.jpx3.intave.check.movement.physics.simulator.Simulation;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.user.User;
 

@@ -25,31 +25,28 @@ final class UseItemBrancher extends MovementSearchBrancher {
   private static final boolean[] PESSIMISTIC = new boolean[]{false, true};
 
   @Override
-  public void branch(MovementSearchInput input, MovementSearchConfig config, List<MovementSearchConfig> result) {
+  public void branch(MovementSearchInput input, MovementSearchBranch inputBranch, List<MovementSearchBranch> outputBranches) {
     InventoryMetadata inventoryData = input.user().meta().inventory();
     ProtocolMetadata protocol = input.user().meta().protocol();
-    UseItemStates useItemStates = useItemStates(input);
+    UseItemRequirement requirement = useItemRequirement(input);
     for (boolean useItemState : inventoryData.handActive() ? OPTIMISTIC : PESSIMISTIC) {
-      if (useItemStates.skip && useItemState) {
+      if (!requirement.allows(useItemState)) {
         continue;
       }
-      if (useItemStates.require && !useItemState) {
+      if (inputBranch.moveConfig().isSprinting() && useItemState && !protocol.combatUpdate()) {
         continue;
       }
-      if (config.moveConfig().isSprinting() && useItemState && !protocol.combatUpdate()) {
-        continue;
-      }
-      result.add(config.withHandActive(useItemState));
+      outputBranches.add(inputBranch.withHandActive(useItemState));
     }
   }
 
-  private UseItemStates useItemStates(MovementSearchInput input) {
+  private UseItemRequirement useItemRequirement(MovementSearchInput input) {
     InventoryMetadata inventoryData = input.user().meta().inventory();
     MovementMetadata movementData = input.user().meta().movement();
     ProtocolMetadata protocol = input.user().meta().protocol();
     boolean hasUsableItem = inventoryData.usableItemInEitherHandOrHotbar();
     if (!hasUsableItem) {
-      return new UseItemStates(true, false);
+      return UseItemRequirement.SKIP;
     }
     boolean skipUseItem = !protocol.sprintWhenHandActive() && movementData.sprinting && !protocol.viaVersionShieldBlockReplacement();
     boolean requireUseItem = !protocol.combatUpdate()
@@ -74,16 +71,38 @@ final class UseItemBrancher extends MovementSearchBrancher {
       skipUseItem = false;
       requireUseItem = false;
     }
-    return new UseItemStates(skipUseItem, requireUseItem);
+    return UseItemRequirement.from(skipUseItem, requireUseItem);
   }
 
-  private static final class UseItemStates {
-    private final boolean skip;
-    private final boolean require;
+  private enum UseItemRequirement {
+    ANY(true, true),
+    SKIP(true, false),
+    REQUIRE(false, true),
+    NONE(false, false);
 
-    private UseItemStates(boolean skip, boolean require) {
-      this.skip = skip;
-      this.require = require;
+    private final boolean allowInactive;
+    private final boolean allowActive;
+
+    UseItemRequirement(boolean allowInactive, boolean allowActive) {
+      this.allowInactive = allowInactive;
+      this.allowActive = allowActive;
+    }
+
+    boolean allows(boolean useItemState) {
+      return useItemState ? allowActive : allowInactive;
+    }
+
+    private static UseItemRequirement from(boolean skip, boolean require) {
+      if (skip && require) {
+        return NONE;
+      }
+      if (require) {
+        return REQUIRE;
+      }
+      if (skip) {
+        return SKIP;
+      }
+      return ANY;
     }
   }
 }

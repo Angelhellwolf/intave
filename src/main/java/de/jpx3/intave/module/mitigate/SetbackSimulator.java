@@ -249,7 +249,7 @@ public final class SetbackSimulator extends Module {
       movementData.artificialFallDistance += (float) -motion.motionY;
     }
 
-    if (!Collision.present(player, BoundingBox.fromPosition(user, movementData, futurePosition.clone().add(motion.toBukkitVector())))) {
+    if (!Collision.present(user, movementData, BoundingBox.fromPosition(user, movementData, futurePosition.clone().add(motion.toBukkitVector())))) {
       futurePosition = futurePosition.clone().add(motion.toBukkitVector());
     }
     futurePosition.setYaw(movementData.rotationYaw);
@@ -377,7 +377,7 @@ public final class SetbackSimulator extends Module {
         motionY *= 0.98f;
         motionZ *= 0.99f;
       } else {
-        if (movementData.inWater) {
+        if (movementData.inWater()) {
           motionY = lastMotion.motionY * 0.8f;
           motionY -= 0.02;
         } else {
@@ -402,7 +402,7 @@ public final class SetbackSimulator extends Module {
     motionY = collisionVector.motionY;
     double multiplier;
     if (applyPhysics && movementData.pose() != Pose.FALL_FLYING) {
-      if (movementData.inWater) {
+      if (movementData.inWater()) {
         multiplier = 0.8f;
       } else {
         multiplier = onGround ? 0.546f : 0.91f;
@@ -410,7 +410,7 @@ public final class SetbackSimulator extends Module {
     } else {
       multiplier = 1;
     }
-    if (movementData.lastOnGround && !movementData.onGround) {
+    if (movementData.lastOnGround() && !movementData.onGround) {
       multiplier *= 0.6f;
     }
     motionX *= multiplier;
@@ -441,7 +441,7 @@ public final class SetbackSimulator extends Module {
         motionY *= 0.25f;
         motionZ *= 0.25D;
       }
-      movementData.lastOnGround = movementData.onGround;
+      movementData.setLastOnGround(movementData.onGround());
       movementData.onGround = onGround;
     }
     collisionVector = resolveCollisionVector(player, boundingBox, motionX, motionY, motionZ);
@@ -478,6 +478,7 @@ public final class SetbackSimulator extends Module {
 
   private void updateMovementStatus(User user) {
     MovementMetadata movementData = user.meta().movement();
+    // this is shit, no?
     movementData.inWater = Collision.rasterizedLiquidPresentSearch(user, movementData.boundingBox());
   }
 

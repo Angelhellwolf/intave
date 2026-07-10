@@ -33,61 +33,61 @@ final class KeypressBrancher extends MovementSearchBrancher {
   };
 
   @Override
-  public void branch(MovementSearchInput input, MovementSearchConfig config, List<MovementSearchConfig> result) {
+  public void branch(MovementSearchInput input, MovementSearchBranch inputBranch, List<MovementSearchBranch> outputBranches) {
     User user = input.user();
     MovementMetadata movement = user.meta().movement();
 
     // Elytra is key-independent
     if (!input.simulator().affectedByMovementKeys()) {
-      result.add(config);
+      outputBranches.add(inputBranch);
       return;
     }
 
     // For 1.9-1.20 vehicles send their keys
     if (movement.legacyVehicleKeyInput) {
-      result.add(config.withKeypress(
+      outputBranches.add(inputBranch.withKeypress(
         movement.legacyVehicleForwardKey,
         movement.legacyVehicleStrafeKey
       ));
       return;
     }
 
-    int resultStart = result.size();
+    int resultStart = outputBranches.size();
 
     // try predicting the keys
-    int predictedDirection = predictedDirection(input, config);
+    int predictedDirection = predictedDirection(input, inputBranch);
     if (predictedDirection >= 0) {
       int predictedForward = forwardKeyFrom(predictedDirection);
       int predictedStrafe = strafeKeyFrom(predictedDirection);
-      if (isValidPress(input, config, predictedForward, predictedStrafe)) {
-        result.add(config.withKeypress(predictedForward, predictedStrafe));
+      if (isValidPress(input, inputBranch, predictedForward, predictedStrafe)) {
+        outputBranches.add(inputBranch.withKeypress(predictedForward, predictedStrafe));
       }
     }
 
     // try the last keys
     int lastKeyForward = movement.lastKeyForward;
     int lastKeyStrafe = movement.lastKeyStrafe;
-    if (isValidPress(input, config, lastKeyForward, lastKeyStrafe)) {
-      result.add(config.withKeypress(lastKeyForward, lastKeyStrafe));
+    if (isValidPress(input, inputBranch, lastKeyForward, lastKeyStrafe)) {
+      outputBranches.add(inputBranch.withKeypress(lastKeyForward, lastKeyStrafe));
     }
 
     // brute force keys
     for (int[] keyPair : KEYS_USAGE_ORDERED) {
       int keyForward = keyPair[0];
       int keyStrafe = keyPair[1];
-      if (isValidPress(input, config, keyForward, keyStrafe)) {
-        result.add(config.withKeypress(keyForward, keyStrafe));
+      if (isValidPress(input, inputBranch, keyForward, keyStrafe)) {
+        outputBranches.add(inputBranch.withKeypress(keyForward, keyStrafe));
       }
     }
 
     // we always have the option to "not press" keys
-    if (result.size() == resultStart) {
-      result.add(config.withKeypress(0, 0));
+    if (outputBranches.size() == resultStart) {
+      outputBranches.add(inputBranch.withKeypress(0, 0));
     }
   }
 
   private int predictedDirection(
-    MovementSearchInput input, MovementSearchConfig config
+    MovementSearchInput input, MovementSearchBranch config
   ) {
     SimulationEnvironment environment = input.environment();
     double lastMotionX = environment.baseMotionX();
@@ -96,14 +96,14 @@ final class KeypressBrancher extends MovementSearchBrancher {
       lastMotionX -= environment.yawSine() * 0.2f;
       lastMotionZ += environment.yawCosine() * 0.2f;
     }
-    double differenceX = environment.motionX() - lastMotionX;
-    double differenceZ = environment.motionZ() - lastMotionZ;
+    double differenceX = environment.offsetMotionX() - lastMotionX;
+    double differenceZ = environment.offsetMotionZ() - lastMotionZ;
     return directionFrom(differenceX, differenceZ, environment.rotationYaw());
   }
 
   private boolean isValidPress(
     MovementSearchInput input,
-    MovementSearchConfig parentConfig,
+    MovementSearchBranch parentConfig,
     int forward, int strafe
   ) {
     InventoryMetadata inventoryData = input.user().meta().inventory();

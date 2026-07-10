@@ -1,10 +1,22 @@
-package de.jpx3.intave.check.movement.physics;
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
+package de.jpx3.intave.check.movement.physics.simulator;
 
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.collision.Collision;
 import de.jpx3.intave.block.fluid.Fluid;
 import de.jpx3.intave.block.fluid.Fluids;
 import de.jpx3.intave.block.physics.BlockProperties;
+import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.diagnostic.timings.Timings;
 import de.jpx3.intave.executor.Synchronizer;
@@ -245,6 +257,7 @@ public final class BoatSimulator extends BaseSimulator {
   @Override
   public Motion simulateAfterTick(
     User user, SimulationEnvironment environment,
+    MovementConfiguration configuration,
     Position position, Motion motion
   ) {
     BoundingBox boundingBox = BoundingBox.fromPosition(user, environment, position);

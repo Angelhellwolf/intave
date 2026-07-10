@@ -23,17 +23,17 @@ import java.util.List;
  */
 public final class RotationBrancher extends MovementSearchBrancher {
 	@Override
-	public void branch(MovementSearchInput input, MovementSearchConfig config, List<MovementSearchConfig> result) {
+	public void branch(MovementSearchInput input, MovementSearchBranch inputBranch, List<MovementSearchBranch> outputBranches) {
 		SimulationEnvironment environment = input.environment();
 		if (environment.lastRotation().equals(environment.rotation())) {
-			result.add(config);
+			outputBranches.add(inputBranch);
 			return;
 		}
 		if (input.user().meta().protocol().flyingPacketUncertaintyRadius() < 0.00001) {
-			result.add(config);
+			outputBranches.add(inputBranch);
 			return;
 		}
-		result.add(config);
-		result.add(config.withRotation(environment.lastRotation()).withExplicitTickFinishAllow(false));
+		outputBranches.add(inputBranch);
+		outputBranches.add(inputBranch.withRotation(environment.lastRotation()).withExplicitTickFinishAllow(false));
 	}
 }

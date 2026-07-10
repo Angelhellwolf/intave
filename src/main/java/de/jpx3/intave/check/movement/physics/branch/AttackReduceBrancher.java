@@ -11,6 +11,8 @@
 
 package de.jpx3.intave.check.movement.physics.branch;
 
+import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
+
 import java.util.List;
 
 final class AttackReduceBrancher extends MovementSearchBrancher {
@@ -18,15 +20,16 @@ final class AttackReduceBrancher extends MovementSearchBrancher {
   private static final boolean[] NEVER = new boolean[]{false};
 
   @Override
-  public void branch(MovementSearchInput input, MovementSearchConfig config, List<MovementSearchConfig> result) {
-    int reduceTicks = input.environment().reduceTicks();
+  public void branch(MovementSearchInput input, MovementSearchBranch inputBranch, List<MovementSearchBranch> outputBranches) {
+    SimulationEnvironment environment = inputBranch.modifiedMutableView(input.environment());
+    int reduceTicks = environment.reduceTicks();
     if (reduceTicks == 0) {
-      result.add(config.withReduceTicks(0).withReduceBefore(false));
+      outputBranches.add(inputBranch.withReduceTicks(0).withReduceBefore(false));
       return;
     }
     for (int reduceIndex = 0; reduceIndex <= Math.min(reduceTicks, 3); reduceIndex++) {
       for (boolean reduceBefore : reduceIndex > 0 ? PESSIMISTIC : NEVER) {
-        result.add(config.withReduceTicks(reduceIndex).withReduceBefore(reduceBefore));
+        outputBranches.add(inputBranch.withReduceTicks(reduceIndex).withReduceBefore(reduceBefore));
       }
     }
   }

@@ -12,20 +12,24 @@
 package de.jpx3.intave.check.movement.physics.search;
 
 import de.jpx3.intave.IntavePlugin;
-import de.jpx3.intave.check.movement.physics.MovementConfiguration;
-import de.jpx3.intave.check.movement.physics.Simulation;
-import de.jpx3.intave.check.movement.physics.Simulator;
+import de.jpx3.intave.annotate.Immutable;
+import de.jpx3.intave.annotate.Mutable;
+import de.jpx3.intave.check.movement.physics.branch.MovementSearchBranch;
 import de.jpx3.intave.check.movement.physics.branch.MovementSearchBranchers;
-import de.jpx3.intave.check.movement.physics.branch.MovementSearchConfig;
 import de.jpx3.intave.check.movement.physics.branch.MovementSearchInput;
+import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
+import de.jpx3.intave.check.movement.physics.config.TraceImmutableMovementConfiguration;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.check.movement.physics.search.collector.BestSimulationSet;
 import de.jpx3.intave.check.movement.physics.search.collector.ExhaustiveSimulationCollector;
 import de.jpx3.intave.check.movement.physics.search.collector.MergingSimulationCollector;
+import de.jpx3.intave.check.movement.physics.simulator.Simulation;
+import de.jpx3.intave.check.movement.physics.simulator.Simulator;
 import de.jpx3.intave.diagnostic.timings.Timings;
 import de.jpx3.intave.executor.RateLimiter;
 import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.player.ItemProperties;
+import de.jpx3.intave.player.collider.complex.SimulationResult;
 import de.jpx3.intave.search.Searcher;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.Position;
@@ -36,6 +40,8 @@ import de.jpx3.intave.user.meta.MetadataBundle;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import org.bukkit.ChatColor;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -49,9 +55,14 @@ import static de.jpx3.intave.math.MathHelper.formatDouble;
 public final class ThreeTickSimulationSearch implements SimulationSearch {
 	private final static double STRICT_ACCURACY = 0.0001;
 
-	private final static Searcher<MovementSearchInput, MovementSearchConfig> SEARCHER = new Searcher<>(
-		MovementSearchBranchers.normal(),
-		MovementSearchConfig::blank
+	private final static Searcher<MovementSearchInput, MovementSearchBranch> TICK_SEARCHER = new Searcher<>(
+		MovementSearchBranchers.tick(),
+		MovementSearchBranch::blank
+	);
+
+	private final static Searcher<MovementSearchInput, MovementSearchBranch> AFTER_TICK_SEARCHER = new Searcher<>(
+		MovementSearchBranchers.afterTick(),
+		MovementSearchBranch::blank
 	);
 
 	private final boolean itemUsageReset;
@@ -63,7 +74,7 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 	}
 
 	@Override
-	public Set<Simulation> exhaustiveSearch(
+	public Set<Simulation> exhaustiveTickSearch(
 		User user, SimulationEnvironment environment, Simulator simulator
 	) {
 		Position receivedPosition = environment.position();
@@ -130,7 +141,7 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 	}
 
 	@Override
-	public Simulation search(
+	public Simulation tickSearch(
 		User user, SimulationEnvironment movementData,
 		Simulator simulator, SimulationSearchOptions options
 	) {
@@ -281,6 +292,90 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 		return bestSimulation;
 	}
 
+	@Override
+	public List<Motion> afterTickMotionCandidates(
+		@Immutable User user, @Mutable SimulationEnvironment environment,
+		@Immutable Simulator simulator, @Immutable Position position,
+		@Immutable PostTickMotionType motionType
+	) {
+		SimulationEnvironment branchEnv = environment.mutableView();
+		SimulationResult result = environment.simulationResult();
+
+		Motion afterTickInputMotion = motionType == PostTickMotionType.SIMULATED_MOTION
+			? result.actualMotion()
+			: environment.sentOffsetMotion();
+
+		MovementConfiguration last = environment.lastMovementConfiguration();
+		TraceImmutableMovementConfiguration trace = last.withRecording();
+
+		Motion outputMotion = simulator.simulateAfterTick(
+			user, branchEnv, trace,
+			position, afterTickInputMotion.copy()
+		);
+
+		// write to the active environment
+		// this is a safety measure in case we drop/forget to run LastPostTickCandidateBrancher next tick
+		branchEnv.setBaseMotion(outputMotion);
+
+		// If the afterTick does not depend on the movementConfiguration, we can just return the outputMotion and not bother with the search
+		if (!trace.requiredAnyState()) {
+//			user.sendMessage("[afterTickMotionCandidates:322] No movement config required, returning single motion candidate");
+			branchEnv.commitTo(environment);
+			return Collections.singletonList(outputMotion);
+		}
+
+//		user.sendMessage(trace.requiredSprintingState() + "spr " + trace.requiredJumpingState() + "jmp");
+
+		// Now we can search for all possible movement configurations that we possibly didn't check in the tick search.
+		Set<MovementSearchBranch> branches = AFTER_TICK_SEARCHER.searchConfigurationsFor(
+			MovementSearchInput.forAfterTick(user, simulator, environment, detectNoSlowdown, trace) // trace to restrict
+		);
+
+		if (branches.isEmpty() || branches.size() == 1) {
+//			if (branches.size() == 1) {
+//				user.sendMessage("Only one branch found");
+//			}
+//			user.sendMessage("[afterTickMotionCandidates:322] No branches found, returning single motion candidate");
+			branchEnv.commitTo(environment);
+			return Collections.singletonList(outputMotion);
+		}
+
+		List<Motion> motions = new ArrayList<>();
+		motions.add(outputMotion);
+
+		for (MovementSearchBranch branch : branches) {
+			SimulationEnvironment disposable = environment.mutableView();
+			// see below
+//			disposable = branch.applyTo(disposable);
+			Motion motion = simulator.simulateAfterTick(
+				user, disposable,
+				branch.moveConfig(),
+				position,
+				afterTickInputMotion.copy()
+			);
+			// see below
+//			disposable.commitTo(environment);
+
+			// We only care about unique motions
+			if (!motions.contains(motion)) {
+				motions.add(motion);
+			}
+		}
+
+//		user.sendMessage("Motions: " + motions.size());
+
+		// Okay this might be a bit confusing.
+		// We opted not to branch each possible environment of the simulateAfterTick calls above,
+		// because there is just too much still happening in between ticks
+		// we do not properly account for, and we currently don't have an applyAll(env -> {}) method.
+		//
+		// Also, no environment variables currently depend on the movement config.
+		// Should this change, we have to properly support this (or we rely on rollbacking here?).
+		branchEnv.commitTo(environment);
+
+		return motions;
+	}
+
 	private void applySimulation(User user, Simulation simulation) {
 		MetadataBundle meta = user.meta();
 		MovementMetadata movementData = meta.movement();
@@ -291,7 +386,7 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 		boolean movementSuggestsHandIsActive = configuration.isHandActive();
 		boolean packetsSuggestsHandIsActive = inventoryData.handActive();
 		if (packetsSuggestsHandIsActive && !movementSuggestsHandIsActive) {
-			boolean releaseHandConditions = Hypot.fast(movementData.motionX(), movementData.motionZ()) > 0.3 || movementData.ticksPast(TELEPORT) >= 2;
+			boolean releaseHandConditions = Hypot.fast(movementData.offsetMotionX(), movementData.offsetMotionZ()) > 0.3 || movementData.ticksPast(TELEPORT) >= 2;
 			boolean itemIsBow = ItemProperties.isBow(meta.inventory().activeItemType()) || ItemProperties.isBow(meta.inventory().offhandItemType());
 			boolean viaVersionBlockReplacement = meta.protocol().viaVersionShieldBlockReplacement();
 			if (releaseHandConditions && (!itemIsBow || (inventoryData.handActiveTicks > 3 && !viaVersionBlockReplacement)) && itemUsageReset) {
@@ -305,7 +400,7 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 	}
 
 	private boolean likelyInaccurate(SimulationEnvironment movementData) {
-		if (Math.abs(movementData.motionY()) < 0.05
+		if (Math.abs(movementData.offsetMotionY()) < 0.05
 			&& Math.abs(movementData.baseMotionX()) < 0.03 && Math.abs(movementData.baseMotionZ()) < 0.03) {
 			return true;
 		}
@@ -320,8 +415,8 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 	) {
 		Timings.CHECK_PHYSICS_PROC_ITR.start();
 		Timings.CHECK_PHYSICS_PROC_ITR_BUILD_CONFIGS.start();
-		Set<MovementSearchConfig> possibleConfigs = SEARCHER.searchConfigurationsFor(
-			MovementSearchInput.from(user, simulator, environment, detectNoSlowdown)
+		Set<MovementSearchBranch> possibleConfigs = TICK_SEARCHER.searchConfigurationsFor(
+			MovementSearchInput.forTick(user, simulator, environment.immutableView(), detectNoSlowdown)
 		);
 		Timings.CHECK_PHYSICS_PROC_ITR_BUILD_CONFIGS.stop();
 
@@ -329,15 +424,14 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 		Function<C, R> finisher = collector.finisher();
 		BiConsumer<C, Simulation> accumulator = collector.accumulator();
 
-		for (MovementSearchConfig config : possibleConfigs) {
+		for (MovementSearchBranch config : possibleConfigs) {
 			boolean canFinishExplicitTick = config.canFinishExplicitTick();
-			SimulationEnvironment myEnv = environment.mutableView();
-			myEnv = config.applyTo(myEnv);
+			SimulationEnvironment localEnvironment = config.modifiedMutableView(environment);
 			Simulation simulation = simulator.simulateTick(
-				user, myEnv.mutableBaseMotionCopy(),
-				myEnv.immutableView(), config.moveConfig()
+				user, localEnvironment.mutableBaseMotionCopy(),
+				localEnvironment.immutableView(), config.moveConfig()
 			);
-			simulation.setEnvironment(myEnv);
+			simulation.setEnvironment(localEnvironment);
 			simulation.setCanFinishExplicitTick(canFinishExplicitTick);
 			accumulator.accept(container, simulation);
 			if (canFinishExplicitTick && earlyStop.test(simulation)) {

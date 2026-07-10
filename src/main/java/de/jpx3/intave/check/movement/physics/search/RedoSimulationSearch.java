@@ -11,15 +11,17 @@
 
 package de.jpx3.intave.check.movement.physics.search;
 
-import de.jpx3.intave.check.movement.physics.EvaluationTag;
-import de.jpx3.intave.check.movement.physics.Simulation;
-import de.jpx3.intave.check.movement.physics.SimulationEvaluator;
-import de.jpx3.intave.check.movement.physics.Simulator;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
+import de.jpx3.intave.check.movement.physics.evaluation.EvaluationTag;
+import de.jpx3.intave.check.movement.physics.evaluation.SimulationEvaluator;
+import de.jpx3.intave.check.movement.physics.simulator.Simulation;
+import de.jpx3.intave.check.movement.physics.simulator.Simulator;
 import de.jpx3.intave.share.Motion;
+import de.jpx3.intave.share.Position;
 import de.jpx3.intave.user.User;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public final class RedoSimulationSearch implements SimulationSearch {
@@ -32,20 +34,20 @@ public final class RedoSimulationSearch implements SimulationSearch {
 	}
 
 	@Override
-	public Set<Simulation> exhaustiveSearch(User user, SimulationEnvironment environment, Simulator simulator) {
-		return delegate.exhaustiveSearch(user, environment, simulator);
+	public Set<Simulation> exhaustiveTickSearch(User user, SimulationEnvironment environment, Simulator simulator) {
+		return delegate.exhaustiveTickSearch(user, environment, simulator);
 	}
 
 	@Override
-	public Simulation search(
+	public Simulation tickSearch(
 		User user, SimulationEnvironment simulationEnvironment,
 		Simulator simulator, SimulationSearchOptions options
 	) {
 		if (!options.allowFuzziness()) {
-			return delegate.search(user, simulationEnvironment, simulator, options);
+			return delegate.tickSearch(user, simulationEnvironment, simulator, options);
 		}
 		SimulationEnvironment branchEnvironment = simulationEnvironment.mutableView();
-		Simulation firstSimulation = delegate.greedyFuzzySearch(user, branchEnvironment, simulator);
+		Simulation firstSimulation = delegate.greedyFuzzyTickSearch(user, branchEnvironment, simulator);
 
 		double difference = firstSimulation.offsetDifference();
 		if (difference < 0.0005 || firstSimulation.isFromExhaustiveSearch()) {
@@ -59,7 +61,7 @@ public final class RedoSimulationSearch implements SimulationSearch {
 			user, resultEnvironment, offsetMotion.motionX, offsetMotion.motionZ, false, false, unusedEvalTags
 		);
 		if (horizontalVL > 0) {
-			Simulation simulation = delegate.greedyFullSearch(user, simulationEnvironment, simulator);
+			Simulation simulation = delegate.greedyFullTickSearch(user, simulationEnvironment, simulator);
 			simulation.appendPurple("redo:H("+firstSimulation.blueDetails()+")");
 			return simulation;
 		}
@@ -67,11 +69,16 @@ public final class RedoSimulationSearch implements SimulationSearch {
 			user, resultEnvironment, offsetMotion.motionY, false, false, unusedEvalTags
 		);
 		if (verticalVL > 0) {
-			Simulation simulation = delegate.greedyFullSearch(user, simulationEnvironment, simulator);
+			Simulation simulation = delegate.greedyFullTickSearch(user, simulationEnvironment, simulator);
 			simulation.appendPurple("redo:V("+firstSimulation.blueDetails()+")");
 			return simulation;
 		}
 		return firstSimulation;
+	}
+
+	@Override
+	public List<Motion> afterTickMotionCandidates(User user, SimulationEnvironment environment, Simulator simulator, Position newPosition, PostTickMotionType motionType) {
+		return delegate.afterTickMotionCandidates(user, environment, simulator, newPosition, motionType);
 	}
 
 	public static SimulationSearch of(SimulationSearch search, SimulationEvaluator simulationEvaluator) {

@@ -56,8 +56,7 @@ final class SlimePhysics implements BlockPhysic {
     User user, SimulationEnvironment environment,
     double motionX, double motionY, double motionZ
   ) {
-    MovementMetadata movementData = user.meta().movement();
-    if (Math.abs(motionY) < 0.1D && !movementData.sneaking) {
+    if (Math.abs(motionY) < 0.1D && !environment.isSneaking()) {
       double d0 = 0.4D + Math.abs(motionY) * 0.2D;
       motionX *= d0;
       motionZ *= d0;

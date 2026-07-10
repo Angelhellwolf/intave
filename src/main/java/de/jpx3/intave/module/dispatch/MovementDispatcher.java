@@ -272,6 +272,7 @@ public final class MovementDispatcher extends Module {
       movement.baseMotionX = 0;
       movement.baseMotionY = 0;
       movement.baseMotionZ = 0;
+      movement.clearPostTickMotionCandidates();
       user.blockCache().invalidateAll();
       meta.potions().clearPotionEffects();
     });
@@ -297,6 +298,8 @@ public final class MovementDispatcher extends Module {
         movement.baseMotionX += knockback.motionX;
         movement.baseMotionY += knockback.motionY;
         movement.baseMotionZ += knockback.motionZ;
+
+        movement.clearPostTickMotionCandidates();
       });
     }
   }
@@ -479,7 +482,7 @@ public final class MovementDispatcher extends Module {
       movement.dismountRidingEntity("Riding dead entity");
     }
 
-    double distanceMoved = Hypot.fast(movement.motionX(), movement.motionZ());
+    double distanceMoved = Hypot.fast(movement.offsetMotionX(), movement.offsetMotionZ());
     if (inventoryData.activatedItemThisTick && inventoryData.deactivatedItemThisTick && distanceMoved > 0.1) {
       if (violationLevelData.wrappedNoSlowdownVL++ > 5) {
         user.nerfPermanently(AttackNerfStrategy.DMG_HIGH, "No slowdown");
@@ -705,7 +708,7 @@ public final class MovementDispatcher extends Module {
             .build();
           Modules.violationProcessor().processViolation(violation);
         }
-        if (movement.artificialFallDistance > requiredFallDistance || Math.abs(movement.motionY()) > 0.01) {
+        if (movement.artificialFallDistance > requiredFallDistance || Math.abs(movement.offsetMotionY()) > 0.01) {
           reader.setOnGround(movement.onGround);
         }
       }
@@ -945,7 +948,7 @@ public final class MovementDispatcher extends Module {
 		        finalVelocity,
 		        movementData
 	        ));
-          movementData.addAmbiguousUpdate(velocity.get());
+          movementData.queueTickAmbiguousUpdate(velocity.get());
         },
         () -> {
           VelocityUpdate myVelocityUpdate = velocity.get();
@@ -1207,9 +1210,15 @@ public final class MovementDispatcher extends Module {
     movementData.activeTick(VEHICLE_EXIT);
     if (movementData.isInVehicle()) {
       movementData.dismountRidingEntity("Sneak exit");
-      movementData.sneaking = false;
+//      movementData.queueTickAmbiguousUpdate(
+//        SneakingUpdate.sneaking(false, movementData)
+//      );
+      movementData.setSneaking(false);
     } else {
-      movementData.sneaking = true;
+//      movementData.queueTickAmbiguousUpdate(
+//        SneakingUpdate.sneaking(true, movementData)
+//      );
+      movementData.setSneaking(true);
     }
     if (IntaveControl.DEBUG_PLAYER_ACTIONS || user.receives(MessageChannel.DEBUG_PLAYER_ACTIONS)) {
       user.player().sendMessage(ChatColor.GREEN + "Start sneaking " + movementData.sneaking);
@@ -1218,7 +1227,10 @@ public final class MovementDispatcher extends Module {
 
   private void stopSneak(User user) {
     MovementMetadata movementData = user.meta().movement();
-    movementData.sneaking = false;
+//    movementData.queueTickAmbiguousUpdate(
+//      SneakingUpdate.sneaking(false, movementData)
+//    );
+    movementData.setSneaking(false);
     if (IntaveControl.DEBUG_PLAYER_ACTIONS || user.receives(MessageChannel.DEBUG_PLAYER_ACTIONS)) {
       user.player().sendMessage(ChatColor.RED + "Stop sneaking after " + movementData.ticks(SNEAKING));
     }

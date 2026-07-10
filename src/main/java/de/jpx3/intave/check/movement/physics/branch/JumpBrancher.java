@@ -20,24 +20,42 @@ final class JumpBrancher extends MovementSearchBrancher {
   private static final boolean[] OPTIMISTIC = new boolean[]{true, false};
   private static final boolean[] PESSIMISTIC = new boolean[]{false, true};
 
-  @Override
-  public void branch(MovementSearchInput input, MovementSearchConfig config, List<MovementSearchConfig> result) {
-    SimulationEnvironment environment = input.environment();
+  private final boolean restricted;
+
+	JumpBrancher(boolean restricted) {
+		this.restricted = restricted;
+	}
+
+	@Override
+  public void branch(MovementSearchInput input, MovementSearchBranch inputBranch, List<MovementSearchBranch> outputBranches) {
+    if (!input.jumpingBranchNecessary()) {
+      outputBranches.add(inputBranch);
+      return;
+    }
+
+    SimulationEnvironment environment = inputBranch.modifiedMutableView(input.environment());
     ProtocolMetadata protocol = input.user().meta().protocol();
-    boolean estimatedJump = Math.abs(environment.motionY() - (1 - input.user().sizeOf(environment.pose()).height() % 1)) < 1e-5
-      || Math.abs(environment.motionY() - environment.jumpMotion()) < 0.0001;
+    boolean estimatedJump = Math.abs(environment.offsetMotionY() - environment.jumpMotion()) < 0.0001;
 
     for (boolean jumped : estimatedJump ? OPTIMISTIC : PESSIMISTIC) {
-      if (jumped && !environment.lastOnGround() && !environment.inLava() && !environment.inWater()) {
+      if (jumped && restricted && !environment.lastOnGround() && !environment.inLava() && !environment.inWater()) {
         continue;
       }
       if (jumped && environment.denyJump()) {
         continue;
       }
-      if (config.moveConfig().isSprinting() && environment.isSneaking() && !jumped && !protocol.combatUpdate()) {
+      if (!jumped && restricted && inputBranch.moveConfig().isSprinting() && environment.isSneaking() && !protocol.combatUpdate()) {
         continue;
       }
-      result.add(config.withJumped(jumped));
+      outputBranches.add(inputBranch.withJumped(jumped));
     }
+  }
+
+  public static JumpBrancher restricted() {
+    return new JumpBrancher(true);
+  }
+
+  public static JumpBrancher unrestricted() {
+    return new JumpBrancher(false);
   }
 }

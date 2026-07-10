@@ -17,9 +17,12 @@ import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.block.cache.MockFullBlockStaticPlane;
 import de.jpx3.intave.block.shape.resolve.DrillResolver;
 import de.jpx3.intave.block.shape.resolve.MockShapeResolverPipeline;
+import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.check.movement.physics.search.NTickSimulationSearch;
 import de.jpx3.intave.check.movement.physics.search.SimulationSearch;
+import de.jpx3.intave.check.movement.physics.simulator.Simulation;
+import de.jpx3.intave.check.movement.physics.simulator.Simulator;
 import de.jpx3.intave.player.collider.complex.SimulationResult;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
@@ -55,7 +58,7 @@ final class NTickSimulationSearchTest {
 	}
 
 	@Test
-	void threeTickSearchReconstructsMovementAcrossTwoFilteredFlyingPacketsWithRotationChange() {
+	void threeTickTickSearchReconstructsMovementAcrossTwoFilteredFlyingPacketsWithRotationChange() {
 		Simulator simulator = new SlowHorizontalTestSimulator();
 		reconstructsMovementAcrossFilteredFlyingPackets(
 			new NTickSimulationSearch(3, false, false),
@@ -67,7 +70,7 @@ final class NTickSimulationSearchTest {
 	}
 
 	@Test
-	void threeTickSearchKeepsLastReportedPositionAcrossNestedFlyingPackets() {
+	void threeTickTickSearchKeepsLastReportedPositionAcrossNestedFlyingPackets() {
 		Simulator simulator = new ReversingVerticalTestSimulator();
 		reconstructsMovementAcrossFilteredFlyingPackets(
 			new NTickSimulationSearch(3, false, false),
@@ -123,7 +126,7 @@ final class NTickSimulationSearchTest {
 			Motion preTickMotion = simulator.simulatePreTick(user, motion, movement);
 			movement.setBaseMotion(preTickMotion);
 
-			Simulation simulate = search.greedyFuzzySearch(
+			Simulation simulate = search.greedyFuzzyTickSearch(
 				user, movement, simulator
 			);
 			if (!foundRequiredDetail && simulate.blueDetails().contains(requiredDetail)) {
@@ -144,6 +147,7 @@ final class NTickSimulationSearchTest {
 
 			Motion afterMotion = simulator.simulateAfterTick(
 				user, movement,
+				MovementConfiguration.blank(),
 				movement.position(),
 				simulate.offsetMotion()
 			);
@@ -305,6 +309,7 @@ final class NTickSimulationSearchTest {
 		public Motion simulateAfterTick(
 			User user,
 			SimulationEnvironment environment,
+			MovementConfiguration configuration,
 			Position position,
 			Motion motion
 		) {
@@ -349,6 +354,7 @@ final class NTickSimulationSearchTest {
 		public Motion simulateAfterTick(
 			User user,
 			SimulationEnvironment environment,
+			MovementConfiguration configuration,
 			Position position,
 			Motion motion
 		) {

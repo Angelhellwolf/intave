@@ -31,7 +31,7 @@ public final class v8Collider implements Collider {
       offsetMotion.motionY *= 0.05f;
       offsetMotion.motionZ *= 0.25D;
     }
-    Motion actualMotion = offsetMotion.copy();
+    Motion actualMotion = inWeb ? Motion.newEmpty() : offsetMotion.copy();
 
     double edgeSneakMotionX = offsetMotion.motionX;
     double edgeSneakMotionY = offsetMotion.motionY;
@@ -156,10 +156,15 @@ public final class v8Collider implements Collider {
     offsetMotion.motionX = newPositionX - positionX;
     offsetMotion.motionY = newPositionY - positionY;
     offsetMotion.motionZ = newPositionZ - positionZ;
-    Motion offsetMotionCopy = Motion.copyFrom(offsetMotion);
+    if (moveResetX) {
+      actualMotion.motionX = 0;
+    }
+    if (moveResetZ) {
+      actualMotion.motionZ = 0;
+    }
     return new SimulationResult(
-      edgeSneak ?actualMotion  : offsetMotionCopy,
-      offsetMotionCopy,
+      actualMotion,
+      offsetMotion.copy(),
       null,
       onGround, collidedHorizontally, collidedVertically,
       moveResetX, moveResetZ, step, edgeSneak, stepHeight

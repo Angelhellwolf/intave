@@ -24,9 +24,9 @@ class SearcherTest {
 	public void testExample() {
 		class ExampleBrancher extends SearchBrancher<Object, String> {
 			@Override
-			public void branch(Object input, String config, List<String> result) {
-				result.add(config + "A");
-				result.add(config + "B");
+			public void branch(Object input, String inputBranch, List<String> outputBranches) {
+				outputBranches.add(inputBranch + "A");
+				outputBranches.add(inputBranch + "B");
 			}
 		}
 		Searcher<Object, String> searcher = new Searcher<>(
@@ -46,10 +46,10 @@ class SearcherTest {
 		Searcher<Object, String> searcher = new Searcher<Object, String>(
 			List.of(new SearchBrancher<>() {
 				@Override
-				public void branch(Object input, String config, List<String> result) {
-					result.add(config + "A");
-					result.add(config + "A");
-					result.add(config + "B");
+				public void branch(Object input, String inputBranch, List<String> outputBranches) {
+					outputBranches.add(inputBranch + "A");
+					outputBranches.add(inputBranch + "A");
+					outputBranches.add(inputBranch + "B");
 				}
 			}),
 			_ -> ""

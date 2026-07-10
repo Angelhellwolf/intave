@@ -1,8 +1,19 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check.other.inventoryclickanalysis;
 
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.check.CheckPart;
-import de.jpx3.intave.check.movement.physics.Simulators;
+import de.jpx3.intave.check.movement.physics.simulator.Simulators;
 import de.jpx3.intave.check.other.InventoryClickAnalysis;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.math.Hypot;
@@ -53,7 +64,7 @@ public final class OnMoveCheck extends CheckPart<InventoryClickAnalysis> {
       return;
     }
 
-    double distanceMoved = Hypot.fast(movementData.motionX(), movementData.motionZ());
+    double distanceMoved = Hypot.fast(movementData.offsetMotionX(), movementData.offsetMotionZ());
     double distanceRequirement = player.isSneaking() ? 0.04 : 0.1;
     if ((keyForward != 0 || keyStrafe != 0) && distanceMoved > distanceRequirement) {
       String message = "performed inventory-click whilst walking";

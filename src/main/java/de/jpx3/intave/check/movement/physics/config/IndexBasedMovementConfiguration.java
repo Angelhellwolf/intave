@@ -9,7 +9,7 @@
  *   https://polyformproject.org/licenses/perimeter/1.0.0/
  */
 
-package de.jpx3.intave.check.movement.physics;
+package de.jpx3.intave.check.movement.physics.config;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
@@ -20,7 +20,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-public final class MovementConfiguration {
+final class IndexBasedMovementConfiguration implements MovementConfiguration {
   private static final List<State> states;
 
   private static final QuadState forward = new QuadState();
@@ -44,28 +44,28 @@ public final class MovementConfiguration {
     states = Collections.unmodifiableList(statez);
   }
 
-  private static final MovementConfiguration[] UNIVERSE = new MovementConfiguration[
+  private static final IndexBasedMovementConfiguration[] UNIVERSE = new IndexBasedMovementConfiguration[
     1 << (states.stream().mapToInt(State::bitLength).reduce(1, Integer::sum) + 1)
   ];
 
   static {
-    Arrays.setAll(UNIVERSE, MovementConfiguration::new);
+    Arrays.setAll(UNIVERSE, IndexBasedMovementConfiguration::new);
   }
 
-  public static StreamCodec<ByteBuf, ByteBuf, MovementConfiguration> STREAM_CODEC = ByteBufStreamCodecs.INTEGER.beforeAndAfter(
-	  MovementConfiguration::fromIndex, MovementConfiguration::index
+  public static StreamCodec<ByteBuf, ByteBuf, IndexBasedMovementConfiguration> STREAM_CODEC = ByteBufStreamCodecs.INTEGER.beforeAndAfter(
+	  IndexBasedMovementConfiguration::fromIndex, IndexBasedMovementConfiguration::index
   );
 
   private final int index;
 
-  private MovementConfiguration(int index) {
+  private IndexBasedMovementConfiguration(int index) {
     this.index = index;
   }
 
   public static MovementConfiguration select(
     int forward, int strafe, int reduceTicks, boolean sprint, boolean jumped, boolean handActive, boolean reduceBefore
   ) {
-    MovementConfiguration configuration = blank();
+    IndexBasedMovementConfiguration configuration = blank();
     configuration = configuration.withForward(forward);
     configuration = configuration.withStrafe(strafe);
     configuration = configuration.withReduceTicks(reduceTicks);
@@ -76,6 +76,11 @@ public final class MovementConfiguration {
     return configuration;
   }
 
+  public static IndexBasedMovementConfiguration blank() {
+    return UNIVERSE[0];
+  }
+
+  @Override
   public int forward() {
     int forwardRepresentation = forward.get(index);
     switch (forwardRepresentation) {
@@ -90,6 +95,7 @@ public final class MovementConfiguration {
     }
   }
 
+  @Override
   public int strafe() {
     // can only be 0, 1, 2
     int strafeRepresentation = strafe.get(index);
@@ -105,59 +111,67 @@ public final class MovementConfiguration {
     }
   }
 
-  public MovementConfiguration withForward(int forward) {
+  @Override
+  public IndexBasedMovementConfiguration withForward(int forward) {
     if (forward < -1 || forward > 1) {
       throw new IllegalArgumentException("forward can only be -1, 0, 1");
     }
     switch (forward) {
       case -1:
-        return UNIVERSE[MovementConfiguration.forward.set(index, 2)];
+        return UNIVERSE[IndexBasedMovementConfiguration.forward.set(index, 2)];
       case 0:
-        return UNIVERSE[MovementConfiguration.forward.set(index, 0)];
+        return UNIVERSE[IndexBasedMovementConfiguration.forward.set(index, 0)];
       case 1:
-        return UNIVERSE[MovementConfiguration.forward.set(index, 1)];
+        return UNIVERSE[IndexBasedMovementConfiguration.forward.set(index, 1)];
       default:
         throw new IllegalStateException("Unexpected value: " + forward);
     }
   }
 
+  @Override
   public MovementConfiguration pressingW() {
     return withForward(1);
   }
 
+  @Override
   public MovementConfiguration pressingS() {
     return withForward(-1);
   }
 
-  public MovementConfiguration withStrafe(int strafe) {
+  @Override
+  public IndexBasedMovementConfiguration withStrafe(int strafe) {
     if (strafe < -1 || strafe > 1) {
       throw new IllegalArgumentException("strafe can only be -1, 0, 1");
     }
     switch (strafe) {
       case -1:
-        return UNIVERSE[MovementConfiguration.strafe.set(index, 2)];
+        return UNIVERSE[IndexBasedMovementConfiguration.strafe.set(index, 2)];
       case 0:
-        return UNIVERSE[MovementConfiguration.strafe.set(index, 0)];
+        return UNIVERSE[IndexBasedMovementConfiguration.strafe.set(index, 0)];
       case 1:
-        return UNIVERSE[MovementConfiguration.strafe.set(index, 1)];
+        return UNIVERSE[IndexBasedMovementConfiguration.strafe.set(index, 1)];
       default:
         throw new IllegalStateException("Unexpected value: " + strafe);
     }
   }
 
+  @Override
   public MovementConfiguration pressingA() {
     return withStrafe(-1);
   }
 
+  @Override
   public MovementConfiguration pressingD() {
     return withStrafe(1);
   }
 
+  @Override
   public MovementConfiguration withoutKeypress() {
     return withForward(0).withStrafe(0);
   }
 
-  public MovementConfiguration withKeypress(int forward, int strafe) {
+  @Override
+  public IndexBasedMovementConfiguration withKeypress(int forward, int strafe) {
     if (Math.abs(forward) > 1 || Math.abs(strafe) > 1) {
       throw new IllegalArgumentException("forward and strafe can only be -1, 0, 1");
     }
@@ -168,62 +182,77 @@ public final class MovementConfiguration {
     return UNIVERSE;
   }
 
+  @Override
   public boolean isReducing() {
     return attackReduceTicks.get(index) > 0;
   }
 
+  @Override
   public int reduceTicks() {
     return attackReduceTicks.get(index);
   }
 
-  public MovementConfiguration withReduceTicks(int ticks) {
+  @Override
+  public IndexBasedMovementConfiguration withReduceTicks(int ticks) {
     return UNIVERSE[attackReduceTicks.set(index, minmax(ticks, 0, 3))];
   }
 
+  @Override
   public MovementConfiguration withoutReducing() {
     return UNIVERSE[attackReduceTicks.set(index, 0)];
   }
 
+  @Override
   public boolean isSprinting() {
     return sprintingState.get(index);
   }
 
+  @Override
   public MovementConfiguration withSprinting() {
     return UNIVERSE[sprintingState.set(index, true)];
   }
 
+  @Override
   public MovementConfiguration withoutSprinting() {
     return UNIVERSE[sprintingState.set(index, false)];
   }
 
-  public MovementConfiguration withSprintingSetTo(boolean sprinting) {
+  @Override
+  public IndexBasedMovementConfiguration withSprintingSetTo(boolean sprinting) {
     return UNIVERSE[sprintingState.set(index, sprinting)];
   }
 
+  @Override
   public boolean isJumping() {
     return jumped.get(index);
   }
 
-  public MovementConfiguration withJumped(boolean hasJumped) {
+  @Override
+  public IndexBasedMovementConfiguration withJumped(boolean hasJumped) {
     return UNIVERSE[jumped.set(index, hasJumped)];
   }
 
+  @Override
   public boolean isHandActive() {
     return handActive.get(index);
   }
 
+  @Override
   public MovementConfiguration withActiveHand() {
     return UNIVERSE[handActive.set(index, true)];
   }
 
+  @Override
   public MovementConfiguration withoutActiveHand() {
     return UNIVERSE[handActive.set(index, false)];
   }
 
-  public MovementConfiguration withHandActive(boolean hasHandActive) {
+  @Override
+  public IndexBasedMovementConfiguration withHandActive(boolean hasHandActive) {
     return UNIVERSE[handActive.set(index, hasHandActive)];
   }
 
+  @Override
   public boolean reduceBefore() {
     return reduceBefore.get(index);
   }
@@ -232,12 +261,9 @@ public final class MovementConfiguration {
     return String.format("%32s", Integer.toBinaryString(index)).replace(' ', '0');
   }
 
-  public MovementConfiguration withReduceBefore(boolean hasReduceBefore) {
+  @Override
+  public IndexBasedMovementConfiguration withReduceBefore(boolean hasReduceBefore) {
     return UNIVERSE[reduceBefore.set(index, hasReduceBefore)];
-  }
-
-  public static MovementConfiguration blank() {
-    return UNIVERSE[0];
   }
 
   private static int minmax(int val, int min, int max) {
@@ -246,19 +272,26 @@ public final class MovementConfiguration {
 
   private static int starterBit;
 
-  public MovementConfiguration withJump() {
+  @Override
+  public IndexBasedMovementConfiguration withJump() {
     return withJumped(true);
   }
 
+  @Override
   public MovementConfiguration withoutJump() {
     return withJumped(false);
+  }
+
+  @Override
+  public TraceImmutableMovementConfiguration withRecording() {
+    return new TraceImmutableMovementConfiguration(this);
   }
 
   private int index() {
     return index;
   }
 
-  private static MovementConfiguration fromIndex(int index) {
+  private static IndexBasedMovementConfiguration fromIndex(int index) {
     if (index < 0 || index >= UNIVERSE.length) {
       throw new IllegalArgumentException("Invalid movement configuration index: " + index);
     }
@@ -324,23 +357,6 @@ public final class MovementConfiguration {
     abstract int bitMask();
   }
 
-  private String keysToString() {
-    StringBuilder builder = new StringBuilder();
-    int forward = forward();
-    int strafe = strafe();
-    if (forward == 1) {
-      builder.append("W");
-    } else if (forward == -1) {
-      builder.append("S");
-    }
-    if (strafe == 1) {
-      builder.append("D");
-    } else if (strafe == -1) {
-      builder.append("A");
-    }
-    return builder.toString();
-  }
-
   @Override
   public boolean equals(Object obj) {
     if (this == obj) {
@@ -349,7 +365,7 @@ public final class MovementConfiguration {
     if (obj == null || getClass() != obj.getClass()) {
       return false;
     }
-    MovementConfiguration that = (MovementConfiguration) obj;
+    IndexBasedMovementConfiguration that = (IndexBasedMovementConfiguration) obj;
     return index == that.index;
   }
 

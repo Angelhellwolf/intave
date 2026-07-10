@@ -18,9 +18,9 @@ import de.jpx3.intave.block.fluid.FluidFlow;
 import de.jpx3.intave.block.fluid.Fluids;
 import de.jpx3.intave.block.shape.resolve.DrillResolver;
 import de.jpx3.intave.block.shape.resolve.MockShapeResolverPipeline;
-import de.jpx3.intave.check.movement.physics.MovementConfiguration;
-import de.jpx3.intave.check.movement.physics.Simulator;
-import de.jpx3.intave.check.movement.physics.Simulators;
+import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
+import de.jpx3.intave.check.movement.physics.simulator.Simulator;
+import de.jpx3.intave.check.movement.physics.simulator.Simulators;
 import de.jpx3.intave.player.collider.Colliders;
 import de.jpx3.intave.player.collider.complex.Collider;
 import de.jpx3.intave.player.collider.simple.SimpleCollider;
@@ -106,8 +106,8 @@ public final class SimulatorBenchmark {
 
 	private record BenchmarkState(
 		User user, MovementMetadata metadata, Simulator simulator,
-		MovementConfiguration[] configurations) {
-
+		MovementConfiguration[] configurations
+	) {
 		private static BenchmarkState create() {
 			User user = createUser();
 			MovementMetadata metadata = user.meta().movement();

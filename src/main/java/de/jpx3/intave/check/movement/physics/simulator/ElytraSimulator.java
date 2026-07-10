@@ -9,8 +9,9 @@
  *   https://polyformproject.org/licenses/perimeter/1.0.0/
  */
 
-package de.jpx3.intave.check.movement.physics;
+package de.jpx3.intave.check.movement.physics.simulator;
 
+import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.diagnostic.timings.Timings;
 import de.jpx3.intave.player.collider.Colliders;
@@ -30,6 +31,7 @@ final class ElytraSimulator extends BaseSimulator {
     SimulationEnvironment environment,
     MovementConfiguration configuration
   ) {
+    motion = motion.copy();
     Timings.CHECK_PHYSICS_SIMULATOR.start();
     Timings.CHECK_PHYSICS_SIMULATOR_ELYTRA.start();
     float rotationPitch = environment.rotationPitch();
@@ -83,7 +85,7 @@ final class ElytraSimulator extends BaseSimulator {
   }
 
   @Override
-  public Motion simulateAfterTick(User user, SimulationEnvironment environment, Position position, Motion motion) {
+  public Motion simulateAfterTick(User user, SimulationEnvironment environment, MovementConfiguration configuration, Position position, Motion motion) {
 //    if (environment.simulationResult().onGround()) {
 //      if (user.meta().movement().elytraFlying) {
 //        user.meta().movement().elytraFlying = false;
@@ -92,7 +94,7 @@ final class ElytraSimulator extends BaseSimulator {
 //        }
 //      }
 //    }
-    return super.simulateAfterTick(user, environment, position, motion);
+    return super.simulateAfterTick(user, environment, configuration, position, motion);
   }
 
   @Override

@@ -69,8 +69,7 @@ public final class VelocityUpdate extends TickAmbiguousUpdate {
 	public static VelocityUpdate openEnded(
 		Motion motion, MovementMetadata metadata
 	) {
-		long sequenceNumber = metadata.reserveNewFutureSequenceNumber();
-
+		long sequenceNumber = metadata.newSequenceNumber();
 		return new VelocityUpdate(
 			motion.copy(),
 			CausalConstraint.openEnded(

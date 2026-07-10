@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
 final class MutableSimulationEnvironmentViewTest {
   @Test
   void readThroughFollowsDelegateUntilValueIsOverridden() {
-    TestSimulationEnvironment delegate = new TestSimulationEnvironment();
+    MockSimulationEnvironment delegate = new MockSimulationEnvironment();
     delegate.setPositionX(1.0);
     delegate.setPositionY(2.0);
     delegate.setPositionZ(3.0);
@@ -41,7 +41,7 @@ final class MutableSimulationEnvironmentViewTest {
 
   @Test
   void updateMovementChangesViewWithoutChangingDelegate() {
-    TestSimulationEnvironment delegate = new TestSimulationEnvironment();
+    MockSimulationEnvironment delegate = new MockSimulationEnvironment();
     delegate.setPositionX(1.0);
     delegate.setPositionY(2.0);
     delegate.setPositionZ(3.0);
@@ -53,13 +53,13 @@ final class MutableSimulationEnvironmentViewTest {
     assertEquals(1.0, delegate.positionX(), 0.0);
     assertEquals(4.0, view.positionX(), 0.0);
     assertEquals(1.0, view.lastPositionX(), 0.0);
-    assertEquals(3.0, view.motionX(), 0.0);
+    assertEquals(3.0, view.offsetMotionX(), 0.0);
     assertEquals(90.0F, view.rotationYaw(), 0.0F);
   }
 
   @Test
   void updateMovementPreservesPreviousRotationAsLastRotation() {
-    TestSimulationEnvironment delegate = new TestSimulationEnvironment();
+    MockSimulationEnvironment delegate = new MockSimulationEnvironment();
     delegate.setRotation(10.0F, 20.0F);
 
     SimulationEnvironment view = delegate.mutableView();
@@ -73,7 +73,7 @@ final class MutableSimulationEnvironmentViewTest {
 
   @Test
   void directRotationOverrideDoesNotRewriteLastRotation() {
-    TestSimulationEnvironment delegate = new TestSimulationEnvironment();
+    MockSimulationEnvironment delegate = new MockSimulationEnvironment();
     delegate.setRotation(10.0F, 20.0F);
 
     SimulationEnvironment view = delegate.mutableView();
@@ -87,7 +87,7 @@ final class MutableSimulationEnvironmentViewTest {
 
   @Test
   void commitToAnotherEnvironment() {
-    TestSimulationEnvironment delegate = new TestSimulationEnvironment();
+    MockSimulationEnvironment delegate = new MockSimulationEnvironment();
     delegate.setPositionX(1.0);
     delegate.setPositionY(2.0);
     delegate.setPositionZ(3.0);
@@ -102,7 +102,7 @@ final class MutableSimulationEnvironmentViewTest {
     view.setInWater(true);
     view.setPushedByEntity(true);
 
-    TestSimulationEnvironment target = new TestSimulationEnvironment();
+    MockSimulationEnvironment target = new MockSimulationEnvironment();
     view.commitTo(target);
 
     assertEquals(4.0, target.positionX(), 0.0);
@@ -119,7 +119,7 @@ final class MutableSimulationEnvironmentViewTest {
 
   @Test
   void nestedMutableViewsReadThroughAndCommitThroughEachLayer() {
-    TestSimulationEnvironment delegate = new TestSimulationEnvironment();
+    MockSimulationEnvironment delegate = new MockSimulationEnvironment();
     delegate.setPositionX(1.0);
     delegate.setPositionY(2.0);
     delegate.setPositionZ(3.0);
@@ -151,7 +151,7 @@ final class MutableSimulationEnvironmentViewTest {
     assertTrue(parent.inWater());
     assertEquals(8.0, child.positionX(), 0.0);
     assertEquals(1.0, child.lastPositionX(), 0.0);
-    assertEquals(4.0, child.motionX(), 0.0);
+    assertEquals(4.0, child.offsetMotionX(), 0.0);
     assertEquals(10.0F, child.lastRotationYaw(), 0.0F);
     assertEquals(0.5, child.baseMotionY(), 0.0);
     assertFalse(child.inWater());
@@ -162,14 +162,14 @@ final class MutableSimulationEnvironmentViewTest {
     assertFalse(delegate.inWater());
     assertEquals(8.0, parent.positionX(), 0.0);
     assertEquals(1.0, parent.lastPositionX(), 0.0);
-    assertEquals(4.0, parent.motionX(), 0.0);
+    assertEquals(4.0, parent.offsetMotionX(), 0.0);
     assertEquals(90.0F, parent.rotationYaw(), 0.0F);
     assertEquals(10.0F, parent.lastRotationYaw(), 0.0F);
     assertEquals(0.5, parent.baseMotionY(), 0.0);
     assertEquals(childBox, parent.boundingBox());
     assertFalse(parent.inWater());
 
-    TestSimulationEnvironment target = new TestSimulationEnvironment();
+    MockSimulationEnvironment target = new MockSimulationEnvironment();
     parent.commitTo(target);
 
     assertEquals(8.0, target.positionX(), 0.0);
@@ -183,7 +183,7 @@ final class MutableSimulationEnvironmentViewTest {
 
   @Test
   void nestedCommitToRootAppliesDelegateMutationsFirst() {
-    TestSimulationEnvironment target = new TestSimulationEnvironment();
+    MockSimulationEnvironment target = new MockSimulationEnvironment();
     SimulationEnvironment outer = target.mutableView();
     outer.setBaseMotion(1.0, 2.0, 3.0);
 

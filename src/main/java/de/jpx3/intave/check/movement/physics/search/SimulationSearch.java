@@ -11,26 +11,35 @@
 
 package de.jpx3.intave.check.movement.physics.search;
 
-import de.jpx3.intave.check.movement.physics.Simulation;
-import de.jpx3.intave.check.movement.physics.Simulator;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
+import de.jpx3.intave.check.movement.physics.simulator.Simulation;
+import de.jpx3.intave.check.movement.physics.simulator.Simulator;
+import de.jpx3.intave.share.Motion;
+import de.jpx3.intave.share.Position;
 import de.jpx3.intave.user.User;
 
+import java.util.List;
 import java.util.Set;
 
 public interface SimulationSearch {
-  default Simulation greedyFuzzySearch(User user, SimulationEnvironment environment, Simulator simulator) {
-    return search(user, environment, simulator, SimulationSearchOptions.GREEDY_FUZZY);
+  default Simulation greedyFuzzyTickSearch(User user, SimulationEnvironment environment, Simulator simulator) {
+    return tickSearch(user, environment, simulator, SimulationSearchOptions.GREEDY_FUZZY);
   }
 
-  default Simulation greedyFullSearch(User user, SimulationEnvironment environment, Simulator simulator) {
-    return search(user, environment, simulator, SimulationSearchOptions.GREEDY_EXACT);
+  default Simulation greedyFullTickSearch(User user, SimulationEnvironment environment, Simulator simulator) {
+    return tickSearch(user, environment, simulator, SimulationSearchOptions.GREEDY_EXACT);
   }
 
-	Set<Simulation> exhaustiveSearch(User user, SimulationEnvironment environment, Simulator simulator);
+	Set<Simulation> exhaustiveTickSearch(User user, SimulationEnvironment environment, Simulator simulator);
 
-  Simulation search(
+  Simulation tickSearch(
 	  User user, SimulationEnvironment movementData,
 	  Simulator simulator, SimulationSearchOptions options
   );
+
+	List<Motion> afterTickMotionCandidates(
+	  User user, SimulationEnvironment environment,
+	  Simulator simulator, Position newPosition,
+	  PostTickMotionType motionType
+	);
 }

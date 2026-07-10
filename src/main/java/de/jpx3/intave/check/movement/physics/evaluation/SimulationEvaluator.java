@@ -9,10 +9,13 @@
  *   https://polyformproject.org/licenses/perimeter/1.0.0/
  */
 
-package de.jpx3.intave.check.movement.physics;
+package de.jpx3.intave.check.movement.physics.evaluation;
 
 import de.jpx3.intave.block.collision.Collision;
+import de.jpx3.intave.check.movement.physics.MovementCharacteristics;
+import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
+import de.jpx3.intave.check.movement.physics.simulator.Simulators;
 import de.jpx3.intave.diagnostic.timings.Timings;
 import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.math.MathHelper;
@@ -47,15 +50,15 @@ public final class SimulationEvaluator {
       movement.verifiedLastPositionX(), movement.verifiedLastPositionZ()
     );
     Pose pose = movement.pose();
-    double receivedMotionX = movement.motionX();
-    double receivedMotionY = movement.motionY();
-    double receivedMotionZ = movement.motionZ();
+    double receivedMotionX = movement.offsetMotionX();
+    double receivedMotionY = movement.offsetMotionY();
+    double receivedMotionZ = movement.offsetMotionZ();
     double differenceY = abs(receivedMotionY - predictedY);
     boolean accountedSkippedMovement = movement.receivedFlyingPacketIn(2);
     double verticalLegitimateDeviation = accountedSkippedMovement ? 0.01 : 0.00001;
 
     if (accountedSkippedMovement) {
-      if (abs(movement.motionX()) < 0.05 && abs(movement.motionZ()) < 0.05 && movement.motionY() < 0 && movement.motionY() > -0.4) {
+      if (abs(movement.offsetMotionX()) < 0.05 && abs(movement.offsetMotionZ()) < 0.05 && movement.offsetMotionY() < 0 && movement.offsetMotionY() > -0.4) {
         boolean pastCollision = movement.ticksPast(NEARBY_COLLISION_INACCURACY) == 0 && !movement.inWeb();
         verticalLegitimateDeviation = pastCollision ? 0.15 : (0.08);
         tags.add(EvaluationTag.FLYING);
@@ -65,7 +68,7 @@ public final class SimulationEvaluator {
       }
     }
 
-    if (pose.height(user) < 1 && receivedMotionY <= 0 && accountedSkippedMovement) {
+    if (pose.height(user, movement) < 1 && receivedMotionY <= 0 && accountedSkippedMovement) {
       verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, 0.1);
       tags.add(EvaluationTag.CROUCHING_BOX);
     }
@@ -133,7 +136,7 @@ public final class SimulationEvaluator {
         scuffed = true;
       }
       boolean collides = Collision.present(user, movement, BoundingBox.fromPosition(user, movement, movement.positionX(), movement.positionY() + 0.0001, movement.positionZ())
-        .expand(movement.motionX(), abs(receivedMotionY + 0.1), movement.motionZ()));
+        .expand(movement.offsetMotionX(), abs(receivedMotionY + 0.1), movement.offsetMotionZ()));
 //      player.sendMessage(scuffed + " " + movement.isSneaking() + " " + Math.abs(receivedMotionY - crouchingHeightGap) + " " + Math.abs(receivedMotionY - standingHeightGap));
       if (scuffed && collides) {
         differenceY = 0;
@@ -143,7 +146,7 @@ public final class SimulationEvaluator {
 
     if (movement.receivedFlyingPacketIn(3) && differenceY > 0.001 && movement.ticksPast(BLOCK_PLACEMENT) > 10) {
       boolean inLiquid = movement.ticksPast(IN_WATER) <= 10 || movement.inLava();
-      int allowedPackets = Hypot.fast(movement.motionX(), movement.motionZ()) < 0.03 ? 3 : 1;
+      int allowedPackets = Hypot.fast(movement.offsetMotionX(), movement.offsetMotionZ()) < 0.03 ? 3 : 1;
       int physicsPacketRelinkFlyVL = movement.physicsPacketRelinkFlyVL();
       movement.setPhysicsPacketRelinkFlyVL(physicsPacketRelinkFlyVL + 1);
       if (inLiquid || physicsPacketRelinkFlyVL <= allowedPackets) {
@@ -166,16 +169,16 @@ public final class SimulationEvaluator {
       tags.add(EvaluationTag.VELOCITY_FLYING);
     }
 
-    if (collidedWithBoat && !movement.isInVehicle() && movement.motionY() < 0.605) {
+    if (collidedWithBoat && !movement.isInVehicle() && movement.offsetMotionY() < 0.605) {
       if (movement.enforceBoatStep()) {
-        if (movement.motionY() < 0.1) {
+        if (movement.offsetMotionY() < 0.1) {
           verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, 1);
           tags.add(EvaluationTag.BOAT);
         }
         movement.setEnforceBoatStep(false);
       } else if (movement.baseMotionY() < 0) {
         verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, 1);
-        if (movement.motionY() > movement.jumpMotion()) {
+        if (movement.offsetMotionY() > movement.jumpMotion()) {
           movement.setEnforceBoatStep(true);
         }
         tags.add(EvaluationTag.BOAT);
@@ -189,7 +192,7 @@ public final class SimulationEvaluator {
         && movement.positionY() % 1 > 0.1
         && movement.ticksPast(EXTERNAL_VELOCITY) != 0;
 
-    boolean movingUpwardsInWeb = movement.ticks(IN_WEB) > 2 && movement.motionY() >= 0 && !movement.onGround() && movement.ticksPast(EXTERNAL_VELOCITY) > 3;
+    boolean movingUpwardsInWeb = movement.ticks(IN_WEB) > 2 && movement.offsetMotionY() >= 0 && !movement.onGround() && movement.ticksPast(EXTERNAL_VELOCITY) > 3;
 
     if (movement.inWeb()) {
       verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, movingUpwardsInWeb ? 0.00001 :/*criticalWeb ? 0.000001 : */0.13);
@@ -208,9 +211,9 @@ public final class SimulationEvaluator {
     }
 
     if (movement.receivedFlyingPacketIn(2) && (movement.inWater() || movement.inLava())) {
-      if (Math.abs(movement.motionY()) < 0.1 &&
-        Math.abs(movement.motionX()) < 0.1 &&
-        Math.abs(movement.motionZ()) < 0.1 &&
+      if (Math.abs(movement.offsetMotionY()) < 0.1 &&
+        Math.abs(movement.offsetMotionX()) < 0.1 &&
+        Math.abs(movement.offsetMotionZ()) < 0.1 &&
         Math.abs(predictedY) < 0.1 &&
         movement.ticksPast(EXTERNAL_VELOCITY) > 8
       ) {
@@ -219,8 +222,22 @@ public final class SimulationEvaluator {
       }
     }
 
+    if (movement.pose() == Pose.SWIMMING && !movement.inWater()) {
+//      if (distanceMoved < 0.1) {
+      verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, 0.08);
+      tags.add(EvaluationTag.FLYING_ON_GROUND);
+//      }
+//      user.sendMessage("Swimming Y: " + formatDouble(distanceMoved, 4) + " | " +
+//        formatDouble(differenceY, 4) + " (" + formatDouble(verticalLegitimateDeviation, 4) + ")");
+    }
+
     if (movement.inWater() && movement.ticks(IN_WATER) < 2) {
       verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, 0.05);
+      tags.add(EvaluationTag.WATERFLOW);
+    }
+
+    if (movement.inWater() && !movement.isSprinting() && distanceMoved < 0.1 && movement.offsetMotionY() > -0.06 && movement.offsetMotionY() < 0) {
+      verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, 0.01);
       tags.add(EvaluationTag.WATERFLOW);
     }
 
@@ -241,14 +258,14 @@ public final class SimulationEvaluator {
       }
     }
 
-    if (movement.ticksPast(VEHICLE_DETACHMENT) <= 2 && Math.abs(movement.motionY()) < 0.1) {
+    if (movement.ticksPast(VEHICLE_DETACHMENT) <= 2 && Math.abs(movement.offsetMotionY()) < 0.1) {
       verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, 0.3);
     }
 
     // Jump out of water
     if (movement.ticksPast(IN_WATER) <= 3 || movement.ticksPast(IN_LAVA) <= 3) {
       double liquidMotionY;
-      if (protocol.waterUpdate()) {
+      if (protocol.aquaticUpdate()) {
         liquidMotionY = receivedMotionY + 0.6f - movement.positionY() + movement.verifiedLastPositionY();
       } else {
         liquidMotionY = receivedMotionY + 0.3f;
@@ -265,7 +282,7 @@ public final class SimulationEvaluator {
     }
 
     // Sometimes shit happens
-    if (movement.ticks(SNEAKING) <= 1 && !movement.inWater() && !movement.inWeb() && (movement.onGround() || movement.lastOnGround()) && movement.motionY() <= 0 && movement.motionY() >= -0.5 && movement.lastSneaking()) {
+    if (movement.ticks(SNEAKING) <= 1 && !movement.inWater() && !movement.inWeb() && (movement.onGround() || movement.lastOnGround()) && movement.offsetMotionY() <= 0 && movement.offsetMotionY() >= -0.5 && movement.lastSneaking()) {
       verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, 0.08f);
       tags.add(EvaluationTag.SNEAKING);
     }
@@ -287,13 +304,13 @@ public final class SimulationEvaluator {
     if (pose == Pose.FALL_FLYING) {
       if (!movement.inWater() && movement.ticksPast(IN_WATER) <= 2 && abs(receivedMotionY) < 0.1) {
         multiplier *= 0.01;
-      } else if (movement.motionY() >= 0 && movement.onGround()) {
+      } else if (movement.offsetMotionY() >= 0 && movement.onGround()) {
         multiplier *= 0.1;
       } else {
         multiplier *= 0.25;
       }
       tags.add(EvaluationTag.ELYTRA);
-    } else if (movement.ticksPast(ELYTRA_FLYING) < 4 && movement.motionY() < movement.jumpMotion()) {
+    } else if (movement.ticksPast(ELYTRA_FLYING) < 4 && movement.offsetMotionY() < movement.jumpMotion()) {
       multiplier *= 0.1;
       tags.add(EvaluationTag.ELYTRA);
     }
@@ -304,13 +321,13 @@ public final class SimulationEvaluator {
 
     boolean justInPowderSnow = movement.ticksPast(IN_POWDER_SNOW) < 5;
     double maxLadderVel = justInPowderSnow ? LADDER_UPWARDS_MOTION * 1.5 : LADDER_UPWARDS_MOTION;
-    if ((onLadder || justInPowderSnow) && movement.motionY() <= maxLadderVel && movement.motionY() >= -0.09) {
+    if ((onLadder || justInPowderSnow) && movement.offsetMotionY() <= maxLadderVel && movement.offsetMotionY() >= -0.09) {
       abuseVertically = 0;
       tags.add(EvaluationTag.LADDER);
     }
 
     // Long teleport
-    if (movement.ticksPast(LONG_TELEPORT) <= 10 && movement.motionY() < -0.097 && movement.motionY() > -0.099) {
+    if (movement.ticksPast(LONG_TELEPORT) <= 10 && movement.offsetMotionY() < -0.097 && movement.offsetMotionY() > -0.099) {
       double horizontalDistance = Hypot.fast(receivedMotionX, receivedMotionZ);
       if (horizontalDistance < 0.2) {
         abuseVertically = 0;
@@ -334,9 +351,9 @@ public final class SimulationEvaluator {
     ViolationMetadata violationLevelData = meta.violationLevel();
     ProtocolMetadata protocol = meta.protocol();
 
-    double motionX = movement.motionX();
-    double motionY = movement.motionY();
-    double motionZ = movement.motionZ();
+    double motionX = movement.offsetMotionX();
+    double motionY = movement.offsetMotionY();
+    double motionZ = movement.offsetMotionZ();
     double distanceMoved = MathHelper.resolveHorizontalDistance(
       movement.positionX(), movement.positionZ(),
       movement.verifiedLastPositionX(), movement.verifiedLastPositionZ()
@@ -382,7 +399,7 @@ public final class SimulationEvaluator {
     }
 
     if (movement.shulkerYToleranceRemaining() > 0) {
-      horizontalLegitimateDeviation = Math.max(horizontalLegitimateDeviation, abs(movement.motionY()) < .3 ? .3 : .1);
+      horizontalLegitimateDeviation = Math.max(horizontalLegitimateDeviation, abs(movement.offsetMotionY()) < .3 ? .3 : .1);
       tags.add(EvaluationTag.SHULKER);
     }
     if (movement.collidedHorizontally()) {
@@ -402,6 +419,21 @@ public final class SimulationEvaluator {
     if (pushedByWaterFlow) {
       horizontalLegitimateDeviation = Math.max(horizontalLegitimateDeviation, 0.018);
       tags.add(EvaluationTag.WATERFLOW);
+    }
+
+    if (movement.pose() == Pose.SWIMMING && !movement.inWater()) {
+      double limit = Math.max(0.1, movement.baseMoveSpeed() * 0.33);
+      if (distanceMoved < limit) {
+        horizontalLegitimateDeviation = Math.max(horizontalLegitimateDeviation, 0.14);
+        tags.add(EvaluationTag.FLYING_ON_GROUND);
+      }
+//      user.sendMessage("Swimming XZ: " + formatDouble(distanceMoved, 4) + "/"+formatDouble(limit, 4)+" | " +
+//        formatDouble(distance, 4) + " (" + formatDouble(horizontalLegitimateDeviation, 4) + ")");
+    } else if (movement.inWater() && movement.pose() != Pose.SWIMMING) {
+      if (distanceMoved < 0.1 && movement.offsetMotionY() > -0.06 && movement.offsetMotionY() < 0) {
+        horizontalLegitimateDeviation = Math.max(horizontalLegitimateDeviation, 0.01);
+        tags.add(EvaluationTag.WATERFLOW);
+      }
     }
 
     if (movement.currentlyInBlock() && !movement.inWeb() && predictedDistanceMoved < distanceMoved * 1.3) {
@@ -482,7 +514,7 @@ public final class SimulationEvaluator {
       tags.add(EvaluationTag.SLIME);
     }
 
-    if (onLadder && (distanceMoved < predictedDistanceMoved || distanceMoved < (movement.motionY() < 0 ? 0.4 : 0.2))) {
+    if (onLadder && (distanceMoved < predictedDistanceMoved || distanceMoved < (movement.offsetMotionY() < 0 ? 0.4 : 0.2))) {
       horizontalLegitimateDeviation = Math.max(distanceMoved, 0.2);
       tags.add(EvaluationTag.LADDER);
     }
@@ -498,24 +530,28 @@ public final class SimulationEvaluator {
       tags.add(EvaluationTag.VELOCITY_FLYING);
     }
 
+    boolean disableEdgeSneakBypass = false;
+
     if (movement.ticks(SNEAKING) <= 1 && movement.isSneaking() || movement.lastSneaking()) {
       double limit = 0;
-      if ((abs(movement.motionX()) < 0.08 || abs(movement.motionZ()) < 0.08) || (movement.isSprinting() && protocol.cavesAndCliffsUpdate())) {
-        boolean smallMovement = abs(movement.motionX()) < 0.08 && abs(movement.motionZ()) < 0.08 && movement.onGround();
-        limit = movement.ticksPast(EDGE_SNEAKING) <= 1 ? 0.12 : (smallMovement ? 0.099 : (movement.ticksPast(EDGE_SNEAKING) < 10 ? flyingLimit : 0.035));
-        if (movement.motionY() >= 0.1 && protocol.cavesAndCliffsUpdate() && movement.ticksPast(EDGE_SNEAKING) <= 1 && movement.isSprinting() && distanceMoved <= 0.5) {
+      if ((abs(movement.offsetMotionX()) < 0.08 || abs(movement.offsetMotionZ()) < 0.08) || (movement.isSprinting() && protocol.cavesAndCliffsUpdate())) {
+        boolean smallMovement = abs(movement.offsetMotionX()) < 0.08 && abs(movement.offsetMotionZ()) < 0.08 && movement.onGround();
+        limit = movement.ticksPast(EDGE_SNEAKING) <= 1 && !disableEdgeSneakBypass ? 0.12 : (smallMovement ? 0.099 : (movement.ticksPast(EDGE_SNEAKING) < 10 && !disableEdgeSneakBypass ? flyingLimit : 0.035));
+        if (!disableEdgeSneakBypass && movement.offsetMotionY() >= 0.1 && protocol.cavesAndCliffsUpdate() && movement.ticksPast(EDGE_SNEAKING) <= 1 && movement.isSprinting() && distanceMoved <= 0.5) {
           limit = 0.4;
         }
-        if (abs(movement.motionY()) < 0.001) {
+        if (abs(movement.offsetMotionY()) < 0.001) {
           limit = 0.06;
         }
-        if (movement.ticksPast(EDGE_SNEAKING) <= 3 && !protocol.emptyFlyingPacketsAreExplicitlySent()) {
+        if (movement.ticksPast(EDGE_SNEAKING) <= 3 && !disableEdgeSneakBypass && !protocol.emptyFlyingPacketsAreExplicitlySent()) {
           limit = Math.max(limit, 0.065);
         }
       } else {
         if (movement.ticksPast(EDGE_SNEAKING) <= 3 || (movement.ticksPast(EDGE_SNEAKING) <= 10 && movement.onGround() && abs(motionY) < 0.01)) {
-          boolean smallMovement = (abs(movement.motionX()) < 0.099 && abs(movement.motionZ()) < 0.21) || (abs(movement.motionZ()) < 0.099 && abs(movement.motionX()) < 0.21) && movement.onGround();
-          limit = smallMovement ? 0.2 : 0.02;
+          boolean smallMovement = (abs(movement.offsetMotionX()) < 0.099 && abs(movement.offsetMotionZ()) < 0.21) || (abs(movement.offsetMotionZ()) < 0.099 && abs(movement.offsetMotionX()) < 0.21) && movement.onGround();
+          if (!disableEdgeSneakBypass) {
+            limit = smallMovement ? 0.2 : 0.02;
+          }
         }
       }
       if (movement.inWater() || movement.inWeb()) {
@@ -551,7 +587,7 @@ public final class SimulationEvaluator {
     if (pose == Pose.FALL_FLYING) {
       if (!movement.inWater() && movement.ticksPast(IN_WATER) <= 2 && distance < 0.3) {
         abuseHorizontally *= 0.2;
-      } else if (movement.motionY() >= 0 && movement.onGround()) {
+      } else if (movement.offsetMotionY() >= 0 && movement.onGround()) {
         abuseHorizontally *= 0.3;
       } else {
         abuseHorizontally *= 0.6;

@@ -12,6 +12,7 @@
 package de.jpx3.intave.check.movement.physics.update;
 
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
+import de.jpx3.intave.user.meta.MovementMetadata;
 
 public final class CausalConstraint {
 	private final long notBeforeMove;
@@ -55,6 +56,10 @@ public final class CausalConstraint {
 		return false;
 	}
 
+	public static CausalConstraint onlyThisTick(MovementMetadata metadata) {
+		return new CausalConstraint(metadata.currentTick(), metadata.currentTick(), metadata.newSequenceNumber());
+	}
+
 	@Override
 	public int hashCode() {
 		int result = 17;
@@ -76,7 +81,7 @@ public final class CausalConstraint {
 		return "T?U" + interval + "@" + sequenceNum;
 	}
 
-	public boolean currentlyPossible(
+	public boolean possible(
 		SimulationEnvironment environment
 	) {
 		return environment.currentTick() >= notBeforeMove &&

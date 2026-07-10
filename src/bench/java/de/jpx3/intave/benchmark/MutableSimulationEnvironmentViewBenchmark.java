@@ -12,8 +12,8 @@
 package de.jpx3.intave.benchmark;
 
 import de.jpx3.intave.check.movement.physics.MoveMetric;
+import de.jpx3.intave.check.movement.physics.environment.MockSimulationEnvironment;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
-import de.jpx3.intave.check.movement.physics.environment.TestSimulationEnvironment;
 import de.jpx3.intave.player.collider.complex.SimulationResult;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
@@ -112,8 +112,8 @@ public final class MutableSimulationEnvironmentViewBenchmark {
 	}
 
 	private static final class BenchmarkState {
-		private TestSimulationEnvironment source;
-		private TestSimulationEnvironment target;
+		private MockSimulationEnvironment source;
+		private MockSimulationEnvironment target;
 		private final Position[] positions = new Position[SAMPLE_MASK + 1];
 		private final Position[] verifiedPositions = new Position[SAMPLE_MASK + 1];
 		private final BoundingBox[] boxes = new BoundingBox[SAMPLE_MASK + 1];
@@ -130,8 +130,8 @@ public final class MutableSimulationEnvironmentViewBenchmark {
 			return state;
 		}
 
-		private static TestSimulationEnvironment createEnvironment(double x, double y, double z) {
-			TestSimulationEnvironment environment = new TestSimulationEnvironment();
+		private static MockSimulationEnvironment createEnvironment(double x, double y, double z) {
+			MockSimulationEnvironment environment = new MockSimulationEnvironment();
 			environment.setPositionX(x);
 			environment.setPositionY(y);
 			environment.setPositionZ(z);
@@ -160,7 +160,7 @@ public final class MutableSimulationEnvironmentViewBenchmark {
 		}
 
 		private void swap() {
-			TestSimulationEnvironment previousSource = source;
+			MockSimulationEnvironment previousSource = source;
 			source = target;
 			target = previousSource;
 		}

@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check.combat.heuristics.combatpatterns.rotation;
 
 import com.comphenix.protocol.events.PacketEvent;
@@ -105,7 +116,7 @@ public final class RotationSnapHeuristic extends ClassicHeuristic<RotationSnapHe
     }
     RotationSnapHeuristicMeta meta = metaOf(user);
 
-    if (movementData.motionX() != 0 && movementData.motionZ() != 0) {
+    if (movementData.offsetMotionX() != 0 && movementData.offsetMotionZ() != 0) {
       meta.internalViolation -= 0.01f;
       if (meta.internalViolation < 0)
         meta.internalViolation = 0;

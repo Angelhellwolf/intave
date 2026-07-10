@@ -25,8 +25,15 @@ import de.jpx3.intave.block.physics.MaterialMagic;
 import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.tick.ShulkerBox;
 import de.jpx3.intave.block.type.BlockTypeAccess;
-import de.jpx3.intave.check.movement.physics.*;
+import de.jpx3.intave.check.movement.physics.MoveMetric;
+import de.jpx3.intave.check.movement.physics.MovementCharacteristics;
+import de.jpx3.intave.check.movement.physics.Pose;
+import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
+import de.jpx3.intave.check.movement.physics.simulator.BoatSimulator;
+import de.jpx3.intave.check.movement.physics.simulator.Simulation;
+import de.jpx3.intave.check.movement.physics.simulator.Simulator;
+import de.jpx3.intave.check.movement.physics.simulator.Simulators;
 import de.jpx3.intave.check.movement.physics.update.TickAmbiguousUpdate;
 import de.jpx3.intave.check.world.interaction.BlockTrustChain;
 import de.jpx3.intave.executor.RateLimiter;
@@ -62,7 +69,8 @@ import static de.jpx3.intave.check.movement.physics.MoveMetric.*;
 import static de.jpx3.intave.check.movement.physics.MovementCharacteristics.resolveFriction;
 import static de.jpx3.intave.player.attribute.AttributeModifier.Operation.ADD_PERCENTAGE;
 import static de.jpx3.intave.share.ClientMath.*;
-import static de.jpx3.intave.user.meta.ProtocolMetadata.*;
+import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_15;
+import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_8;
 
 public final class MovementMetadata implements SimulationEnvironment {
   public static final AttributeModifier SPRINTING_MODIFIER = AttributeModifier.newBuilder(
@@ -73,7 +81,7 @@ public final class MovementMetadata implements SimulationEnvironment {
   public final BlockTrustChain placementTrustChain = new BlockTrustChain();
   public final Map<String, Double> serverMovementDebugValues = new HashMap<>();
   public final Map<String, Double> clientMovementDebugValues = new HashMap<>();
-  public final List<TickAmbiguousUpdate> movementUpdates = new LinkedList<>();
+  public final List<TickAmbiguousUpdate> tickAmbiguousUpdates = new LinkedList<>();
   public float width = 0.6f, height = 1.8f;
   public float stepHeight = 0.6f;
   public double stepHeightThisMove = 0d;
@@ -122,6 +130,7 @@ public final class MovementMetadata implements SimulationEnvironment {
   public boolean treatThisFlyPacketAsMovePacket;
   public double baseMotionX, baseMotionY, baseMotionZ; // base or last motion, exclusively for the physics check
   public double baseMotionXBeforeVelocity, baseMotionYBeforeVelocity, baseMotionZBeforeVelocity;
+  private List<Motion> postTickMotionCandidates = Collections.emptyList();
   public double endMotionXOverride = Double.NaN, endMotionYOverride = Double.NaN, endMotionZOverride = Double.NaN;
   public int highestLocalRiptideLevel = 0;
   public boolean physicsResetMotionX, physicsResetMotionZ;
@@ -190,7 +199,8 @@ public final class MovementMetadata implements SimulationEnvironment {
 	private Material frictionMaterial = Material.AIR, previousFrictionMaterial = Material.AIR;
   private Material collideMaterial = Material.AIR, previousCollideMaterial = Material.AIR;
 
-  private SimulationResult beforeMoveCollider = null;
+  private SimulationResult beforeMoveCollider = SimulationResult.invalid();
+  private MovementConfiguration lastMovementConfiguration = MovementConfiguration.blank();
 
   private volatile BoundingBox boundingBox = BoundingBox.fromBounds(0, 0, 0, 0, 0, 0);
   private boolean boundingBoxSetup = false;
@@ -299,7 +309,7 @@ public final class MovementMetadata implements SimulationEnvironment {
       return;
     }
     setSprinting(player.isSprinting());
-    sneaking = player.isSneaking();
+    setSneaking(player.isSneaking());
   }
 
   @DispatchTarget
@@ -333,7 +343,7 @@ public final class MovementMetadata implements SimulationEnvironment {
       motionX = positionX - verifiedLastPositionX;
       motionY = positionY - verifiedLastPositionY;
       motionZ = positionZ - verifiedLastPositionZ;
-      boolean falling = motionY() <= 0.0D;
+      boolean falling = offsetMotionY() <= 0.0D;
       if (falling && Effects.slowFallingEffectActive(player)) {
         artificialFallDistance = 0f;
         gravity = 0.01D;
@@ -410,8 +420,6 @@ public final class MovementMetadata implements SimulationEnvironment {
     if (player == null) {
       return Material.AIR;
     }
-
-    World world = player.getWorld();
     int blockCollisionPosX = floor(positionX);
     int blockCollisionPosY = floor(positionY - reduction);
     int blockCollisionPosZ = floor(positionZ);
@@ -445,7 +453,7 @@ public final class MovementMetadata implements SimulationEnvironment {
       );
       ProtocolMetadata clientData = user.meta().protocol();
       if (blockType == Material.AIR && !clientData.trailsAndTailsUpdate()) {
-        Material blockBelow = VolatileBlockAccess.typeAccess(user, world, blockCollisionPosX, blockCollisionPosY, blockCollisionPosZ);
+        Material blockBelow = VolatileBlockAccess.typeAccess(user, blockCollisionPosX, blockCollisionPosY, blockCollisionPosZ);
         if (blockBelow.name().contains("FENCE") || blockBelow.name().contains("WALL")) {
           blockType = blockBelow;
         }
@@ -591,70 +599,19 @@ public final class MovementMetadata implements SimulationEnvironment {
     return plate != null && plate.getType() == Material.ELYTRA;
   }
 
-  public void updateEyesInWater() {
-    double yPos = positionY + eyeHeight() - (double) 0.11111f;
-    this.eyesInWater = interactingFluid != null && interactingFluid.isOfWater();
-    this.interactingFluid = null;
-
-    Fluid fluid = VolatileBlockAccess.fluidAccess(user, positionX, yPos, positionZ);
-    if (fluid.isOfWater()) {
-      double d1 = (float) floor(yPos) + 1.0f;
-      if (d1 > yPos) {
-        this.interactingFluid = fluid;
-      }
-    }
-  }
-
+  @Override
   public boolean areEyesInWater() {
     return this.eyesInWater;
   }
 
-  public void updatePose() {
-    boolean modernPose = user.protocolVersion() >= VER_1_14;
-    Pose pose;
-    if (modernPose) {
-      if (this.isPoseClear(Pose.SWIMMING)) {
-        if (isSwimming(user)) {
-          pose = Pose.SWIMMING;
-        } else if (elytraFlying) {
-          pose = Pose.FALL_FLYING;
-        } else if (player.isSleeping()) {
-          pose = Pose.SLEEPING;
-        } else if (poseSneaking(user)) {
-          pose = Pose.CROUCHING;
-        } else {
-          pose = Pose.STANDING;
-        }
+  @Override
+  public void setEyesInWater(boolean eyesInWater) {
+    this.eyesInWater = eyesInWater;
+  }
 
-        Pose pose1;
-        if (!this.isPoseClear(pose)) {
-          if (this.isPoseClear(Pose.CROUCHING)) {
-            pose1 = Pose.CROUCHING;
-          } else {
-            pose1 = Pose.SWIMMING;
-          }
-        } else {
-          pose1 = pose;
-        }
-
-        this.pose = pose1;
-      }
-    } else {
-      if (isSwimming(user)) {
-        pose = Pose.SWIMMING;
-      } else if (player.isSleeping()) {
-        pose = Pose.SLEEPING;
-      } else if (elytraFlying) {
-        pose = Pose.FALL_FLYING;
-      } else if (poseSneaking(user)) {
-        pose = Pose.CROUCHING;
-      } else {
-        pose = Pose.STANDING;
-      }
-      this.pose = pose;
-    }
-
-    updateSize();
+  @Override
+  public void setInteractingFluid(Fluid interactingFluid) {
+    this.interactingFluid = interactingFluid;
   }
 
   private boolean flyingWithElytra(Player player) {
@@ -668,57 +625,19 @@ public final class MovementMetadata implements SimulationEnvironment {
     return clientData.canUseElytra();
   }
 
-  private boolean isSwimming(User user) {
-    MetadataBundle meta = user.meta();
-    MovementMetadata movement = meta.movement();
-    ProtocolMetadata protocol = meta.protocol();
-    if (!protocol.swimmingMechanics()) {
-      return false;
-    }
-    boolean sprinting = movement.lastSprinting;
-    boolean swimming = movement.pose() == Pose.SWIMMING;
-    if (swimming) {
-      return sprinting && movement.inWater;
-    } else {
-      return sprinting && ((movement.pose() == Pose.FALL_FLYING && movement.inWater) || movement.areEyesInWater());
-    }
-  }
-
-  public boolean poseSneaking(User user) {
-    MetadataBundle meta = user.meta();
-    MovementMetadata movementData = meta.movement();
-    ProtocolMetadata clientData = meta.protocol();
-    InventoryMetadata inventoryData = meta.inventory();
-    boolean sneakingAllowed = movementData.sneaking && !inventoryData.inventoryOpen();
-    boolean actualSneaking;
-    if (clientData.delayedSneak()) {
-      actualSneaking = movementData.lastSneaking;
-    } else if (clientData.alternativeSneak()) {
-      actualSneaking = movementData.lastSneaking || sneakingAllowed;
-    } else {
-      actualSneaking = sneakingAllowed;
-    }
-    return actualSneaking;
-  }
-
   public void manualPoseSet(Pose pose) {
     this.pose = pose;
     updatePose();
   }
 
-  private void updateSize() {
-    width = pose.width(user);
-    height = pose.height(user);
-    widthRounded = Math.round(width * 500d) / 1000d;
-    heightRounded = Math.round(height * 100d) / 100d;
-  }
-
-  private boolean isPoseClear(Pose pose) {
-    return Collision.nonePresent(user, this, pose.boundingBoxOf(user).shrink(0.0000001));
+  @Override
+  public void setPose(Pose pose) {
+    this.pose = pose;
+    updateSize();
   }
 
   private float jumpUpwardsMotion() {
-	  float jumpStrength = (float) user.meta().abilities().attributeValue("generic.jump_strength");
+	  float jumpStrength = (float) user.meta().abilities().jumpStrength();
     if (Float.isNaN(jumpStrength) || jumpStrength < 0 || jumpStrength > 32) {
       jumpStrength = 0.42f;
     }
@@ -767,6 +686,16 @@ public final class MovementMetadata implements SimulationEnvironment {
     return beforeMoveCollider;
   }
 
+  @Override
+  public MovementConfiguration lastMovementConfiguration() {
+    return lastMovementConfiguration;
+  }
+
+  @Override
+  public void setLastMovementConfiguration(MovementConfiguration configuration) {
+    this.lastMovementConfiguration = configuration;
+  }
+
   public boolean collidedWithBoat() {
     return nearestBoatLocation != null && distanceToVerifiedLocation(nearestBoatLocation) < 2;
   }
@@ -799,7 +728,7 @@ public final class MovementMetadata implements SimulationEnvironment {
         output = 1.62f;
         break;
     }
-    double scale = user.meta().abilities().attributeValue("generic.scale");
+    double scale = user.meta().abilities().scale();
     if (Double.isNaN(scale)) {
       scale = 1.0;
     }
@@ -846,7 +775,7 @@ public final class MovementMetadata implements SimulationEnvironment {
     if (sneaking && !protocol.canSprintWhileSneaking()) {
       sprintingAllowed = false;
     }
-    boolean preventWaterSprint = protocol.waterUpdate() && inWater && !isSwimming(user);
+    boolean preventWaterSprint = protocol.aquaticUpdate() && inWater() && !shouldHaveSwimmingPose();
     if (inventoryData.inventoryOpen() || abilities.foodLevel <= 6 || preventWaterSprint) {
       sprintingAllowed = false;
     }
@@ -854,7 +783,7 @@ public final class MovementMetadata implements SimulationEnvironment {
 
   public boolean inLava() {
     ProtocolMetadata clientData = user.meta().protocol();
-    if (clientData.waterUpdate()) {
+    if (clientData.aquaticUpdate()) {
       return aquaticUpdateInLava;
     } else {
       BoundingBox lavaBoundingBox = boundingBox().grow(
@@ -1023,8 +952,20 @@ public final class MovementMetadata implements SimulationEnvironment {
   }
 
   @Override
+  public void setHeight(float height) {
+    this.height = height;
+    this.heightRounded = Math.round(height * 500d) / 1000d;
+  }
+
+  @Override
   public float width() {
     return width;
+  }
+
+  @Override
+  public void setWidth(float width) {
+    this.width = width;
+    this.widthRounded = Math.round(width * 500d) / 1000d;
   }
 
   @Override
@@ -1065,6 +1006,7 @@ public final class MovementMetadata implements SimulationEnvironment {
     }
 //    if (user.meta().protocol().newBlockEntityIntersectionLogic()) {
 //    }
+    setLastMovementConfiguration(configuration);
     setSimulationResult(collider);
   }
 
@@ -1088,7 +1030,7 @@ public final class MovementMetadata implements SimulationEnvironment {
     lastSneaking = sneaking;
     if (isRealClientTick) {
       currentTick++;
-      movementUpdates.removeIf(tau -> tau.expired(this));
+      tickAmbiguousUpdates.removeIf(tau -> tau.expired(this));
       worldBorder.tick();
     }
 
@@ -1140,8 +1082,7 @@ public final class MovementMetadata implements SimulationEnvironment {
       inactiveTick(EXTERNAL_VELOCITY);
     }
 
-    width = pose.width(user);
-    height = pose.height(user);
+    updateSize();
 
     // misc
     if (ticks(SNEAKING) > 1) {
@@ -1159,13 +1100,13 @@ public final class MovementMetadata implements SimulationEnvironment {
     return currentTick;
   }
 
-  public void addAmbiguousUpdate(TickAmbiguousUpdate contextAction) {
-    movementUpdates.add(contextAction);
+  public void queueTickAmbiguousUpdate(TickAmbiguousUpdate update) {
+    tickAmbiguousUpdates.add(update);
   }
 
   @Override
-  public List<TickAmbiguousUpdate> tickAmbiguousUpdates() {
-    return Collections.unmodifiableList(movementUpdates);
+  public List<TickAmbiguousUpdate> allTickAmbiguousUpdates() {
+    return Collections.unmodifiableList(tickAmbiguousUpdates);
   }
 
   @Override
@@ -1180,7 +1121,7 @@ public final class MovementMetadata implements SimulationEnvironment {
 
   private final Lock currentSequenceLock = new ReentrantLock();
 
-  public long reserveNewFutureSequenceNumber() {
+  public long newSequenceNumber() {
     try {
       currentSequenceLock.lock();
       currentSequence++;
@@ -1264,16 +1205,26 @@ public final class MovementMetadata implements SimulationEnvironment {
     return verifiedLocation;
   }
 
-  public double motionX() {
+  public double offsetMotionX() {
     return motionX;
   }
 
-  public double motionY() {
+  public double offsetMotionY() {
     return motionY;
   }
 
-  public double motionZ() {
+  public double offsetMotionZ() {
     return motionZ;
+  }
+
+  @Override
+  public List<Motion> postTickMotionCandidates() {
+    return Collections.unmodifiableList(postTickMotionCandidates);
+  }
+
+  @Override
+  public void setPostTickMotionCandidates(@NotNull List<Motion> postTickMotionCandidates) {
+    this.postTickMotionCandidates = postTickMotionCandidates;
   }
 
   @Override
@@ -1447,7 +1398,7 @@ public final class MovementMetadata implements SimulationEnvironment {
   }
 
   @Override
-  public boolean hasJumpedInTick() {
+  public boolean isJumping() {
     return physicsJumped;
   }
 
@@ -1462,8 +1413,23 @@ public final class MovementMetadata implements SimulationEnvironment {
   }
 
   @Override
+  public void setSneaking(boolean sneaking) {
+    this.sneaking = sneaking;
+  }
+
+  @Override
   public boolean isSprinting() {
     return sprinting;
+  }
+
+  @Override
+  public boolean lastSprinting() {
+    return lastSprinting;
+  }
+
+  @Override
+  public void setLastSprinting(boolean lastSprinting) {
+    this.lastSprinting = lastSprinting;
   }
 
   @Override
@@ -1503,13 +1469,24 @@ public final class MovementMetadata implements SimulationEnvironment {
     this.jumpMovementFactor = jumpMovementFactor;
   }
 
+  @Override
   public Simulator simulator() {
     return simulator;
   }
 
   @Override
+  public void setSimulator(Simulator simulator) {
+    this.simulator = simulator;
+  }
+
+  @Override
   public Pose pose() {
     return pose;
+  }
+
+  @Override
+  public User user() {
+    return user;
   }
 
   @Override
@@ -1579,8 +1556,14 @@ public final class MovementMetadata implements SimulationEnvironment {
     this.lastPositionZ = z;
   }
 
+  @Override
   public boolean sprintingAllowed() {
     return sprintingAllowed;
+  }
+
+  @Override
+  public boolean shouldHaveFallFlyingPose() {
+    return elytraFlying;
   }
 
   public float friction(boolean sprinting) {
@@ -1590,6 +1573,11 @@ public final class MovementMetadata implements SimulationEnvironment {
   @Override
   public double stepHeight() {
     return stepHeight;
+  }
+
+  @Override
+  public void setStepHeight(float stepHeight) {
+    this.stepHeight = stepHeight;
   }
 
   public float frictionMultiplier() {
@@ -1678,10 +1666,6 @@ public final class MovementMetadata implements SimulationEnvironment {
 
   public void setVerifiedLocation(Location verifiedLocation) {
     this.verifiedLocation = verifiedLocation;
-  }
-
-  public void setSimulator(Simulator simulator) {
-    this.simulator = simulator;
   }
 
   public double estimatedAttachMovement() {

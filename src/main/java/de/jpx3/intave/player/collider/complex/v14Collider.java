@@ -38,7 +38,7 @@ public final class v14Collider implements Collider {
       offsetMotion.motionZ *= 0.25D;
     }
 
-    Motion actualMotion = Motion.copyFrom(offsetMotion);
+    Motion actualMotion = inWeb ? Motion.newEmpty() : offsetMotion.copy();
 
     // "maybeBackOffFromEdge"
     boolean edgeSneak = false;
@@ -57,19 +57,25 @@ public final class v14Collider implements Collider {
     boolean collidedVertically = initialY != offsetMotion.motionY;
     boolean collidedHorizontally = initialX != offsetMotion.motionX || initialZ != offsetMotion.motionZ;
     boolean onGround = initialY != offsetMotion.motionY && initialY < 0.0;
-    boolean moveResetX = initialX != offsetMotion.motionX;
-    boolean moveResetZ = initialZ != offsetMotion.motionZ;
-
+    boolean moveResetX = actualMotion.motionX != offsetMotion.motionX;
+    boolean moveResetZ = actualMotion.motionZ != offsetMotion.motionZ;
+    if (moveResetX) {
+      actualMotion.motionX = 0.0D;
+    }
+    if (moveResetZ) {
+      actualMotion.motionZ = 0.0D;
+    }
     return new SimulationResult(
-      Motion.copyFrom(actualMotion),
-      Motion.copyFrom(offsetMotion),
+      actualMotion.copy(),
+      offsetMotion.copy(),
       null,
       onGround,
       collidedHorizontally,
       collidedVertically,
       moveResetX,
       moveResetZ,
-      stepped[0], edgeSneak,
+      stepped[0],
+      edgeSneak,
       environment.stepHeight()
     );
   }

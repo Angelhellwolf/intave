@@ -25,12 +25,20 @@ final class SprintingBrancher extends MovementSearchBrancher {
   private static final boolean[] NEVER = new boolean[]{false};
 
   @Override
-  public void branch(MovementSearchInput input, MovementSearchConfig config, List<MovementSearchConfig> result) {
+  public void branch(
+    MovementSearchInput input, MovementSearchBranch inputBranch,
+    List<MovementSearchBranch> outputBranches
+  ) {
+    if (!input.sprintingBranchNecessary()) {
+      outputBranches.add(inputBranch);
+      return;
+    }
+
     SimulationEnvironment environment = input.environment();
     boolean[] selector = sprintSelector(input, environment);
 
     if (selector.length == 1) {
-      result.add(config.withSprintingSetTo(selector[0]));
+      outputBranches.add(inputBranch.withSprintingSetTo(selector[0]));
       return;
     }
 
@@ -38,7 +46,7 @@ final class SprintingBrancher extends MovementSearchBrancher {
       if (sprinting && input.user().meta().abilities().foodLevel < 6) {
         continue;
       }
-      result.add(config.withSprintingSetTo(sprinting));
+      outputBranches.add(inputBranch.withSprintingSetTo(sprinting));
     }
   }
 

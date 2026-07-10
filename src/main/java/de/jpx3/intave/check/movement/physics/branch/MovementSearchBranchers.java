@@ -20,15 +20,24 @@ public final class MovementSearchBranchers {
   private MovementSearchBranchers() {
   }
 
-  public static List<SearchBrancher<MovementSearchInput, MovementSearchConfig>> normal() {
+  public static List<SearchBrancher<MovementSearchInput, MovementSearchBranch>> tick() {
     return Arrays.asList(
-      new KeypressBrancher(),
       new RotationBrancher(),
+      new LastPostTickMotionCandidateBrancher(),
+      new KeypressBrancher(),
       new SprintingBrancher(),
+      new UpdateBrancher(),
       new UseItemBrancher(),
       new AttackReduceBrancher(),
-      new JumpBrancher(),
-      new UpdateBrancher()
+      JumpBrancher.restricted()
+    );
+  }
+
+  public static List<SearchBrancher<MovementSearchInput, MovementSearchBranch>> afterTick() {
+    return Arrays.asList(
+      new UseLastMovementConfigBrancher(),
+      new SprintingBrancher(),
+      JumpBrancher.unrestricted()
     );
   }
 }

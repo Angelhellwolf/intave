@@ -9,10 +9,9 @@
  *   https://polyformproject.org/licenses/perimeter/1.0.0/
  */
 
-package de.jpx3.intave.search;
+package de.jpx3.intave.check.movement.physics.search;
 
-import java.util.List;
-
-public abstract class SearchBrancher<I, T> {
-	public abstract void branch(I input, T inputBranch, List<T> outputBranches);
+public enum PostTickMotionType {
+	SIMULATED_MOTION,
+	SENT_OFFSET_MOTION
 }

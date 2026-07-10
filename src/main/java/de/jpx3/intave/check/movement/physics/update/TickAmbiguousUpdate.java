@@ -27,4 +27,8 @@ public abstract class TickAmbiguousUpdate implements Comparable<TickAmbiguousUpd
 	public int compareTo(@NotNull TickAmbiguousUpdate o) {
 		return Long.compare(this.constraint().sequenceNumber(), o.constraint().sequenceNumber());
 	}
+
+	public boolean possible(SimulationEnvironment simulationEnvironment) {
+		return constraint().possible(simulationEnvironment);
+	}
 }

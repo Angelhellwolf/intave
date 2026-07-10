@@ -12,19 +12,25 @@
 package de.jpx3.intave.check.movement.physics.environment;
 
 import de.jpx3.intave.block.fluid.Fluid;
-import de.jpx3.intave.check.movement.physics.*;
+import de.jpx3.intave.check.movement.physics.MoveMetric;
+import de.jpx3.intave.check.movement.physics.Pose;
+import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
+import de.jpx3.intave.check.movement.physics.simulator.Simulation;
+import de.jpx3.intave.check.movement.physics.simulator.Simulator;
 import de.jpx3.intave.check.movement.physics.update.TickAmbiguousUpdate;
 import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.player.collider.complex.SimulationResult;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.Position;
+import de.jpx3.intave.user.User;
 import de.jpx3.intave.world.border.WorldBorder;
 import org.bukkit.Material;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 
@@ -36,6 +42,8 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
   private final SimulationEnvironment delegate;
   private final List<EnvironmentMutation> deferredMutations = new ArrayList<>();
 
+  private Pose pose;
+  private boolean poseOverridden;
   private boolean positionOverridden;
   private double positionX, positionY, positionZ;
   private boolean verifiedLastPositionOverridden;
@@ -67,108 +75,59 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
   private boolean inWebOverridden, inWeb;
   private boolean onGroundOverridden, onGround;
   private boolean lastOnGroundOverridden, lastOnGround;
+  private boolean sneakingOverridden, sneaking;
+  private boolean lastSprintingOverridden, lastSprinting;
   private boolean collidedHorizontallyOverridden, collidedHorizontally;
   private boolean collidedVerticallyOverridden, collidedVertically;
   private boolean fallDistanceOverridden;
   private double fallDistance;
   private boolean pushedByEntityOverridden, pushedByEntity;
-  private boolean simulationResultOverriden;
+  private boolean configurationOverridden;
+  private boolean simulationResultOverridden;
+  private MovementConfiguration configuration;
   private SimulationResult simulationResult;
   private boolean interactingFluidOverridden;
   private Fluid interactingFluid;
+  private boolean eyesInWaterOverridden;
+  private boolean eyesInWater;
   private boolean inVehicleOverridden, inVehicle;
   private boolean enforceBoatStepOverridden, enforceBoatStep;
   private boolean physicsPacketRelinkFlyVLOverridden;
   private int physicsPacketRelinkFlyVL;
   private WorldBorder worldBorder;
   private boolean worldBorderOverridden;
-
   private long currentTick = 0;
   private boolean currentTickOverridden;
   private long activeSequence = 0;
   private boolean activeSequenceOverridden;
+  private boolean widthOverridden, heightOverridden;
+  private float width, height;
+  private double widthRounded, heightRounded;
+  private boolean simulatorOverridden;
+  private Simulator simulator;
+  private boolean stepHeightOverridden;
+  private float stepHeight;
+  private boolean postTickMotionCandidatesOverridden;
+  private List<Motion> postTickMotionCandidates;
 
   private final EnumMap<MoveMetric, Integer> activeTrackerOverrides = new EnumMap<>(MoveMetric.class);
   private final EnumMap<MoveMetric, Integer> pastTrackerOverrides = new EnumMap<>(MoveMetric.class);
 
-  private MutableSimulationEnvironmentView(SimulationEnvironment delegate) {
+  MutableSimulationEnvironmentView(SimulationEnvironment delegate) {
     this.delegate = delegate;
-  }
-
-  public static MutableSimulationEnvironmentView of(SimulationEnvironment delegate) {
-    return new MutableSimulationEnvironmentView(delegate);
-  }
-
-  @Override
-  public void commitTo(SimulationEnvironment other) {
-    if (other == this) {
-      return;
-    }
-    if (delegate != other && delegate.depth() > 0) {
-      delegate.commitTo(other);
-    }
-    for (EnvironmentMutation deferredMutation : deferredMutations) {
-      deferredMutation.apply(other);
-    }
-    if (verifiedLastPositionOverridden) {
-      other.setVerifiedLastPosition(
-        new Position(verifiedLastPositionX, verifiedLastPositionY, verifiedLastPositionZ),
-        verifiedLastPositionReason
-      );
-    }
-    if (lastPositionOverridden) {
-      other.setLastPosition(lastPositionX, lastPositionY, lastPositionZ);
-    }
-    if (lastOnGroundOverridden) {
-      other.setLastOnGround(lastOnGround);
-    }
-    if (boundingBoxOverridden) {
-      other.setBoundingBox(boundingBox);
-    }
-    if (baseMotionOverridden) {
-      other.setBaseMotion(baseMotionX, baseMotionY, baseMotionZ);
-    }
-    if (motionMultiplierOverridden) {
-      other.resetMotionMultiplier();
-    }
-    if (jumpMotionOverridden) {
-      other.setJumpMotion(jumpMotion);
-    }
-    if (inWaterOverridden) {
-      other.setInWater(inWater);
-    }
-    if (inLavaOverridden && !inLava) {
-      other.aquaticUpdateLavaReset();
-    }
-    if (inWebOverridden && !inWeb) {
-      other.resetInWeb();
-    }
-    if (fallDistanceOverridden && fallDistance == 0.0) {
-      other.resetFallDistance();
-    }
-    if (pushedByEntityOverridden) {
-      other.setPushedByEntity(pushedByEntity);
-    }
-    if (simulationResultOverriden) {
-      other.setSimulationResult(simulationResult);
-    }
-    if (motionXResetOverridden) {
-      other.setMotionResetX(motionXReset);
-    }
-    if (motionZResetOverridden) {
-      other.setMotionResetZ(motionZReset);
-    }
-    if (enforceBoatStepOverridden) {
-      other.setEnforceBoatStep(enforceBoatStep);
-    }
-    if (physicsPacketRelinkFlyVLOverridden) {
-      other.setPhysicsPacketRelinkFlyVL(physicsPacketRelinkFlyVL);
-    }
   }
 
   @Override
   public Pose pose() {
-    return delegate.pose();
+    return poseOverridden ? pose : delegate.pose();
+  }
+
+  @Override
+  public void setPose(Pose pose) {
+    poseOverridden = true;
+    this.pose = pose;
+    updateSize();
+    deferredMutations.add(environment -> environment.setPose(pose));
   }
 
   @Override
@@ -197,6 +156,7 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
         positionY() - verifiedLastPositionY(),
         positionZ() - verifiedLastPositionZ()
       );
+      updatePose();
     }
     deferredMutations.add(environment -> environment.updateMovement(
       newPositionX, newPositionY, newPositionZ,
@@ -209,6 +169,11 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
   public void setRotation(float newRotationYaw, float newRotationPitch) {
     setRotationOverride(newRotationYaw, newRotationPitch);
     deferredMutations.add(environment -> environment.setRotation(newRotationYaw, newRotationPitch));
+  }
+
+  @Override
+  public User user() {
+    return delegate.user();
   }
 
   @Override
@@ -301,18 +266,30 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
   }
 
   @Override
-  public double motionX() {
-    return motionOverridden ? motionX : delegate.motionX();
+  public double offsetMotionX() {
+    return motionOverridden ? motionX : delegate.offsetMotionX();
   }
 
   @Override
-  public double motionY() {
-    return motionOverridden ? motionY : delegate.motionY();
+  public double offsetMotionY() {
+    return motionOverridden ? motionY : delegate.offsetMotionY();
   }
 
   @Override
-  public double motionZ() {
-    return motionOverridden ? motionZ : delegate.motionZ();
+  public double offsetMotionZ() {
+    return motionOverridden ? motionZ : delegate.offsetMotionZ();
+  }
+
+  @Override
+  public List<Motion> postTickMotionCandidates() {
+    return postTickMotionCandidatesOverridden ? Collections.unmodifiableList(postTickMotionCandidates) : delegate.postTickMotionCandidates();
+  }
+
+  @Override
+  public void setPostTickMotionCandidates(@NotNull List<Motion> postTickMotionCandidates) {
+    postTickMotionCandidatesOverridden = true;
+    this.postTickMotionCandidates = postTickMotionCandidates;
+    deferredMutations.add(environment -> environment.setPostTickMotionCandidates(postTickMotionCandidates));
   }
 
   @Override
@@ -414,13 +391,25 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
   }
 
   @Override
+  public boolean shouldHaveFallFlyingPose() {
+    // not yet modifiable
+    return delegate.shouldHaveFallFlyingPose();
+  }
+
+  @Override
   public float friction(boolean sprinting) {
     return delegate.friction(sprinting);
   }
 
   @Override
   public double stepHeight() {
-    return delegate.stepHeight();
+    return stepHeightOverridden ? stepHeight : delegate.stepHeight();
+  }
+
+  @Override
+  public void setStepHeight(float stepHeight) {
+    stepHeightOverridden = true;
+    this.stepHeight = stepHeight;
   }
 
   @Override
@@ -441,8 +430,8 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
   }
 
   @Override
-  public boolean hasJumpedInTick() {
-    return hasJumpedInTickOverridden ? hasJumpedInTick : delegate.hasJumpedInTick();
+  public boolean isJumping() {
+    return hasJumpedInTickOverridden ? hasJumpedInTick : delegate.isJumping();
   }
 
   @Override
@@ -462,12 +451,31 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
 
   @Override
   public boolean isSneaking() {
-    return delegate.isSneaking();
+    return sneakingOverridden ? sneaking : delegate.isSneaking();
+  }
+
+  @Override
+  public void setSneaking(boolean sneaking) {
+    sneakingOverridden = true;
+    this.sneaking = sneaking;
+    deferredMutations.add(environment -> environment.setSneaking(sneaking));
   }
 
   @Override
   public boolean isSprinting() {
     return delegate.isSprinting();
+  }
+
+  @Override
+  public boolean lastSprinting() {
+    return lastSprintingOverridden ? lastSprinting : delegate.lastSprinting();
+  }
+
+  @Override
+  public void setLastSprinting(boolean lastSprinting) {
+    lastSprintingOverridden = true;
+    this.lastSprinting = lastSprinting;
+    deferredMutations.add(environment -> environment.setLastSprinting(lastSprinting));
   }
 
   @Override
@@ -634,7 +642,13 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
 
   @Override
   public Simulator simulator() {
-    return delegate.simulator();
+    return simulatorOverridden ? simulator : delegate.simulator();
+  }
+
+  @Override
+  public void setSimulator(Simulator simulator) {
+    simulatorOverridden = true;
+    this.simulator = simulator;
   }
 
   @Override
@@ -658,14 +672,26 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
 
   @Override
   public void setSimulationResult(SimulationResult result) {
-    simulationResultOverriden = true;
+    simulationResultOverridden = true;
     simulationResult = result;
     deferredMutations.add(environment -> environment.setSimulationResult(result));
   }
 
   @Override
   public SimulationResult simulationResult() {
-    return simulationResultOverriden ? simulationResult : delegate.simulationResult();
+    return simulationResultOverridden ? simulationResult : delegate.simulationResult();
+  }
+
+  @Override
+  public void setLastMovementConfiguration(MovementConfiguration configuration) {
+    configurationOverridden = true;
+    this.configuration = configuration;
+    deferredMutations.add(environment -> environment.setLastMovementConfiguration(configuration));
+  }
+
+  @Override
+  public MovementConfiguration lastMovementConfiguration() {
+    return configurationOverridden ? configuration : delegate.lastMovementConfiguration();
   }
 
   @Override
@@ -698,6 +724,25 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
   @Override
   public boolean denyJump() {
     return delegate.denyJump();
+  }
+
+  @Override
+  public void setEyesInWater(boolean eyesInWater) {
+    eyesInWaterOverridden = true;
+    this.eyesInWater = eyesInWater;
+    deferredMutations.add(environment -> environment.setEyesInWater(eyesInWater));
+  }
+
+  @Override
+  public boolean areEyesInWater() {
+    return eyesInWaterOverridden ? eyesInWater : delegate.areEyesInWater();
+  }
+
+  @Override
+  public void setInteractingFluid(Fluid interactingFluid) {
+    interactingFluidOverridden = true;
+    this.interactingFluid = interactingFluid;
+    deferredMutations.add(environment -> environment.setInteractingFluid(interactingFluid));
   }
 
   @Override
@@ -813,8 +858,6 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
 
   @Override
   public void updateEyesInWater() {
-    interactingFluidOverridden = true;
-    interactingFluid = null;
     deferredMutations.add(SimulationEnvironment::updateEyesInWater);
   }
 
@@ -827,22 +870,36 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
 
   @Override
   public float height() {
-    return delegate.height();
+    return heightOverridden ? height : delegate.height();
+  }
+
+  @Override
+  public void setHeight(float height) {
+    heightOverridden = true;
+    this.height = height;
+    this.heightRounded = Math.round(height * 500d) / 1000d;
   }
 
   @Override
   public float width() {
-    return delegate.width();
+    return widthOverridden ? width : delegate.width();
+  }
+
+  @Override
+  public void setWidth(float width) {
+    widthOverridden = true;
+    this.width = width;
+    this.widthRounded = Math.round(width * 500d) / 1000d;
   }
 
   @Override
   public double heightRounded() {
-    return delegate.heightRounded();
+    return heightOverridden ? heightRounded : delegate.heightRounded();
   }
 
   @Override
   public double widthRounded() {
-    return delegate.widthRounded();
+    return widthOverridden ? widthRounded : delegate.widthRounded();
   }
 
   @Override
@@ -909,8 +966,8 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
   }
 
   @Override
-  public List<TickAmbiguousUpdate> tickAmbiguousUpdates() {
-    return delegate.tickAmbiguousUpdates();
+  public List<TickAmbiguousUpdate> allTickAmbiguousUpdates() {
+    return delegate.allTickAmbiguousUpdates();
   }
 
   @Override
@@ -955,7 +1012,8 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
     if (collider.edgeSneak()) {
       activeTickOverride(EDGE_SNEAKING);
     }
-    setBeforeMoveColliderResultOverride(collider);
+    setLastMovementConfiguration(configuration);
+    setLastSimulationResult(collider);
   }
 
   private void tickOverride(MoveMetric metric, boolean active) {
@@ -1024,8 +1082,8 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
     this.lastRotationPitch = lastRotationPitch;
   }
 
-  private void setBeforeMoveColliderResultOverride(SimulationResult result) {
-    simulationResultOverriden = true;
+  private void setLastSimulationResult(SimulationResult result) {
+    simulationResultOverridden = true;
     simulationResult = result;
   }
 
@@ -1037,6 +1095,86 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
     float f4 = cos(f);
     float f5 = sin(f);
     return new Vector(f3 * f4, -f5, (double) (f2 * f4));
+  }
+
+  @Override
+  public void commitTo(SimulationEnvironment other) {
+    if (other == this) {
+      return;
+    }
+    if (delegate != other && delegate.depth() > 0) {
+      delegate.commitTo(other);
+    }
+    for (EnvironmentMutation deferredMutation : deferredMutations) {
+      deferredMutation.apply(other);
+    }
+    if (verifiedLastPositionOverridden) {
+      other.setVerifiedLastPosition(
+        new Position(verifiedLastPositionX, verifiedLastPositionY, verifiedLastPositionZ),
+        verifiedLastPositionReason
+      );
+    }
+    if (lastPositionOverridden) {
+      other.setLastPosition(lastPositionX, lastPositionY, lastPositionZ);
+    }
+    if (lastOnGroundOverridden) {
+      other.setLastOnGround(lastOnGround);
+    }
+    if (boundingBoxOverridden) {
+      other.setBoundingBox(boundingBox);
+    }
+    if (baseMotionOverridden) {
+      other.setBaseMotion(baseMotionX, baseMotionY, baseMotionZ);
+    }
+    if (motionMultiplierOverridden) {
+      other.resetMotionMultiplier();
+    }
+    if (jumpMotionOverridden) {
+      other.setJumpMotion(jumpMotion);
+    }
+    if (inWaterOverridden) {
+      other.setInWater(inWater);
+    }
+    if (inLavaOverridden && !inLava) {
+      other.aquaticUpdateLavaReset();
+    }
+    if (inWebOverridden && !inWeb) {
+      other.resetInWeb();
+    }
+    if (fallDistanceOverridden && fallDistance == 0.0) {
+      other.resetFallDistance();
+    }
+    if (pushedByEntityOverridden) {
+      other.setPushedByEntity(pushedByEntity);
+    }
+    if (simulationResultOverridden) {
+      other.setSimulationResult(simulationResult);
+    }
+    if (motionXResetOverridden) {
+      other.setMotionResetX(motionXReset);
+    }
+    if (motionZResetOverridden) {
+      other.setMotionResetZ(motionZReset);
+    }
+    if (enforceBoatStepOverridden) {
+      other.setEnforceBoatStep(enforceBoatStep);
+    }
+    if (physicsPacketRelinkFlyVLOverridden) {
+      other.setPhysicsPacketRelinkFlyVL(physicsPacketRelinkFlyVL);
+    }
+    if (worldBorderOverridden) {
+      other.setWorldBorder(worldBorder);
+    }
+    if (simulatorOverridden) {
+      other.setSimulator(simulator);
+    }
+    if (stepHeightOverridden) {
+      other.setStepHeight(stepHeight);
+    }
+  }
+
+  public static MutableSimulationEnvironmentView of(SimulationEnvironment delegate) {
+    return new MutableSimulationEnvironmentView(delegate);
   }
 
   private interface EnvironmentMutation {

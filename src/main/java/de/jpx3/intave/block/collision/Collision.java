@@ -71,29 +71,8 @@ public final class Collision {
     );
   }
 
-  @Deprecated
-  public static boolean present(Player player, BoundingBox box) {
-    return present(player, UserRepository.userOf(player).meta().movement(), box);
-  }
-
-  @Deprecated
-  public static boolean present(Player player, SimulationEnvironment environment, BoundingBox box) {
-    return present(UserRepository.userOf(player), environment, box);
-  }
-
   public static boolean present(User user, SimulationEnvironment environment, BoundingBox box) {
     return collectCollisionShapes(user, environment.immutableView(), box, 1, EXISTS_ANY_SHAPE, () -> false);
-  }
-
-  @Deprecated
-  public static boolean nonePresent(Player player, BoundingBox playerBox) {
-    User user = UserRepository.userOf(player);
-    return nonePresent(user, user.meta().movement(), playerBox);
-  }
-
-  @Deprecated
-  public static boolean nonePresent(Player player, SimulationEnvironment environment, BoundingBox playerBox) {
-    return nonePresent(UserRepository.userOf(player), environment, playerBox);
   }
 
   public static boolean nonePresent(User user, SimulationEnvironment environment, BoundingBox playerBox) {

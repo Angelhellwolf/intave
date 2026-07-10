@@ -13,5 +13,5 @@ package de.jpx3.intave.check.movement.physics.branch;
 
 import de.jpx3.intave.search.SearchBrancher;
 
-abstract class MovementSearchBrancher extends SearchBrancher<MovementSearchInput, MovementSearchConfig> {
+abstract class MovementSearchBrancher extends SearchBrancher<MovementSearchInput, MovementSearchBranch> {
 }

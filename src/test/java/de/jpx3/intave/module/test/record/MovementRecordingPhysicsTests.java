@@ -19,12 +19,13 @@ import de.jpx3.intave.block.fluid.Fluids;
 import de.jpx3.intave.block.physics.BlockPhysics;
 import de.jpx3.intave.block.shape.resolve.DenyShapeResolverPipeline;
 import de.jpx3.intave.block.shape.resolve.DrillResolver;
-import de.jpx3.intave.check.movement.physics.Simulation;
-import de.jpx3.intave.check.movement.physics.Simulator;
-import de.jpx3.intave.check.movement.physics.Simulators;
+import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.check.movement.physics.search.SimulationSearch;
 import de.jpx3.intave.check.movement.physics.search.ThreeTickSimulationSearch;
+import de.jpx3.intave.check.movement.physics.simulator.Simulation;
+import de.jpx3.intave.check.movement.physics.simulator.Simulator;
+import de.jpx3.intave.check.movement.physics.simulator.Simulators;
 import de.jpx3.intave.module.test.record.action.Action;
 import de.jpx3.intave.module.test.record.action.ReceiveVelocity;
 import de.jpx3.intave.player.collider.Colliders;
@@ -162,7 +163,7 @@ final class MovementRecordingPhysicsTests {
 			Motion preTickMotion = simulator.simulatePreTick(user, previousBaseMotion.copy(), metadata);
 			metadata.setBaseMotion(preTickMotion);
 
-			Simulation simulation = processor.greedyFullSearch(user, metadata.mutableView(), simulator);
+			Simulation simulation = processor.greedyFullTickSearch(user, metadata.mutableView(), simulator);
 //			Simulation simulation = processor.simulate(user, simulator, hasMovement || hasRotation);
 //			boolean subversiveFlyingMovement = subversiveFlyingMovement(user, simulationEnvironment, simulation, hasMovement);
 //			if (!hasMovement && !hasRotation && !subversiveFlyingMovement) {
@@ -201,7 +202,7 @@ final class MovementRecordingPhysicsTests {
 				System.err.println("  LastV " + metadata.verifiedLastPosition());
 				Position nextPosition;
 				if (frames.size() > tick + 1 && (nextPosition = frames.get(tick + 1).moveTo()) != null) {
-					System.err.println("  Next " + nextPosition + " (dy to sent: " +(nextPosition.getY() - metadata.position().getY()) + ")");
+					System.err.println("  Next " + nextPosition + " (dy to sent: " + (nextPosition.getY() - metadata.position().getY()) + ")");
 				}
 				System.err.println("Motion");
 				System.err.println("  Sim   " + simulation.offsetMotion());
@@ -324,7 +325,9 @@ final class MovementRecordingPhysicsTests {
 	) {
 		if (hasMovement) {
 			Motion afterTickMotion = simulator.simulateAfterTick(
-				user, metadata, metadata.position(), metadata.sentOffsetMotion()
+				user, metadata, MovementConfiguration.blank(),
+				metadata.position(),
+				metadata.sentOffsetMotion()
 			);
 			metadata.setBaseMotion(afterTickMotion);
 			metadata.inactiveTick(
@@ -337,6 +340,7 @@ final class MovementRecordingPhysicsTests {
 			Motion afterTickMotion = simulator.simulateAfterTick(
 				user,
 				metadata,
+				MovementConfiguration.blank(),
 				metadata.lastPosition().mutable().add(metadata.sentOffsetMotion()),
 				metadata.sentOffsetMotion()
 			);

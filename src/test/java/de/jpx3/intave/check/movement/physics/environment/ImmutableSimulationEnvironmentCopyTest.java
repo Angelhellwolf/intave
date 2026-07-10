@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
 final class ImmutableSimulationEnvironmentCopyTest {
   @Test
   void copyDoesNotFollowSourceChanges() {
-    TestSimulationEnvironment source = new TestSimulationEnvironment();
+    MockSimulationEnvironment source = new MockSimulationEnvironment();
     source.setPositionX(1.0);
     source.setPositionY(2.0);
     source.setPositionZ(3.0);
@@ -43,7 +43,7 @@ final class ImmutableSimulationEnvironmentCopyTest {
 
   @Test
   void copyRejectsMutations() {
-    SimulationEnvironment copy = new TestSimulationEnvironment().immutableCopy();
+    SimulationEnvironment copy = new MockSimulationEnvironment().immutableCopy();
 
     assertThrows(UnsupportedOperationException.class, () -> copy.setBaseMotion(1.0, 2.0, 3.0));
     assertThrows(UnsupportedOperationException.class, () -> copy.activeTick(MoveMetric.ALIVE));
@@ -52,7 +52,7 @@ final class ImmutableSimulationEnvironmentCopyTest {
 
   @Test
   void mutableObjectsAreReturnedDefensively() {
-    TestSimulationEnvironment source = new TestSimulationEnvironment();
+    MockSimulationEnvironment source = new MockSimulationEnvironment();
     source.setRotation(45.0F, 20.0F);
     BoundingBox box = BoundingBox.fromBounds(1.0, 2.0, 3.0, 4.0, 5.0, 6.0);
     source.setBoundingBox(box);
@@ -71,7 +71,7 @@ final class ImmutableSimulationEnvironmentCopyTest {
 
   @Test
   void copiedBoundingBoxPreservesOriginFlag() {
-    TestSimulationEnvironment source = new TestSimulationEnvironment();
+    MockSimulationEnvironment source = new MockSimulationEnvironment();
     BoundingBox box = BoundingBox.fromBounds(1.0, 2.0, 3.0, 4.0, 5.0, 6.0);
     box.makeOriginBox();
     source.setBoundingBox(box);
@@ -83,7 +83,7 @@ final class ImmutableSimulationEnvironmentCopyTest {
 
   @Test
   void copiedMetricDerivedFlyingPacketStateIsFrozen() {
-    SimulationEnvironment source = new TestSimulationEnvironment().mutableView();
+    SimulationEnvironment source = new MockSimulationEnvironment().mutableView();
     source.activeTick(MoveMetric.FLYING_PACKET_ACCURATE);
 
     SimulationEnvironment copy = source.immutableCopy();
@@ -98,7 +98,7 @@ final class ImmutableSimulationEnvironmentCopyTest {
 
   @Test
   void immutableCopyOfImmutableCopyReturnsSameInstance() {
-    SimulationEnvironment copy = new TestSimulationEnvironment().immutableCopy();
+    SimulationEnvironment copy = new MockSimulationEnvironment().immutableCopy();
 
     assertSame(copy, copy.immutableCopy());
     assertSame(copy, copy.immutableView());
@@ -106,7 +106,7 @@ final class ImmutableSimulationEnvironmentCopyTest {
 
   @Test
   void commitToCopiesFrozenSnapshotToTarget() {
-    TestSimulationEnvironment source = new TestSimulationEnvironment();
+    MockSimulationEnvironment source = new MockSimulationEnvironment();
     source.setPositionX(1.0);
     source.setPositionY(2.0);
     source.setPositionZ(3.0);
@@ -132,7 +132,7 @@ final class ImmutableSimulationEnvironmentCopyTest {
     source.setBaseMotion(9.0, 9.0, 9.0);
     source.inactiveTick(MoveMetric.ALIVE);
 
-    TestSimulationEnvironment target = new TestSimulationEnvironment();
+    MockSimulationEnvironment target = new MockSimulationEnvironment();
     copy.commitTo(target);
 
     assertEquals(1.0, target.positionX(), 0.0);

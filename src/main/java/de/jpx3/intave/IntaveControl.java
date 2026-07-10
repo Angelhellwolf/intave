@@ -35,14 +35,14 @@ public final class IntaveControl {
   public static final boolean LATENCY_PING_AS_XP_LEVEL = false;
   public static boolean DEBUG_MOVEMENT_IGNORE = false; // if SG
   public static final boolean DEBUG_MOUNTING = false;
-  public static final boolean DEBUG_ELYTRA = true;
+  public static final boolean DEBUG_ELYTRA = false;
   public static final boolean DEBUG_PLAYER_ACTIONS = false;
   public static boolean DEBUG_TELEPORT_LOCKS = false; // if SG
   public static final boolean SCAFFOLD_ACTION_DEBUG = false;
   public static final boolean DEBUG_TELEPORT_CAUSE_AND_CAUSER = false;
   public static final boolean DEBUG_TELEPORT_PACKET_STACKTRACE = false;
   public static final boolean TELEPORT_FAR_AWAY_ON_Q_PRESS = false;
-  public static final boolean GIVE_VELOCITY_ON_Q_PRESS = false;
+  public static final boolean GIVE_VELOCITY_ON_Q_PRESS = true;
   public static final boolean DEBUG_INTAVE_TELEPORT_EVENT_CANCELS = false;
   public static final boolean DISABLE_BLOCK_CACHING_ENTIRELY = false;
   public static final boolean BLOCK_CACHE_DEBUG = false;

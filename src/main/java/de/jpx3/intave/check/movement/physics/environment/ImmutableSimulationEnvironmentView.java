@@ -14,14 +14,16 @@ package de.jpx3.intave.check.movement.physics.environment;
 import de.jpx3.intave.block.fluid.Fluid;
 import de.jpx3.intave.check.movement.physics.MoveMetric;
 import de.jpx3.intave.check.movement.physics.Pose;
-import de.jpx3.intave.check.movement.physics.Simulation;
-import de.jpx3.intave.check.movement.physics.Simulator;
+import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
+import de.jpx3.intave.check.movement.physics.simulator.Simulation;
+import de.jpx3.intave.check.movement.physics.simulator.Simulator;
 import de.jpx3.intave.check.movement.physics.update.TickAmbiguousUpdate;
 import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.player.collider.complex.SimulationResult;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.Position;
+import de.jpx3.intave.user.User;
 import de.jpx3.intave.world.border.WorldBorder;
 import org.bukkit.Material;
 import org.bukkit.util.Vector;
@@ -48,6 +50,11 @@ public final class ImmutableSimulationEnvironmentView implements SimulationEnvir
 	}
 
 	@Override
+	public void setPose(Pose pose) {
+		throw new UnsupportedOperationException("This environment view is unmodifiable");
+	}
+
+	@Override
 	public Vector lookVector() {
 		return delegate.lookVector();
 	}
@@ -64,6 +71,11 @@ public final class ImmutableSimulationEnvironmentView implements SimulationEnvir
 	@Override
 	public void setRotation(float newRotationYaw, float newRotationPitch) {
 		throw new UnsupportedOperationException("This environment view is unmodifiable");
+	}
+
+	@Override
+	public User user() {
+		return delegate.user();
 	}
 
 	@Override
@@ -167,18 +179,28 @@ public final class ImmutableSimulationEnvironmentView implements SimulationEnvir
 	}
 
 	@Override
-	public double motionX() {
-		return delegate.motionX();
+	public double offsetMotionX() {
+		return delegate.offsetMotionX();
 	}
 
 	@Override
-	public double motionY() {
-		return delegate.motionY();
+	public double offsetMotionY() {
+		return delegate.offsetMotionY();
 	}
 
 	@Override
-	public double motionZ() {
-		return delegate.motionZ();
+	public double offsetMotionZ() {
+		return delegate.offsetMotionZ();
+	}
+
+	@Override
+	public List<Motion> postTickMotionCandidates() {
+		return delegate.postTickMotionCandidates();
+	}
+
+	@Override
+	public void setPostTickMotionCandidates(@NotNull List<Motion> postTickMotionCandidates) {
+		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
 	}
 
 	@Override
@@ -277,6 +299,11 @@ public final class ImmutableSimulationEnvironmentView implements SimulationEnvir
 	}
 
 	@Override
+	public boolean shouldHaveFallFlyingPose() {
+		return delegate.shouldHaveFallFlyingPose();
+	}
+
+	@Override
 	public float friction(boolean sprinting) {
 		return delegate.friction(sprinting);
 	}
@@ -284,6 +311,11 @@ public final class ImmutableSimulationEnvironmentView implements SimulationEnvir
 	@Override
 	public double stepHeight() {
 		return delegate.stepHeight();
+	}
+
+	@Override
+	public void setStepHeight(float stepHeight) {
+		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
 	}
 
 	@Override
@@ -302,8 +334,8 @@ public final class ImmutableSimulationEnvironmentView implements SimulationEnvir
 	}
 
 	@Override
-	public boolean hasJumpedInTick() {
-		return delegate.hasJumpedInTick();
+	public boolean isJumping() {
+		return delegate.isJumping();
 	}
 
 	@Override
@@ -327,8 +359,23 @@ public final class ImmutableSimulationEnvironmentView implements SimulationEnvir
 	}
 
 	@Override
+	public void setSneaking(boolean sneaking) {
+		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
+	}
+
+	@Override
 	public boolean isSprinting() {
 		return delegate.isSprinting();
+	}
+
+	@Override
+	public boolean lastSprinting() {
+		return delegate.lastSprinting();
+	}
+
+	@Override
+	public void setLastSprinting(boolean lastSprinting) {
+		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
 	}
 
 	@Override
@@ -482,6 +529,11 @@ public final class ImmutableSimulationEnvironmentView implements SimulationEnvir
 	}
 
 	@Override
+	public void setSimulator(Simulator simulator) {
+		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
+	}
+
+	@Override
 	public void dismountRidingEntity(String boatSetback) {
 		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
 	}
@@ -504,6 +556,16 @@ public final class ImmutableSimulationEnvironmentView implements SimulationEnvir
 	@Override
 	public SimulationResult simulationResult() {
 		return delegate.simulationResult();
+	}
+
+	@Override
+	public void setLastMovementConfiguration(MovementConfiguration configuration) {
+		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
+	}
+
+	@Override
+	public MovementConfiguration lastMovementConfiguration() {
+		return delegate.lastMovementConfiguration();
 	}
 
 	@Override
@@ -534,6 +596,21 @@ public final class ImmutableSimulationEnvironmentView implements SimulationEnvir
 	@Override
 	public boolean denyJump() {
 		return delegate.denyJump();
+	}
+
+	@Override
+	public void setEyesInWater(boolean eyesInWater) {
+		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
+	}
+
+	@Override
+	public boolean areEyesInWater() {
+		return delegate.areEyesInWater();
+	}
+
+	@Override
+	public void setInteractingFluid(Fluid interactingFluid) {
+
 	}
 
 	@Override
@@ -657,8 +734,18 @@ public final class ImmutableSimulationEnvironmentView implements SimulationEnvir
 	}
 
 	@Override
+	public void setHeight(float height) {
+		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
+	}
+
+	@Override
 	public float width() {
 		return delegate.width();
+	}
+
+	@Override
+	public void setWidth(float width) {
+		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
 	}
 
 	@Override
@@ -707,8 +794,8 @@ public final class ImmutableSimulationEnvironmentView implements SimulationEnvir
 	}
 
 	@Override
-	public List<TickAmbiguousUpdate> tickAmbiguousUpdates() {
-		return delegate.tickAmbiguousUpdates();
+	public List<TickAmbiguousUpdate> allTickAmbiguousUpdates() {
+		return delegate.allTickAmbiguousUpdates();
 	}
 
 	@Override

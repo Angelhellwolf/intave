@@ -12,14 +12,14 @@
 package de.jpx3.intave.check.movement.physics.search;
 
 import de.jpx3.intave.IntavePlugin;
-import de.jpx3.intave.check.movement.physics.MovementConfiguration;
-import de.jpx3.intave.check.movement.physics.Simulation;
-import de.jpx3.intave.check.movement.physics.Simulator;
+import de.jpx3.intave.check.movement.physics.branch.MovementSearchBranch;
 import de.jpx3.intave.check.movement.physics.branch.MovementSearchBranchers;
-import de.jpx3.intave.check.movement.physics.branch.MovementSearchConfig;
 import de.jpx3.intave.check.movement.physics.branch.MovementSearchInput;
+import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.check.movement.physics.search.collector.MergingSimulationCollector;
+import de.jpx3.intave.check.movement.physics.simulator.Simulation;
+import de.jpx3.intave.check.movement.physics.simulator.Simulator;
 import de.jpx3.intave.diagnostic.timings.Timings;
 import de.jpx3.intave.executor.RateLimiter;
 import de.jpx3.intave.math.Hypot;
@@ -51,9 +51,9 @@ import static de.jpx3.intave.math.MathHelper.formatDouble;
 public final class NTickSimulationSearch implements SimulationSearch {
 	private final static double STRICT_ACCURACY = 0.0001;
 
-	private final static Searcher<MovementSearchInput, MovementSearchConfig> SEARCHER = new Searcher<>(
-		MovementSearchBranchers.normal(),
-		MovementSearchConfig::blank
+	private final static Searcher<MovementSearchInput, MovementSearchBranch> SEARCHER = new Searcher<>(
+		MovementSearchBranchers.tick(),
+		MovementSearchBranch::blank
 	);
 
 	private final int ticks;
@@ -70,12 +70,12 @@ public final class NTickSimulationSearch implements SimulationSearch {
 	}
 
 	@Override
-	public Set<Simulation> exhaustiveSearch(User user, SimulationEnvironment environment, Simulator simulator) {
+	public Set<Simulation> exhaustiveTickSearch(User user, SimulationEnvironment environment, Simulator simulator) {
 		return Collections.emptySortedSet();
 	}
 
 	@Override
-	public Simulation search(
+	public Simulation tickSearch(
 		User user, SimulationEnvironment movementData,
 		Simulator simulator, SimulationSearchOptions options
 	) {
@@ -178,6 +178,11 @@ public final class NTickSimulationSearch implements SimulationSearch {
 		);
 	}
 
+	@Override
+	public List<Motion> afterTickMotionCandidates(User user, SimulationEnvironment environment, Simulator simulator, Position newPosition, PostTickMotionType motionType) {
+		return Collections.emptyList();
+	}
+
 	private Simulation finishSearch(
 		User user,
 		RateLimiter ratelimiter,
@@ -226,7 +231,7 @@ public final class NTickSimulationSearch implements SimulationSearch {
 		boolean movementSuggestsHandIsActive = configuration.isHandActive();
 		boolean packetsSuggestsHandIsActive = inventoryData.handActive();
 		if (packetsSuggestsHandIsActive && !movementSuggestsHandIsActive) {
-			boolean releaseHandConditions = Hypot.fast(movementData.motionX(), movementData.motionZ()) > 0.3 || movementData.ticksPast(TELEPORT) >= 2;
+			boolean releaseHandConditions = Hypot.fast(movementData.offsetMotionX(), movementData.offsetMotionZ()) > 0.3 || movementData.ticksPast(TELEPORT) >= 2;
 			boolean itemIsBow = ItemProperties.isBow(meta.inventory().activeItemType()) || ItemProperties.isBow(meta.inventory().offhandItemType());
 			boolean viaVersionBlockReplacement = meta.protocol().viaVersionShieldBlockReplacement();
 			if (releaseHandConditions && (!itemIsBow || (inventoryData.handActiveTicks > 3 && !viaVersionBlockReplacement)) && itemUsageReset) {
@@ -240,7 +245,7 @@ public final class NTickSimulationSearch implements SimulationSearch {
 	}
 
 	private boolean likelyInaccurate(SimulationEnvironment movementData) {
-		if (Math.abs(movementData.motionY()) < 0.05
+		if (Math.abs(movementData.offsetMotionY()) < 0.05
 			&& Math.abs(movementData.baseMotionX()) < 0.03 && Math.abs(movementData.baseMotionZ()) < 0.03) {
 			return true;
 		}
@@ -255,8 +260,8 @@ public final class NTickSimulationSearch implements SimulationSearch {
 	) {
 		Timings.CHECK_PHYSICS_PROC_ITR.start();
 		Timings.CHECK_PHYSICS_PROC_ITR_BUILD_CONFIGS.start();
-		Set<MovementSearchConfig> possibleConfigs = SEARCHER.searchConfigurationsFor(
-			MovementSearchInput.from(user, simulator, environment, detectNoSlowdown)
+		Set<MovementSearchBranch> possibleConfigs = SEARCHER.searchConfigurationsFor(
+			MovementSearchInput.forTick(user, simulator, environment, detectNoSlowdown)
 		);
 		Timings.CHECK_PHYSICS_PROC_ITR_BUILD_CONFIGS.stop();
 
@@ -264,10 +269,9 @@ public final class NTickSimulationSearch implements SimulationSearch {
 		Function<C, R> finisher = collector.finisher();
 		BiConsumer<C, Simulation> accumulator = collector.accumulator();
 
-		for (MovementSearchConfig config : possibleConfigs) {
+		for (MovementSearchBranch config : possibleConfigs) {
 			boolean canFinishExplicitTick = config.canFinishExplicitTick();
-			SimulationEnvironment myEnv = environment.mutableView();
-			myEnv = config.applyTo(myEnv);
+			SimulationEnvironment myEnv = config.modifiedMutableView(environment);
 			Simulation simulation = simulator.simulateTick(
 				user, myEnv.mutableBaseMotionCopy(),
 				myEnv.immutableView(), config.moveConfig()

@@ -14,24 +14,28 @@ package de.jpx3.intave.check.movement.physics.environment;
 import de.jpx3.intave.block.fluid.Fluid;
 import de.jpx3.intave.check.movement.physics.MoveMetric;
 import de.jpx3.intave.check.movement.physics.Pose;
-import de.jpx3.intave.check.movement.physics.Simulation;
-import de.jpx3.intave.check.movement.physics.Simulator;
+import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
+import de.jpx3.intave.check.movement.physics.simulator.Simulation;
+import de.jpx3.intave.check.movement.physics.simulator.Simulator;
 import de.jpx3.intave.check.movement.physics.update.TickAmbiguousUpdate;
 import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.player.collider.complex.SimulationResult;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.Position;
+import de.jpx3.intave.user.User;
 import de.jpx3.intave.world.border.WorldBorder;
 import org.bukkit.Material;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 
 public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvironment {
+	private final User user;
 	private final Pose pose;
 	private final Vector lookVector;
 	private final double positionX, positionY, positionZ;
@@ -42,6 +46,7 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 	private final double motionX, motionY, motionZ;
 	private final double baseMotionX, baseMotionY, baseMotionZ;
 	private final boolean motionXReset, motionZReset;
+	private final List<Motion> postTickMotionCandidates;
 	private final Vector motionMultiplier;
 	private final float rotationYaw, yawSine, yawCosine, rotationPitch;
 	private final float aiMoveSpeed, sprintAiMoveSpeed;
@@ -50,6 +55,7 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 	private final float blockSpeedFactor, jumpMovementFactor;
 	private final boolean hasJumpedInTick;
 	private final boolean sneaking, sprinting, hasSprintSpeed, sprintingAllowed;
+	private final boolean lastSprinting;
 	private final boolean inWater, inLava, inWeb;
 	private final boolean onGround, lastOnGround, collidedHorizontally, collidedVertically;
 	private final boolean collidedWithBoat;
@@ -65,6 +71,7 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 	private final Simulator simulator;
 	private final boolean pushedByEntity;
 	private final SimulationResult beforeMoveCollider;
+	private final MovementConfiguration lastMovementConfiguration;
 	private final int reduceTicks;
 	private final long currentTick;
 	private final long currentSequence;
@@ -87,10 +94,13 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 	private final int highestLocalRiptideLevel;
 	private final boolean onGroundWithRiptide;
 	private final double baseMoveSpeed;
+	private final boolean areEyesInWater;
+	private final boolean clientElytraFlying;
 	private final EnumMap<MoveMetric, Integer> activeTracker;
 	private final EnumMap<MoveMetric, Integer> pastTracker;
 
 	private ImmutableSimulationEnvironmentCopy(SimulationEnvironment source) {
+		this.user = source.user();
 		this.pose = source.pose();
 		this.lookVector = copyVector(source.lookVector());
 		this.positionX = source.positionX();
@@ -105,9 +115,9 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 		this.lastRotationYaw = source.lastRotationYaw();
 		this.lastRotationPitch = source.lastRotationPitch();
 		this.boundingBox = copyBoundingBox(source.boundingBox());
-		this.motionX = source.motionX();
-		this.motionY = source.motionY();
-		this.motionZ = source.motionZ();
+		this.motionX = source.offsetMotionX();
+		this.motionY = source.offsetMotionY();
+		this.motionZ = source.offsetMotionZ();
 		this.baseMotionX = source.baseMotionX();
 		this.baseMotionY = source.baseMotionY();
 		this.baseMotionZ = source.baseMotionZ();
@@ -125,12 +135,14 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 		this.stepHeight = source.stepHeight();
 		this.resetMotion = source.resetMotion();
 		this.jumpMotion = source.jumpMotion();
-		this.hasJumpedInTick = source.hasJumpedInTick();
+		this.hasJumpedInTick = source.isJumping();
 		this.gravity = source.gravity();
 		this.blockSpeedFactor = source.blockSpeedFactor();
 		this.jumpMovementFactor = source.jumpMovementFactor();
 		this.sneaking = source.isSneaking();
 		this.sprinting = source.isSprinting();
+		this.lastSprinting = source.lastSprinting();
+		this.areEyesInWater = source.areEyesInWater();
 		this.hasSprintSpeed = source.hasSprintSpeed();
 		this.sprintingAllowed = source.sprintingAllowed();
 		this.inWater = source.inWater();
@@ -156,6 +168,7 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 		this.simulator = source.simulator();
 		this.pushedByEntity = source.pushedByEntity();
 		this.beforeMoveCollider = copySimulationResult(source.simulationResult());
+		this.lastMovementConfiguration = source.lastMovementConfiguration();
 		this.reduceTicks = source.reduceTicks();
 		this.denyJump = source.denyJump();
 		this.height = source.height();
@@ -166,7 +179,7 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 		this.interactingFluid = source.interactingFluid();
 		this.currentTick = source.currentTick();
 		this.currentSequence = source.activeSequence();
-		this.possibleMovementUpdates = new ArrayList<>(source.tickAmbiguousUpdates());
+		this.possibleMovementUpdates = new ArrayList<>(source.allTickAmbiguousUpdates());
 		this.worldBorder = source.border();
 		this.fireworkRocketsPower = source.fireworkRocketsPower();
 		this.shulkerXToleranceRemaining = source.shulkerXToleranceRemaining();
@@ -186,7 +199,8 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 		this.highestLocalRiptideLevel = source.highestLocalRiptideLevel();
 		this.onGroundWithRiptide = source.onGroundWithRiptide();
 		this.baseMoveSpeed = source.baseMoveSpeed();
-
+		this.clientElytraFlying = source.shouldHaveFallFlyingPose();
+		this.postTickMotionCandidates =  new ArrayList<>(source.postTickMotionCandidates());
 		this.activeTracker = new EnumMap<>(MoveMetric.class);
 		this.pastTracker = new EnumMap<>(MoveMetric.class);
 		for (MoveMetric metric : MoveMetric.values()) {
@@ -208,6 +222,11 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 	}
 
 	@Override
+	public void setPose(Pose pose) {
+		throw immutableCopyException();
+	}
+
+	@Override
 	public Vector lookVector() {
 		return copyVector(lookVector);
 	}
@@ -224,6 +243,11 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 	@Override
 	public void setRotation(float newRotationYaw, float newRotationPitch) {
 		throw immutableCopyException();
+	}
+
+	@Override
+	public User user() {
+		return user;
 	}
 
 	@Override
@@ -307,18 +331,28 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 	}
 
 	@Override
-	public double motionX() {
+	public double offsetMotionX() {
 		return motionX;
 	}
 
 	@Override
-	public double motionY() {
+	public double offsetMotionY() {
 		return motionY;
 	}
 
 	@Override
-	public double motionZ() {
+	public double offsetMotionZ() {
 		return motionZ;
+	}
+
+	@Override
+	public List<Motion> postTickMotionCandidates() {
+		return postTickMotionCandidates.isEmpty() ? Collections.emptyList() : new ArrayList<>(postTickMotionCandidates);
+	}
+
+	@Override
+	public void setPostTickMotionCandidates(@NotNull List<Motion> postTickMotionCandidates) {
+		throw immutableCopyException();
 	}
 
 	@Override
@@ -417,6 +451,11 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 	}
 
 	@Override
+	public void setStepHeight(float stepHeight) {
+		throw immutableCopyException();
+	}
+
+	@Override
 	public double resetMotion() {
 		return resetMotion;
 	}
@@ -432,7 +471,7 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 	}
 
 	@Override
-	public boolean hasJumpedInTick() {
+	public boolean isJumping() {
 		return hasJumpedInTick;
 	}
 
@@ -457,8 +496,23 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 	}
 
 	@Override
+	public void setSneaking(boolean sneaking) {
+		throw immutableCopyException();
+	}
+
+	@Override
 	public boolean isSprinting() {
 		return sprinting;
+	}
+
+	@Override
+	public boolean lastSprinting() {
+		return lastSprinting;
+	}
+
+	@Override
+	public void setLastSprinting(boolean lastSprinting) {
+		throw immutableCopyException();
 	}
 
 	@Override
@@ -618,6 +672,11 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 	}
 
 	@Override
+	public void setSimulator(Simulator simulator) {
+		throw immutableCopyException();
+	}
+
+	@Override
 	public void dismountRidingEntity(String boatSetback) {
 		throw immutableCopyException();
 	}
@@ -640,6 +699,16 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 	@Override
 	public SimulationResult simulationResult() {
 		return copySimulationResult(beforeMoveCollider);
+	}
+
+	@Override
+	public MovementConfiguration lastMovementConfiguration() {
+		return lastMovementConfiguration;
+	}
+
+	@Override
+	public void setLastMovementConfiguration(MovementConfiguration configuration) {
+		throw immutableCopyException();
 	}
 
 	@Override
@@ -672,6 +741,26 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 	@Override
 	public boolean denyJump() {
 		return denyJump;
+	}
+
+	@Override
+	public void setEyesInWater(boolean eyesInWater) {
+		throw immutableCopyException();
+	}
+
+	@Override
+	public boolean areEyesInWater() {
+		return areEyesInWater;
+	}
+
+	@Override
+	public void setInteractingFluid(Fluid interactingFluid) {
+		throw immutableCopyException();
+	}
+
+	@Override
+	public boolean shouldHaveFallFlyingPose() {
+		return clientElytraFlying;
 	}
 
 	@Override
@@ -795,8 +884,18 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 	}
 
 	@Override
+	public void setHeight(float height) {
+		throw immutableCopyException();
+	}
+
+	@Override
 	public float width() {
 		return width;
+	}
+
+	@Override
+	public void setWidth(float width) {
+		throw immutableCopyException();
 	}
 
 	@Override
@@ -845,7 +944,7 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 	}
 
 	@Override
-	public List<TickAmbiguousUpdate> tickAmbiguousUpdates() {
+	public List<TickAmbiguousUpdate> allTickAmbiguousUpdates() {
 		return new ArrayList<>(possibleMovementUpdates);
 	}
 
@@ -967,8 +1066,8 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 	}
 
 	private static SimulationResult copySimulationResult(SimulationResult result) {
-		if (result == null) {
-			return null;
+		if (result == null || !result.isValid()) {
+			return SimulationResult.invalid();
 		}
 		return result.copy();
 	}
