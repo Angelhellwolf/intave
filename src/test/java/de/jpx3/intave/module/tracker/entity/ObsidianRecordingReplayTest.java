@@ -137,8 +137,7 @@ class ObsidianRecordingReplayTest {
           && frame.attackedEntity != null && frame.attackedEntity.entityId == targetEntityId
       ) {
         comparisons++;
-        double simulatedReach = simulatedReachTo(entity, frame.player);
-        if (Math.abs(simulatedReach - frame.attackReachDistance) <= REACH_MATCH_TOLERANCE_BLOCKS) {
+        if (closestReachDeviation(entity, frame.player, frame.attackReachDistance) <= REACH_MATCH_TOLERANCE_BLOCKS) {
           matches++;
         }
       }
@@ -158,13 +157,29 @@ class ObsidianRecordingReplayTest {
   }
 
   /**
+   * Intave doesn't know exactly which tick a given attack packet was sent on relative to the entity's movement
+   * packets, so (like {@code AttackRaytrace}'s own iterative reach search) it has to accept a hit if any recent
+   * candidate position of the entity places it within reach. Mirrors {@link #closestSimulatedDistance} by scanning
+   * the entity's current position plus its whole {@code positionHistory} and keeping the smallest deviation from
+   * the client's recorded reach.
+   */
+  private static double closestReachDeviation(Entity entity, PlayerState player, double recordedReach) {
+    double closest = Math.abs(simulatedReachFor(entity.boundingBox(), player) - recordedReach);
+    for (int i = 0; i < entity.positionHistory.size(); i++) {
+      BoundingBox candidateHitbox = Entity.entityBoundingBoxFrom(entity.positionHistory.back(i), entity);
+      double deviation = Math.abs(simulatedReachFor(candidateHitbox, player) - recordedReach);
+      closest = Math.min(closest, deviation);
+    }
+    return closest;
+  }
+
+  /**
    * Mirrors the core hit-test of {@link de.jpx3.intave.world.raytrace.Raytracing#entityRaytrace} (eye position,
    * look vector, box intercept) without the block-occlusion and pose-uncertainty handling that requires a live
    * {@code Player}/world - the recording only ever samples the entity that's actually under the crosshair.
    */
-  private static double simulatedReachTo(Entity entity, PlayerState player) {
+  private static double simulatedReachFor(BoundingBox hitbox, PlayerState player) {
     RawVector3d eye = new RawVector3d(player.x, player.y + player.eyeHeight, player.z);
-    BoundingBox hitbox = entity.boundingBox();
     if (hitbox.isVecInside(eye)) {
       return 0;
     }
