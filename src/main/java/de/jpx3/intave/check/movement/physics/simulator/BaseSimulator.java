@@ -340,7 +340,7 @@ class BaseSimulator extends Simulator {
     Position position, Motion motion
   ) {
     motion = motion.copy();
-//    SimulationResult beforeMoveCollider = environment.simulationResult();
+//    SimulationResult beforeMoveCollider = environment.result();
 //    Motion actualMotion = beforeMoveCollider == null ? null : beforeMoveCollider.actualMotion();
 //    if (actualMotion != null) {
 //      motion.motionX = actualMotion.motionX();
@@ -384,6 +384,14 @@ class BaseSimulator extends Simulator {
     }
     if (environment.motionZReset()) {
       motion.setMotionZ(0.0);
+    }
+
+    SimulationResult result = environment.simulationResult();
+    if (result != null && result.offsetMotionDiffersFromActualMotionInXZ()) {
+      Motion actualMotion = result.actualMotion();
+      if (actualMotion != null && configuration.overrideEndMotionToActualMotion()) {
+        motion.setTo(actualMotion);
+      }
     }
 
     // Update supporting block if on-ground

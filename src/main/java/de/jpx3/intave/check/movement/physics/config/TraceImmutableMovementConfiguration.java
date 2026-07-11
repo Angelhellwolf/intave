@@ -17,6 +17,7 @@ public final class TraceImmutableMovementConfiguration implements MovementConfig
 	private boolean requiredJumpingState;
 	private boolean requiredReducingState;
 	private boolean requiredSprintingState;
+	private boolean requiredHorizontalMotionResetState;
 
 	public TraceImmutableMovementConfiguration(MovementConfiguration delegate) {
 		this.delegate = delegate;
@@ -51,6 +52,12 @@ public final class TraceImmutableMovementConfiguration implements MovementConfig
 	public boolean isJumping() {
 		requiredJumpingState = true;
 		return delegate.isJumping();
+	}
+
+	@Override
+	public boolean overrideEndMotionToActualMotion() {
+		requiredHorizontalMotionResetState = true;
+		return delegate.overrideEndMotionToActualMotion();
 	}
 
 	@Override
@@ -165,6 +172,16 @@ public final class TraceImmutableMovementConfiguration implements MovementConfig
 		throw new UnsupportedOperationException("Cannot modify a recording configuration");
 	}
 
+	@Override
+	public MovementConfiguration allowOverrideToActualMotion() {
+		throw new UnsupportedOperationException("Cannot modify a recording configuration");
+	}
+
+	@Override
+	public MovementConfiguration denyOverrideToActualMotion() {
+		throw new UnsupportedOperationException("Cannot modify a recording configuration");
+	}
+
 	public boolean requiredSprintingState() {
 		return requiredSprintingState;
 	}
@@ -177,14 +194,19 @@ public final class TraceImmutableMovementConfiguration implements MovementConfig
 		return requiredReducingState;
 	}
 
+	public boolean requiredHorizontalMotionResetState() {
+		return requiredHorizontalMotionResetState;
+	}
+
 	public boolean requiredAnyState() {
-		return requiredJumpingState || requiredReducingState || requiredSprintingState;
+		return requiredJumpingState || requiredReducingState || requiredSprintingState || requiredHorizontalMotionResetState;
 	}
 
 	public void reset() {
 		requiredJumpingState = false;
 		requiredReducingState = false;
 		requiredSprintingState = false;
+		requiredHorizontalMotionResetState = false;
 	}
 
 	@Override

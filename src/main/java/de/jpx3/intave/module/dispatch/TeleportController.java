@@ -254,6 +254,7 @@ public final class TeleportController implements PacketEventSubscriber {
 //          player.setVelocity(new Vector(3, 0.4, 0.3));
           Vector randomVelocity = player.getLocation().getDirection().clone();
           randomVelocity.setY(0.4);
+//          Vector randomVelocity = new Vector(0, 0.01, 0);
           player.setVelocity(randomVelocity);
           player.setFallDistance(0.0f);
           if (user.receives(MessageChannel.DEBUG_TELEPORT)) {

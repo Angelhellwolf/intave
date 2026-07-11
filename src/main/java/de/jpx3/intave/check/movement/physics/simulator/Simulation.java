@@ -229,7 +229,11 @@ public final class Simulation {
     return simulationResult.offsetMotionDiffersFromActualMotion();
   }
 
-  static Simulation of(User user, MovementConfiguration configuration, SimulationEnvironment environment, SimulationResult simulationResult) {
+  public boolean offsetMotionDiffersFromActualMotionInXZ() {
+    return simulationResult.offsetMotionDiffersFromActualMotionInXZ();
+  }
+
+  public static Simulation of(User user, MovementConfiguration configuration, SimulationEnvironment environment, SimulationResult simulationResult) {
     Simulation simulation = SIMULATION_OBJ_CACHE.get(user);
     simulation.flush(configuration, environment, simulationResult);
     return simulation;

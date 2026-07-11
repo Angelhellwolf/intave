@@ -47,24 +47,24 @@ public final class v14Collider implements Collider {
     }
 
     // "collide"
-    double initialX = offsetMotion.motionX;
-    double initialY = offsetMotion.motionY;
-    double initialZ = offsetMotion.motionZ;
+    double afterBOFEMotionX = offsetMotion.motionX;
+    double afterBOFEMotionY = offsetMotion.motionY;
+    double afterBOFEMotionZ = offsetMotion.motionZ;
 
     boolean[] stepped = new boolean[1];
     offsetMotion.setTo(motionAfterCollision(user, environment, offsetMotion, stepped));
 
-    boolean collidedVertically = initialY != offsetMotion.motionY;
-    boolean collidedHorizontally = initialX != offsetMotion.motionX || initialZ != offsetMotion.motionZ;
-    boolean onGround = initialY != offsetMotion.motionY && initialY < 0.0;
-    boolean moveResetX = actualMotion.motionX != offsetMotion.motionX;
-    boolean moveResetZ = actualMotion.motionZ != offsetMotion.motionZ;
-    if (moveResetX) {
-      actualMotion.motionX = 0.0D;
-    }
-    if (moveResetZ) {
-      actualMotion.motionZ = 0.0D;
-    }
+    boolean collidedVertically = afterBOFEMotionY != offsetMotion.motionY;
+    boolean collidedHorizontally = !epsilonEquals(afterBOFEMotionX, offsetMotion.motionX) || !epsilonEquals(afterBOFEMotionZ, offsetMotion.motionZ);
+    boolean onGround = afterBOFEMotionY != offsetMotion.motionY && afterBOFEMotionY < 0.0;
+    boolean moveResetX = afterBOFEMotionX != offsetMotion.motionX;
+    boolean moveResetZ = afterBOFEMotionZ != offsetMotion.motionZ;
+//    if (moveResetX) {
+//      actualMotion.motionX = 0.0D;
+//    }
+//    if (moveResetZ) {
+//      actualMotion.motionZ = 0.0D;
+//    }
     return new SimulationResult(
       actualMotion.copy(),
       offsetMotion.copy(),
@@ -187,5 +187,9 @@ public final class v14Collider implements Collider {
       motionZ = collision.allowedOffset(Z_AXIS, playerBox, motionZ);
     }
     return new Motion(motionX, motionY, motionZ);
+  }
+
+  private static boolean epsilonEquals(double a, double b) {
+    return Math.abs(b - a) < (double) 0.00001f;
   }
 }

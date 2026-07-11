@@ -65,7 +65,7 @@ public final class RedoSimulationSearch implements SimulationSearch {
 			simulation.appendPurple("redo:H("+firstSimulation.blueDetails()+")");
 			return simulation;
 		}
-		double verticalVL = evaluator.calculateVerticalViolationLevelIncrease(
+		double verticalVL = evaluator.calculateVerticalViolationIncrease(
 			user, resultEnvironment, offsetMotion.motionY, false, false, unusedEvalTags
 		);
 		if (verticalVL > 0) {

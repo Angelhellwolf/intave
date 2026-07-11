@@ -92,6 +92,16 @@ public final class SimulationResult {
 		return actualMotion().distance(offsetMotion()) > 0.001;
 	}
 
+	public boolean offsetMotionDiffersFromActualMotionInXZ() {
+		if (actualMotion == null) {
+			return false;
+		}
+		if (offsetMotion == null) {
+			return false;
+		}
+		return actualMotion().horizontalDistance(offsetMotion()) > 0.001;
+	}
+
 	public Motion intermittentResult() {
 		return intermittentResult;
 	}

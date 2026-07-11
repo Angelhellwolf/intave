@@ -31,6 +31,7 @@ final class IndexBasedMovementConfiguration implements MovementConfiguration {
   private static final BiState jumped = new BiState();
   private static final BiState handActive = new BiState();
   private static final BiState reduceBefore = new BiState();
+  private static final BiState noHorizontalMotionReset = new BiState();
 
   static {
     List<State> statez = new ArrayList<>();
@@ -41,6 +42,7 @@ final class IndexBasedMovementConfiguration implements MovementConfiguration {
     statez.add(jumped);
     statez.add(handActive);
     statez.add(reduceBefore);
+    statez.add(noHorizontalMotionReset);
     states = Collections.unmodifiableList(statez);
   }
 
@@ -215,6 +217,21 @@ final class IndexBasedMovementConfiguration implements MovementConfiguration {
   @Override
   public MovementConfiguration withoutSprinting() {
     return UNIVERSE[sprintingState.set(index, false)];
+  }
+
+  @Override
+  public MovementConfiguration allowOverrideToActualMotion() {
+    return UNIVERSE[noHorizontalMotionReset.set(index, false)];
+  }
+
+  @Override
+  public MovementConfiguration denyOverrideToActualMotion() {
+    return UNIVERSE[noHorizontalMotionReset.set(index, true)];
+  }
+
+  @Override
+  public boolean overrideEndMotionToActualMotion() {
+    return !noHorizontalMotionReset.get(index);
   }
 
   @Override

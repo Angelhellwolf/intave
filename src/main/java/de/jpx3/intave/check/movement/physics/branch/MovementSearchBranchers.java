@@ -37,6 +37,7 @@ public final class MovementSearchBranchers {
     return Arrays.asList(
       new UseLastMovementConfigBrancher(),
       new SprintingBrancher(),
+      new HorizontalResetBrancher(),
       JumpBrancher.unrestricted()
     );
   }

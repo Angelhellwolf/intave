@@ -401,7 +401,7 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 
 	private boolean likelyInaccurate(SimulationEnvironment movementData) {
 		if (Math.abs(movementData.offsetMotionY()) < 0.05
-			&& Math.abs(movementData.baseMotionX()) < 0.03 && Math.abs(movementData.baseMotionZ()) < 0.03) {
+			&& Math.abs(movementData.offsetMotionX()) < 0.05 && Math.abs(movementData.offsetMotionZ()) < 0.05) {
 			return true;
 		}
 		return movementData.isSneaking() || movementData.inWater();

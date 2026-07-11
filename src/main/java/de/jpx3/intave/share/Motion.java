@@ -235,6 +235,13 @@ public final class Motion {
 		return "(" + formatDouble(motionX, 4) + ", " + formatDouble(motionY, 4) + ", " + formatDouble(motionZ, 4) + ")";
 	}
 
+	public String shortString() {
+		return "" + (motionX < 0 ? "-" : "+") + (Math.abs(motionX) > 0.99 ? (int) motionX : "") + "." + formatDouble(motionX, 3).split("\\.")[1]
+			+ "," + (motionY < 0 ? "-" : "+") + (Math.abs(motionY) > 0.99 ? (int) motionY : "") + "." + formatDouble(motionY, 3).split("\\.")[1]
+			+ "," + (motionZ < 0 ? "-" : "+") + (Math.abs(motionZ) > 0.99 ? (int) motionZ : "") + "." + formatDouble(motionZ, 3).split("\\.")[1]
+			+ "";
+	}
+
 	public boolean isZero() {
 		return motionX == 0.0 && motionY == 0.0 && motionZ == 0.0;
 	}

@@ -69,4 +69,11 @@ public final class MovementSearchInput {
     }
     return tracedAfterTickMovementConfig.requiredSprintingState();
   }
+
+  boolean horizontalMotionResetBranchNecessary() {
+    if (tracedAfterTickMovementConfig == null) {
+      return false;
+    }
+    return tracedAfterTickMovementConfig.requiredHorizontalMotionResetState();
+  }
 }

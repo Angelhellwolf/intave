@@ -38,10 +38,10 @@ import de.jpx3.intave.check.movement.physics.MovementCharacteristics;
 import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
+import de.jpx3.intave.check.movement.physics.evaluation.DefaultSimulationEvaluator;
 import de.jpx3.intave.check.movement.physics.evaluation.EvaluationTag;
 import de.jpx3.intave.check.movement.physics.evaluation.SimulationEvaluator;
 import de.jpx3.intave.check.movement.physics.search.RedoSimulationSearch;
-import de.jpx3.intave.check.movement.physics.search.RollbackSimulationSearch;
 import de.jpx3.intave.check.movement.physics.search.SimulationSearch;
 import de.jpx3.intave.check.movement.physics.search.ThreeTickSimulationSearch;
 import de.jpx3.intave.check.movement.physics.simulator.Simulation;
@@ -141,11 +141,11 @@ public final class Physics extends Check {
     }
 
     boolean detectNoSlowdown = settings.boolBy("enforce-item-slowdown", true);
-    this.simulationEvaluator = new SimulationEvaluator();
+    this.simulationEvaluator = new DefaultSimulationEvaluator();
 
     SimulationSearch search = new ThreeTickSimulationSearch(resetItemUsage, detectNoSlowdown);
     search = RedoSimulationSearch.of(search, simulationEvaluator);
-    search = RollbackSimulationSearch.of(search, simulationEvaluator);
+//    search = RollbackSimulationSearch.of(search, simulationEvaluator);
     this.simulationSearch = search;
 
     setDefaultMitigationStrategy(MitigationStrategy.CAREFUL);
@@ -442,8 +442,16 @@ public final class Physics extends Check {
     Set<EvaluationTag> verticalTags = EnumSet.noneOf(EvaluationTag.class);
     Set<EvaluationTag> horizontalTags = EnumSet.noneOf(EvaluationTag.class);
 
-    double verticalViolationIncrease = skipVLCalculation ? 0 : simulationEvaluator.calculateVerticalViolationLevelIncrease(user, movementData, predictedOffsetY, onLadder, collidedWithBoat, verticalTags);
-    double horizontalViolationIncrease = skipVLCalculation ? 0 : simulationEvaluator.calculateHorizontalViolationIncrease(user, movementData, predictedOffsetX, predictedOffsetZ, onLadder, collidedWithBoat, horizontalTags);
+    double verticalViolationIncrease = skipVLCalculation ? 0 : simulationEvaluator.calculateVerticalViolationIncrease(
+      user, movementData, predictedOffsetY,
+      onLadder, collidedWithBoat, verticalTags
+    );
+    double horizontalViolationIncrease = skipVLCalculation ? 0 : simulationEvaluator.calculateHorizontalViolationIncrease(
+      user, movementData,
+      predictedOffsetX, predictedOffsetZ,
+      receivedOffsetMotionX, receivedOffsetMotionZ,
+      onLadder, collidedWithBoat, horizontalTags
+    );
 
     if (onLadder) {
       movementData.artificialFallDistance = 0;
@@ -475,7 +483,7 @@ public final class Physics extends Check {
       boolean noCollisionOnHighVersion = !(protocol.cavesAndCliffsUpdate()
         && Collision.present(user, movementData, movementData.boundingBox().growHorizontally(0.3)));
 
-      if (distance > 0.005 && !onLadder && noCollisionOnHighVersion) {
+      if (distance > 0.005 && horizontalViolationIncrease > 0.001 && !onLadder && noCollisionOnHighVersion) {
         if (actuallyMoved) {
           boolean aggressive = violationLevelData.physicsVelocityVL++ >= VELOCITY_VL_THRESHOLD || movementData.ticksPast(EXTERNAL_VELOCITY) == 0;
           if (aggressive || distance > 0.01) {
@@ -1007,18 +1015,8 @@ public final class Physics extends Check {
       if (movementData.ticksPast(RIPTIDE_SPIN) < 4) {
         debug += ChatColor.ITALIC + " rt:" + movementData.ticksPast(RIPTIDE_SPIN) + "@" + movementData.highestLocalRiptideLevel + chatColor;
       }
-      if (simulation.offsetMotionDiffersFromActualMotion()) {
-        debug += ChatColor.GREEN + " [";
-        if (Math.abs(offsetMotion.motionX - actualMotion.motionX) > 0.001) {
-          debug += ChatColor.RED + "" + ChatColor.STRIKETHROUGH + "x:" + formatDouble(offsetMotion.motionX, 4) + ChatColor.GREEN + "x:" + formatDouble(actualMotion.motionX, 4) + ChatColor.GREEN;
-        }
-//        if (Math.abs(offsetMotion.motionY - actualMotion.motionY) > 0.001) {
-//          debug += ChatColor.RED + "" + ChatColor.STRIKETHROUGH + "y:" + formatDouble(offsetMotion.motionY, 4) + ChatColor.GREEN + "y:" + formatDouble(actualMotion.motionY, 4) + ChatColor.GREEN;
-//        }
-        if (Math.abs(offsetMotion.motionZ - actualMotion.motionZ) > 0.001) {
-          debug += ChatColor.RED + "" + ChatColor.STRIKETHROUGH + "z:" + formatDouble(offsetMotion.motionZ, 4) + ChatColor.GREEN + "z:" + formatDouble(actualMotion.motionZ, 4) + ChatColor.GREEN;
-        }
-        debug += ChatColor.GREEN + "]" + chatColor;
+      if (simulation.offsetMotionDiffersFromActualMotionInXZ()) {
+        debug += ChatColor.ITALIC + " om.xz!=am.xz" + chatColor;
       }
       if (inventory.handActive()) {
         debug += ChatColor.ITALIC + " hnd:" + inventory.handActiveTicks + chatColor;
@@ -1177,6 +1175,33 @@ public final class Physics extends Check {
         }
       }
 //      Synchronizer.synchronize(() -> player.sendMessage(finalDebug));
+    }
+
+    if (user.receives(MessageChannel.DEBUG_MOTION)) {
+      ChatColor chatColor = ChatColor.GRAY;
+      String symbol = "";
+
+      double distance1 = simulation.offsetMotion().distance(simulation.actualMotion());
+      if (setback) {
+        chatColor = ChatColor.DARK_RED;
+        symbol = "!! ";
+      } else if (violationLevelIncrease > 0) {
+        chatColor = ChatColor.RED;
+        symbol = "! ";
+      } else if (distance1 > 0.1) {
+	      chatColor = ChatColor.YELLOW;
+	      symbol = "? ";
+      }
+
+      String string = chatColor + symbol + " rom:" + movementData.sentOffsetMotion().shortString()
+        + " som:" + simulation.offsetMotion().shortString()
+        + " sam:" + simulation.actualMotion().shortString();
+//      List<Motion> candidates = movementData.postTickMotionCandidates();
+//      if (!candidates.isEmpty() && candidates.size() > 1) {
+//        string += " cands:" + candidates.stream().map(Motion::toString).collect(Collectors.joining(","));
+//      }
+      string += " " + formatDouble(distance1, 3);
+      user.sendMessage(string);
     }
   }
 

@@ -32,6 +32,8 @@ public interface MovementConfiguration {
 
 	boolean reduceBefore();
 
+	boolean overrideEndMotionToActualMotion();
+
 	int reduceTicks();
 
 	int strafe();
@@ -67,6 +69,10 @@ public interface MovementConfiguration {
 	MovementConfiguration withoutReducing();
 
 	MovementConfiguration withoutSprinting();
+
+	MovementConfiguration allowOverrideToActualMotion();
+
+	MovementConfiguration denyOverrideToActualMotion();
 
 	TraceImmutableMovementConfiguration withRecording();
 

@@ -30,6 +30,7 @@ import de.jpx3.intave.check.movement.physics.MovementCharacteristics;
 import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
+import de.jpx3.intave.check.movement.physics.evaluation.MaskedMotionTolerance;
 import de.jpx3.intave.check.movement.physics.simulator.BoatSimulator;
 import de.jpx3.intave.check.movement.physics.simulator.Simulation;
 import de.jpx3.intave.check.movement.physics.simulator.Simulator;
@@ -224,6 +225,7 @@ public final class MovementMetadata implements SimulationEnvironment {
   public Input input = Input.none();
   public Input lastInput = Input.none();
   private @NotNull WorldBorder worldBorder = WorldBorder.createDefault();
+  public final MaskedMotionTolerance maskedMotionTolerance = new MaskedMotionTolerance();
 
   // tick for causal constraint solving
   // must always be a client position packet
@@ -1006,6 +1008,16 @@ public final class MovementMetadata implements SimulationEnvironment {
     }
 //    if (user.meta().protocol().newBlockEntityIntersectionLogic()) {
 //    }
+    // <tolerances>
+    Motion offsetMotion = simulation.offsetMotion();
+    Motion actualMotion = simulation.actualMotion();
+    if (offsetMotion.horizontalDistance(actualMotion) > 0.1) {
+      maskedMotionTolerance.set(
+        actualMotion.motionX,
+        actualMotion.motionZ
+      );
+    }
+    // </tolerances>
     setLastMovementConfiguration(configuration);
     setSimulationResult(collider);
   }
@@ -1034,6 +1046,8 @@ public final class MovementMetadata implements SimulationEnvironment {
       worldBorder.tick();
     }
 
+    // <tolerances>
+
     if (shulkerXToleranceRemaining > 0) {
       shulkerXToleranceRemaining--;
     }
@@ -1051,6 +1065,13 @@ public final class MovementMetadata implements SimulationEnvironment {
     if (pistonMotionToleranceRemaining > 0) {
       pistonMotionToleranceRemaining--;
     }
+
+    maskedMotionTolerance.afterTick(
+      offsetMotionX(),
+      offsetMotionZ()
+    );
+
+    // </tolerances>
 
     activeTick(
       ALIVE

@@ -122,7 +122,7 @@ public final class RollbackSimulationSearch implements SimulationSearch {
 			user, simulation.environment(), offsetMotion.motionX, offsetMotion.motionZ,
 			false, false, unusedEvalTags
 		);
-		double verticalVL = evaluator.calculateVerticalViolationLevelIncrease(
+		double verticalVL = evaluator.calculateVerticalViolationIncrease(
 			user, simulation.environment(), offsetMotion.motionY,
 			false, false, unusedEvalTags
 		);
