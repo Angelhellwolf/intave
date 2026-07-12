@@ -723,7 +723,30 @@ public final class Physics extends Check {
       String actual = formatPosition(actualMotion.motionX, actualMotion.motionY, actualMotion.motionZ);
 
       String message = "moved incorrectly";
-      String details = received + " actual: " + expected;
+//      String details = received + " actual: " + expected;
+      String details = "";
+
+      details += formatDouble(distance, 6) + " / ";
+
+      String vlInfo = "";
+      if (verticalViolationIncrease > 500) {
+        vlInfo += "mv";
+      } else if (verticalViolationIncrease < 0.1) {
+        vlInfo += "0v";
+      } else {
+        vlInfo += formatDouble(verticalViolationIncrease, 1) + "v";
+      }
+      if (horizontalViolationIncrease > 500) {
+        vlInfo += "mh";
+      } else if (horizontalViolationIncrease < 0.1) {
+        vlInfo += "0h";
+      } else {
+        vlInfo += formatDouble(horizontalViolationIncrease, 1) + "h";
+      }
+      details += vlInfo + " / ";
+
+      details += simulation.blueDetails().replace('/', '_');
+//      details += formatDouble(-differenceX, 4) + "dx " + formatDouble(-differenceY, 4) + "dy " + formatDouble(-differenceZ, 4) + "dz";
 
       if (velocityDetected) {
         details += ", strict";
@@ -813,7 +836,7 @@ public final class Physics extends Check {
           boolean velocityFlag = velocityDetected && violationLevelAfter > 30 && (verticalViolationIncrease >= 100 || horizontalViolationIncrease >= 100);
           setback =
             (distanceMoved > (violationLevelAfter > 80 ? 0.5 : 0.7) || violationLevelAfter > 200 || flagAnywayss || velocityFlag)
-            && deepPitchViolationOverflow && (highPitchAggressiveViolationOverflow || violationLevelAfter > 200 || user.justJoined());
+              && deepPitchViolationOverflow && (highPitchAggressiveViolationOverflow || violationLevelAfter > 200 || user.justJoined());
           manualOverrideDistance = 1;
           break;
         case SILENT:
@@ -832,13 +855,13 @@ public final class Physics extends Check {
       // reduce setbacks
       if (
         setback && !velocityDetected &&
-        Math.abs(predictedOffsetX - receivedOffsetMotionX) < 0.25 &&
-        Math.abs(predictedOffsetY - receivedOffsetMotionY) < 0.25 &&
-        Math.abs(predictedOffsetZ - receivedOffsetMotionZ) < 0.25 &&
-        distance < 0.4 &&
-        movementData.ticksPast(BLOCK_PLACEMENT) >= 8 &&
-        user.trustFactor().atLeast(TrustFactor.ORANGE) &&
-        violationLevelAfter < 100
+          Math.abs(predictedOffsetX - receivedOffsetMotionX) < 0.25 &&
+          Math.abs(predictedOffsetY - receivedOffsetMotionY) < 0.25 &&
+          Math.abs(predictedOffsetZ - receivedOffsetMotionZ) < 0.25 &&
+          distance < 0.4 &&
+          movementData.ticksPast(BLOCK_PLACEMENT) >= 8 &&
+          user.trustFactor().atLeast(TrustFactor.ORANGE) &&
+          violationLevelAfter < 100
       ) {
         ViolationBufferStorage buffer = user.storageOf(ViolationBufferStorage.class);
         // check for reset

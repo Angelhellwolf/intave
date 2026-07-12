@@ -180,7 +180,7 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 				}
 				double durationMs = ((double)System.nanoTime() - start) / 1_000_000d;
 				if (durationMs > 0.1) {
-					bestSimulation.appendBlue(formatDouble(durationMs, 4) + "ms");
+					bestSimulation.appendBlue(formatDouble(durationMs, 2) + "ms");
 				}
 				applySimulation(user, bestSimulation);
 				if (firstTickFlyingSimulations.isEmpty()) {
@@ -228,7 +228,7 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 				}
 				double durationMs = ((double)System.nanoTime() - start) / 1_000_000d;
 				if (durationMs > 0.1) {
-					bestSimulation.appendBlue(formatDouble(durationMs, 4) + "ms");
+					bestSimulation.appendBlue(formatDouble(durationMs, 2) + "ms");
 				}
 				applySimulation(user, bestSimulation);
 				ratelimiter.noteAcquired(totalSimulationsDone);
@@ -273,7 +273,7 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 					}
 					double durationMs = ((double)System.nanoTime() - start) / 1_000_000d;
 					if (durationMs > 0.1) {
-						bestSimulation.appendBlue(formatDouble(durationMs, 4) + "ms");
+						bestSimulation.appendBlue(formatDouble(durationMs, 2) + "ms");
 					}
 					applySimulation(user, bestSimulation);
 					ratelimiter.noteAcquired(totalSimulationsDone);
@@ -285,7 +285,9 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 			bestSimulation.appendBlue(totalSimulationsDone + "ds");
 		}
 		double durationMs = ((double)System.nanoTime() - start) / 1_000_000d;
-		bestSimulation.appendBlue(formatDouble(durationMs, 4) + "ms");
+		if (durationMs > 0.1) {
+			bestSimulation.appendBlue(formatDouble(durationMs, 2) + "ms");
+		}
 		bestSimulation.setWasFromExhaustiveSearch();
 		applySimulation(user, bestSimulation);
 		ratelimiter.noteAcquired(totalSimulationsDone);

@@ -627,7 +627,7 @@ public final class DefaultSimulationEvaluator implements SimulationEvaluator {
       boolean movedTooQuickly = distanceMoved > predictedDistanceMoved * 1.0005 && abuseHorizontally > 0.00001;
 
       if (inLiquid) {
-        movedTooQuickly &= distanceMoved > baseMoveSpeed;
+//        movedTooQuickly &= distanceMoved > baseMoveSpeed;
         tags.add(EvaluationTag.WATERFLOW);
       }
 
@@ -652,23 +652,26 @@ public final class DefaultSimulationEvaluator implements SimulationEvaluator {
       boolean movedTooQuicklyCheckable = (distanceMoved > 0.125 * stackMultiplier || violationLevelData.physicsInvalidMovementsInRow >= 8)
         && !flewWithElytra;
 
-      if (movedTooQuickly && movedTooQuicklyCheckable && !movement.physicsUnpredictableVelocityExpected()) {
+      boolean noCollisions = Collision.nonePresent(user, movement, BoundingBox.fromPosition(user, movement, movement.positionX(), movement.positionY(), movement.positionZ()).grow(0.1));
+      if (movedTooQuickly && movedTooQuicklyCheckable && !movement.receivedFlyingPacketIn(3)) {
 //      player.sendMessage("moved too quickly: " + distanceMoved + " " + predictedDistanceMoved + " " + abuseHorizontally + " " + stackMultiplier);
         if (abuseHorizontally > 0.2 * stackMultiplier) {
           horizontalViolationIncrease = 1000;
         } else if (distanceMoved - 0.1 > predictedDistanceMoved && distanceMoved > 0.3) {
           horizontalViolationIncrease = 1000;
         } else {
-          horizontalViolationIncrease = Math.max(15, abuseHorizontally * 250);
+          int upperLimit = movement.receivedFlyingPacketIn(10) || !noCollisions ? 15 : 1000;
+          horizontalViolationIncrease = Math.max(upperLimit, abuseHorizontally * 250);
         }
       } else {
-        boolean noCollisions = Collision.nonePresent(user, movement, BoundingBox.fromPosition(user, movement, movement.positionX(), movement.positionY(), movement.positionZ()).grow(0.1));
         double multiplier = (abuseHorizontally > 0.1 ? 20.0 : 10.0) *
           (noCollisions ? 3 : 2) *
           (1 / stackMultiplier);
-        if (abuseHorizontally < 0.1 && abs(motionX) + abs(motionZ) < 0.1 && !inLiquid && !movement.inWeb()) {
+
+        if (abuseHorizontally < 0.1 && abs(motionX) + abs(motionZ) < 0.1 && !movement.inWeb()) {
           multiplier *= 0.1;
         }
+//        user.sendMessage(abuseHorizontally + " * " + multiplier);
         horizontalViolationIncrease = abuseHorizontally * multiplier;
       }
 
