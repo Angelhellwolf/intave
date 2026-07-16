@@ -11,15 +11,12 @@
 
 package de.jpx3.intave.packet.reader;
 
-import com.comphenix.protocol.events.PacketContainer;
+import de.jpx3.intave.share.BlockPosition;
 
-public interface PacketReader extends AutoCloseable {
-  void enter(PacketContainer packet);
-  void flush();
-  void release();
-  @Override
-  default void close() {
-    release();
-  }
-  void releaseSafe();
+public final class BedUseReader extends EntityReader {
+	public BlockPosition bedPosition() {
+		return BlockPosition.fromProtocolLib(
+			packet().getBlockPositionModifier().read(0)
+		);
+	}
 }

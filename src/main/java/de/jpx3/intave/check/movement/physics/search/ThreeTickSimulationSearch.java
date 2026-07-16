@@ -49,6 +49,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
 
+import static de.jpx3.intave.IntaveControl.FIRST_TICK_MUST_BE_FULLY_SIMULATED;
 import static de.jpx3.intave.check.movement.physics.MoveMetric.TELEPORT;
 import static de.jpx3.intave.math.MathHelper.formatDouble;
 
@@ -150,7 +151,7 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 
 		boolean likelyInaccurate = likelyInaccurate(movementData);
 		boolean allowFuzziness = options.allowFuzziness();
-		double requiredAccuracyFirstTick = likelyInaccurate && allowFuzziness ? 0.001 : STRICT_ACCURACY;
+		double requiredAccuracyFirstTick = STRICT_ACCURACY;
 		double requiredAccuracySecondTick = likelyInaccurate && allowFuzziness ? 0.03 : STRICT_ACCURACY;
 		double requiredAccuracyThirdTick = likelyInaccurate && allowFuzziness ? 0.04 : STRICT_ACCURACY;
 
@@ -164,7 +165,7 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 		MergingSimulationCollector firstTickContainer = collectSimulations(
 			user, simulator, movementData,
 			MergingSimulationCollector.forEnvironment(user, movementData, maxFlyingSimulations),
-		 sim -> sim.offsetDifference() < requiredAccuracyFirstTick
+		 sim -> sim.offsetDifference() < requiredAccuracyFirstTick && !FIRST_TICK_MUST_BE_FULLY_SIMULATED
 		);
 
 		int totalSimulationsDone = firstTickContainer.simulationsDone();

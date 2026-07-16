@@ -11,15 +11,16 @@
 
 package de.jpx3.intave.packet.reader;
 
-import com.comphenix.protocol.events.PacketContainer;
+public final class AnimationReader extends EntityReader {
+	public Animation animation() {
+		return Animation.values()[packet().getIntegers().read(1)];
+	}
 
-public interface PacketReader extends AutoCloseable {
-  void enter(PacketContainer packet);
-  void flush();
-  void release();
-  @Override
-  default void close() {
-    release();
-  }
-  void releaseSafe();
+	public enum Animation {
+		SWING,
+		HURT,
+		WAKEUP,
+		CRIT,
+		CRIT_MAGIC
+	};
 }

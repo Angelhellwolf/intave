@@ -25,6 +25,7 @@ import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.collision.Collision;
+import de.jpx3.intave.block.collision.custom.BedWakeupPositionSearch;
 import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.shape.BlockShapes;
 import de.jpx3.intave.block.tick.ShulkerBox;
@@ -77,10 +78,7 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -97,7 +95,6 @@ import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_16;
 import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_9;
 
 public final class MovementDispatcher extends Module {
-  private static final boolean ELYTRA_SUPPORTED = MinecraftVersions.VER1_9_0.atOrAbove();
   private Physics physicsCheck;
   private TeleportController teleportController;
   private InteractionRaytrace interactionRaytraceCheck;
@@ -255,8 +252,6 @@ public final class MovementDispatcher extends Module {
   }
 
   private void synchronizeRespawn(Player player) {
-//    Modules.feedback()
-//      .synchronize(player, UserRepository.userOf(player), (p, user) -> {
     User user = UserRepository.userOf(player);
     user.tickFeedback(() -> {
       MetadataBundle meta = user.meta();
@@ -264,6 +259,7 @@ public final class MovementDispatcher extends Module {
       ProtocolMetadata protocol = meta.protocol();
       InventoryMetadata inventory = meta.inventory();
       movement.sneaking = false;
+      movement.sleepingBedPosition = null;
       movement.setSprinting(false);
       if (protocol.protocolVersion() >= VER_1_16) {
         user.refreshSprintState();
@@ -691,7 +687,7 @@ public final class MovementDispatcher extends Module {
       return;
     }
 
-    if (!vehicleMove && !movement.awaitTeleport && !movement.awaitOutgoingTeleport && !movement.invalidMovement && !movement.dropPostTickMotionProcessing) {
+    if (!vehicleMove && !movement.isSleeping() && !movement.awaitTeleport && !movement.awaitOutgoingTeleport && !movement.invalidMovement && !movement.dropPostTickMotionProcessing) {
       if (claimsToBeOnGround != movement.onGround) {
         double requiredFallDistance = Collision.present(user, movement, movement.boundingBox().grow(0.1, 0.1, 0.1)) ? 0.5 : 0.1;
         boolean shulkerInteraction = movement.shulkerXToleranceRemaining > 0 || movement.shulkerYToleranceRemaining > 0 || movement.shulkerZToleranceRemaining > 0;
@@ -806,60 +802,6 @@ public final class MovementDispatcher extends Module {
   }
 
   @PacketSubscription(
-    priority = ListenerPriority.LOWEST,
-    packetsOut = {
-      ENTITY_METADATA
-    }
-  )
-  public void receiveElytraUpdate(PacketEvent event) {
-    Player player = event.getPlayer();
-    PacketContainer packet = event.getPacket();
-    Integer entityId = packet.getIntegers().read(0);
-
-    if (!ELYTRA_SUPPORTED || entityId != player.getEntityId()) {
-      return;
-    }
-
-    EntityMetadataReader reader = PacketReaders.readerOf(packet);
-    Object elytraObject = reader.fetchRaw(0);
-
-    if (elytraObject == null) {
-      reader.release();
-      return;
-    }
-
-    User user = UserRepository.userOf(player);
-    MetadataBundle meta = user.meta();
-    MovementMetadata movement = meta.movement();
-    ProtocolMetadata protocol = meta.protocol();
-
-    if (!protocol.canUseElytra()) {
-      reader.release();
-      return;
-    }
-
-    if (IntaveControl.DEBUG_ELYTRA) {
-      player.sendMessage("Elytra update received");
-    }
-
-    byte data = (byte) elytraObject;
-    boolean gliding = (data & 1 << 7) != 0;
-
-    user.tickFeedback(() -> {
-      movement.elytraFlying = gliding;
-      if (IntaveControl.DEBUG_ELYTRA) {
-        if (gliding) {
-          player.sendMessage("§aActivated elytra flying (metadata) [" + movement.pose() + "]");
-        } else {
-          player.sendMessage("§cDeactivated elytra flying (metadata) [" + movement.pose() + "]");
-        }
-      }
-    });
-
-    reader.release();
-  }
-
-  @PacketSubscription(
     packetsOut = {
       WORLD_BORDER,
       INITIALIZE_BORDER,
@@ -872,14 +814,55 @@ public final class MovementDispatcher extends Module {
     User user, PacketEvent event
   ) {
     user.tickFeedback(() -> {
-	    try (WorldBorderReader reader = PacketReaders.readerOf(event.getPacket())) {
-		    MovementMetadata movement = user.meta().movement();
+	    try (
+        WorldBorderReader reader = PacketReaders.readerOf(event.getPacket())
+      ) {
+        MovementMetadata movement = user.meta().movement();
         WorldBorder newBorder = reader.updated(movement.border());
         movement.setWorldBorder(newBorder);
-		  } catch (Exception e) {
-		    throw new RuntimeException(e);
-	    }
+      }
     });
+  }
+
+  @PacketSubscription(
+    packetsOut = USE_BED
+  )
+  public void playerBedUseCommand(
+    User user, BedUseReader reader, PacketEvent event
+  ) {
+    if (!reader.targetEntityIdIsSameAs(user)) {
+      return;
+    }
+    de.jpx3.intave.share.BlockPosition sleepingBedPosition = reader.bedPosition();
+    user.sendMessage(IntavePlugin.prefix() + "Player is sleeping in bed at " + sleepingBedPosition);
+    user.packetTickFeedback(event, () -> {
+      user.meta().movement().sleepingBedPosition = sleepingBedPosition;
+    });
+  }
+
+  @PacketSubscription(
+    packetsOut = {ANIMATION}
+  )
+  public void playerAnimationCommand(
+    User user, AnimationReader reader, PacketEvent event
+  ) {
+    if (!reader.targetEntityIdIsSameAs(user)) {
+      return;
+    }
+    if (reader.animation() == AnimationReader.Animation.WAKEUP) {
+      MovementMetadata movement = user.meta().movement();
+      de.jpx3.intave.share.BlockPosition sleepingBedPosition = movement.sleepingBedPosition;
+      if (sleepingBedPosition != null) {
+        Optional<Position> wakeupPosition = BedWakeupPositionSearch.findStandUpPosition(user, sleepingBedPosition, 0);
+        user.packetTickFeedback(event, () -> {
+          wakeupPosition.ifPresent(position -> {
+	          movement.setPosition(position);
+            movement.setVerifiedLastPosition(position, "Bed wakeup");
+          });
+          movement.sleepingBedPosition = null;
+        });
+      }
+    }
   }
 
   @PacketSubscription(
@@ -941,7 +924,6 @@ public final class MovementDispatcher extends Module {
       Motion finalVelocity = motion.copy();
 
       AtomicReference<VelocityUpdate> velocity = new AtomicReference<>(null);
-
       user.doubleTickFeedback(event,
         () -> {
 	        velocity.set(VelocityUpdate.openEnded(
@@ -1163,7 +1145,7 @@ public final class MovementDispatcher extends Module {
       case START_FALL_FLYING:
         if (movementData.hasElytraEquipped() && protocol.canUseElytra()) {
           if (protocol.serversideElytra()) {
-            movementData.elytraFlying = true;
+            movementData.gliding = true;
             if (IntaveControl.DEBUG_ELYTRA) {
               user.player().sendMessage(ChatColor.GREEN + "Activated elytra flying (START_FALL_FLYING)");
             }

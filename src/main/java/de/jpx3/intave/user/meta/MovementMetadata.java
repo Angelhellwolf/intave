@@ -87,7 +87,8 @@ public final class MovementMetadata implements SimulationEnvironment {
   public float stepHeight = 0.6f;
   public double stepHeightThisMove = 0d;
   public double widthRounded, heightRounded;
-  public volatile boolean elytraFlying;
+  public volatile boolean gliding;
+  public volatile @Nullable de.jpx3.intave.share.BlockPosition sleepingBedPosition;
   public int fireworkRocketsPower = 1;
   public boolean onGround, lastOnGround, step, onGroundWithRiptide;
   public boolean collidedHorizontally, collidedVertically;
@@ -254,9 +255,9 @@ public final class MovementMetadata implements SimulationEnvironment {
   public void setup() {
     if (player != null) {
       if (player.hasMetadata("intave.testplayer.gliding")) {
-        this.elytraFlying = player.getMetadata("intave.testplayer.gliding").get(0).asBoolean();
+        this.gliding = player.getMetadata("intave.testplayer.gliding").get(0).asBoolean();
       } else {
-        Synchronizer.synchronize(() -> this.elytraFlying = flyingWithElytra(player));
+        Synchronizer.synchronize(() -> this.gliding = flyingWithElytra(player));
       }
     }
     applyPlayerStats();
@@ -364,6 +365,17 @@ public final class MovementMetadata implements SimulationEnvironment {
     if (hasMovement || hasRotation) {
       updatePose();
     }
+  }
+
+  @Override
+  public void setPosition(double x, double y, double z) {
+    lastPositionX = positionX;
+    lastPositionY = positionY;
+    lastPositionZ = positionZ;
+    positionX = x;
+    positionY = y;
+    positionZ = z;
+    setBoundingBox(BoundingBox.fromPosition(user, this, x, y, z));
   }
 
   @Override
@@ -1082,7 +1094,7 @@ public final class MovementMetadata implements SimulationEnvironment {
     tick(SNEAKING, isSneaking());
     tick(SPRINTING, isSprinting());
     tick(TELEPORT, isTeleportConfirmationPacket);
-    tick(ELYTRA_FLYING, elytraFlying);
+    tick(ELYTRA_FLYING, gliding);
     tick(INVENTORY_OPEN, user.meta().inventory().inventoryOpen());
 
     inactiveTick(
@@ -1454,6 +1466,18 @@ public final class MovementMetadata implements SimulationEnvironment {
   }
 
   @Override
+  public boolean isSleeping() {
+    return sleepingBedPosition != null;
+  }
+
+  @Override
+  public void setSleeping(boolean sleeping) {
+    if (!sleeping) {
+      sleepingBedPosition = null;
+    }
+  }
+
+  @Override
   public boolean hasSprintSpeed() {
     return hasSprintSpeed;
   }
@@ -1584,7 +1608,7 @@ public final class MovementMetadata implements SimulationEnvironment {
 
   @Override
   public boolean shouldHaveFallFlyingPose() {
-    return elytraFlying;
+    return gliding;
   }
 
   public float friction(boolean sprinting) {

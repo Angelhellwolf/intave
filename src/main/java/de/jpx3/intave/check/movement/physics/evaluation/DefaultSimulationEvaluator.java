@@ -336,7 +336,7 @@ public final class DefaultSimulationEvaluator implements SimulationEvaluator {
 
       boolean justInPowderSnow = movement.ticksPast(IN_POWDER_SNOW) < 5;
       double maxLadderVel = justInPowderSnow ? LADDER_UPWARDS_MOTION * 1.5 : LADDER_UPWARDS_MOTION;
-      if ((onLadder || justInPowderSnow) && motionY <= maxLadderVel && motionY >= -0.09) {
+      if ((onLadder || justInPowderSnow) && motionY <= maxLadderVel && (motionY >= -0.09 || Math.abs(motionY - -0.150) < 0.001)) {
         abuseVertically = 0;
         tags.add(EvaluationTag.LADDER);
       }

@@ -86,9 +86,16 @@ public interface SimulationEnvironment {
       hasMovement ? newPosition.getZ() : 0,
       hasRotation ? newRotation.yaw() : 0,
       hasRotation ? newRotation.pitch() : 0,
-      hasMovement,
-      hasRotation
+      hasMovement, hasRotation
     );
+  }
+
+  void setPosition(double x, double y, double z);
+
+  default void setPosition(@Nullable Position position) {
+    if (position != null) {
+      setPosition(position.getX(), position.getY(), position.getZ());
+    }
   }
 
   void setRotation(float newRotationYaw, float newRotationPitch);
@@ -131,7 +138,7 @@ public interface SimulationEnvironment {
     Pose suggestedPose;
     if (shouldHaveSwimmingPose()) {
       suggestedPose = Pose.SWIMMING;
-    } else if (user.player().isSleeping()) {
+    } else if (shouldBeInSleepingPose()) {
       suggestedPose = Pose.SLEEPING;
     } else if (shouldHaveFallFlyingPose()) {
       suggestedPose = Pose.FALL_FLYING;
@@ -239,6 +246,9 @@ public interface SimulationEnvironment {
   void setSneaking(boolean sneaking);
   boolean lastSprinting();
   void setLastSprinting(boolean lastSprinting);
+
+  boolean isSleeping();
+  void setSleeping(boolean sleeping);
 
   boolean hasSprintSpeed();
   boolean sprintingAllowed();
@@ -503,6 +513,10 @@ public interface SimulationEnvironment {
     setLastRotation(lastRotation);
     activeTick(MoveMetric.FLYING_PACKET_ACCURATE);
     setTreatThisFlyPacketAsMovePacket(true);
+  }
+
+  default boolean shouldBeInSleepingPose() {
+    return isSleeping();
   }
 
   default boolean shouldHaveSwimmingPose() {

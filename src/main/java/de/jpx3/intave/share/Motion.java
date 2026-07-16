@@ -236,9 +236,10 @@ public final class Motion {
 	}
 
 	public String shortString() {
-		return "" + (motionX < 0 ? "-" : "+") + (Math.abs(motionX) > 0.99 ? (int) motionX : "") + "." + formatDouble(motionX, 3).split("\\.")[1]
-			+ "," + (motionY < 0 ? "-" : "+") + (Math.abs(motionY) > 0.99 ? (int) motionY : "") + "." + formatDouble(motionY, 3).split("\\.")[1]
-			+ "," + (motionZ < 0 ? "-" : "+") + (Math.abs(motionZ) > 0.99 ? (int) motionZ : "") + "." + formatDouble(motionZ, 3).split("\\.")[1]
+		int digits = 5;
+		return "" + (motionX < 0 ? "-" : "+") + (Math.abs(motionX) > 0.99 ? (int) motionX : "") + "." + formatDouble(motionX, digits).split("\\.")[1]
+			+ "," + (motionY < 0 ? "-" : "+") + (Math.abs(motionY) > 0.99 ? (int) motionY : "") + "." + formatDouble(motionY, digits).split("\\.")[1]
+			+ "," + (motionZ < 0 ? "-" : "+") + (Math.abs(motionZ) > 0.99 ? (int) motionZ : "") + "." + formatDouble(motionZ, digits).split("\\.")[1]
 			+ "";
 	}
 

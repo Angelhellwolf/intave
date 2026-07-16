@@ -1122,7 +1122,7 @@ public final class EntityTracker extends Module {
     int entityId = optionalId.getAsInt();
     MovementMetadata movement = user.meta().movement();
     InventoryMetadata inventory = user.meta().inventory();
-    if ((movement.pose() == Pose.FALL_FLYING || movement.elytraFlying) && entityId == player.getEntityId()) {
+    if ((movement.pose() == Pose.FALL_FLYING || movement.gliding) && entityId == player.getEntityId()) {
       int power = 1;
       ItemStack firework = null;
       // Choose firework item

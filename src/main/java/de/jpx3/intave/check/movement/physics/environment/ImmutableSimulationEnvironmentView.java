@@ -69,6 +69,11 @@ public final class ImmutableSimulationEnvironmentView implements SimulationEnvir
 	}
 
 	@Override
+	public void setPosition(double x, double y, double z) {
+		throw new UnsupportedOperationException("This environment view is unmodifiable");
+	}
+
+	@Override
 	public void setRotation(float newRotationYaw, float newRotationPitch) {
 		throw new UnsupportedOperationException("This environment view is unmodifiable");
 	}
@@ -375,6 +380,16 @@ public final class ImmutableSimulationEnvironmentView implements SimulationEnvir
 
 	@Override
 	public void setLastSprinting(boolean lastSprinting) {
+		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
+	}
+
+	@Override
+	public boolean isSleeping() {
+		return delegate.isSleeping();
+	}
+
+	@Override
+	public void setSleeping(boolean sleeping) {
 		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
 	}
 

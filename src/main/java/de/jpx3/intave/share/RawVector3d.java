@@ -215,6 +215,13 @@ public class RawVector3d {
     }
   }
 
+  public BlockPosition toBlockPosition() {
+    if (this instanceof BlockPosition) {
+      return (BlockPosition) this;
+    }
+    return new BlockPosition((int) Math.floor(x), (int) Math.floor(y), (int) Math.floor(z));
+  }
+
   public double x() {
     return x;
   }

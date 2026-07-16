@@ -201,6 +201,15 @@ public final class MockSimulationEnvironment implements SimulationEnvironment {
     this.lastSprinting = lastSprinting;
   }
 
+  @Override
+  public boolean isSleeping() {
+    return false;
+  }
+
+  @Override
+  public void setSleeping(boolean sleeping) {
+  }
+
   public void setInWeb(boolean inWeb) {
     this.inWeb = inWeb;
   }
@@ -247,6 +256,13 @@ public final class MockSimulationEnvironment implements SimulationEnvironment {
       yaw = newRotationYaw;
       pitch = newRotationPitch;
     }
+  }
+
+  @Override
+  public void setPosition(double x, double y, double z) {
+    positionX = x;
+    positionY = y;
+    positionZ = z;
   }
 
   @Override

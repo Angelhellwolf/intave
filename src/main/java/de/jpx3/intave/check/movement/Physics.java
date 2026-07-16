@@ -254,7 +254,7 @@ public final class Physics extends Check {
     } else {
       boolean inLava = movementData.inLava();
       boolean inWater = movementData.inWater();
-      if (movementData.elytraFlying && !inWater && !inLava) {
+      if (movementData.gliding && !inWater && !inLava) {
         return Simulators.ELYTRA;
       }
     }
@@ -477,7 +477,7 @@ public final class Physics extends Check {
       && !movementData.inWater()
       && !movementData.collidedWithBoat();
 
-    if (checkVelocity && !movementData.elytraFlying && movementData.ticksPast(EXTERNAL_VELOCITY) < 10 && !movementData.receivedFlyingPacketIn(2)) {
+    if (checkVelocity && !movementData.gliding && movementData.ticksPast(EXTERNAL_VELOCITY) < 10 && !movementData.receivedFlyingPacketIn(2)) {
       boolean actuallyMoved = (Math.abs(predictedOffsetX) > 0.01 || Math.abs(predictedOffsetZ) > 0.01);
 
       boolean noCollisionOnHighVersion = !(protocol.cavesAndCliffsUpdate()
@@ -1044,6 +1044,9 @@ public final class Physics extends Check {
       if (inventory.handActive()) {
         debug += ChatColor.ITALIC + " hnd:" + inventory.handActiveTicks + chatColor;
       }
+      if (movementData.isSleeping()) {
+        debug += ChatColor.ITALIC + " slp" + chatColor;
+      }
       if (velocityDetected) {
         // velocity low tolerance
         debug += ChatColor.ITALIC + " vlt:" + movementData.ticksPast(EXTERNAL_VELOCITY) + chatColor;
@@ -1204,7 +1207,7 @@ public final class Physics extends Check {
       ChatColor chatColor = ChatColor.GRAY;
       String symbol = "";
 
-      double distance1 = simulation.offsetMotion().distance(simulation.actualMotion());
+      double distance1 = movementData.sentOffsetMotion().distance(simulation.offsetMotion());
       if (setback) {
         chatColor = ChatColor.DARK_RED;
         symbol = "!! ";
@@ -1223,7 +1226,7 @@ public final class Physics extends Check {
 //      if (!candidates.isEmpty() && candidates.size() > 1) {
 //        string += " cands:" + candidates.stream().map(Motion::toString).collect(Collectors.joining(","));
 //      }
-      string += " " + formatDouble(distance1, 3);
+      string += " " + formatDouble(distance1, 6);
       user.sendMessage(string);
     }
   }

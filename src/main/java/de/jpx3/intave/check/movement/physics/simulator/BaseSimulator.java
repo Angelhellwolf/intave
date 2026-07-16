@@ -121,8 +121,7 @@ class BaseSimulator extends Simulator {
 
   @Override
   public Simulation simulateTick(
-    User user,
-    Motion motion,
+    User user, Motion motion,
     SimulationEnvironment environment,
     MovementConfiguration configuration
   ) {
@@ -495,12 +494,13 @@ class BaseSimulator extends Simulator {
     environment.aquaticUpdateLavaReset();
 
 //    if (!user.meta().protocol().newBlockEntityIntersectionLogic()) {
-      int blockPositionStartX = floor(entityBoundingBox.minX + 0.001);
-      int blockPositionStartY = floor(entityBoundingBox.minY + 0.001);
-      int blockPositionStartZ = floor(entityBoundingBox.minZ + 0.001);
-      int blockPositionEndX = floor(entityBoundingBox.maxX - 0.001);
-      int blockPositionEndY = floor(entityBoundingBox.maxY - 0.001);
-      int blockPositionEndZ = floor(entityBoundingBox.maxZ - 0.001);
+    double limit = 1.0E-7D;
+    int blockPositionStartX = floor(entityBoundingBox.minX + limit);
+      int blockPositionStartY = floor(entityBoundingBox.minY + limit);
+      int blockPositionStartZ = floor(entityBoundingBox.minZ + limit);
+      int blockPositionEndX = floor(entityBoundingBox.maxX - limit);
+      int blockPositionEndY = floor(entityBoundingBox.maxY - limit);
+      int blockPositionEndZ = floor(entityBoundingBox.maxZ - limit);
 
       Location blockCollisionFrom = new Location(world, positionX, positionY, positionZ);
       for (int x = blockPositionStartX; x <= blockPositionEndX; x++) {
@@ -589,12 +589,12 @@ class BaseSimulator extends Simulator {
     ProtocolMetadata protocol = meta.protocol();
 	  float motionXZMultiplier;
     if (protocol.aquaticUpdate()) {
-      motionXZMultiplier = environment.pose() == Pose.SWIMMING || configuration.isSprinting() ? 0.9f : 0.8f;
+      motionXZMultiplier = /*environment.pose() == Pose.SWIMMING || */configuration.isSprinting() ? 0.9f : 0.8f;
     } else {
       motionXZMultiplier = 0.8f;
     }
     float depthStriderMultiplier = Math.min(3.0f, Enchantments.resolveDepthStriderModifier(player));
-    if (!environment.lastOnGround()) {
+    if (!environment.lastOnGround()) { // wrong?
       depthStriderMultiplier *= 0.5F;
     }
     if (depthStriderMultiplier > 0.0F) {
@@ -698,7 +698,7 @@ class BaseSimulator extends Simulator {
   }
 
   private void performGlobalEntityPush(User user, SimulationEnvironment environment, Motion context, BoundingBox boundingBox) {
-    Collection<Entity> entities = user.meta().connection().tracedEntities(); // .values();
+    Collection<Entity> entities = user.meta().connection().tracedEntities();
     environment.setPushedByEntity(false);
     for (Entity entity : entities) {
       if (

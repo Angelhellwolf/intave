@@ -84,11 +84,9 @@ final class v13Waterflow implements FluidFlow {
         waterFlowTotal.normalize().multiply(0.0045000000000000005D);
       }
 
-      baseMotion.motionX += waterFlowTotal.motionX;
-      baseMotion.motionY += waterFlowTotal.motionY;
-      baseMotion.motionZ += waterFlowTotal.motionZ;
-
-      environment.activeTick(WATERFLOW_PUSH);
+      // add is in-place
+	    baseMotion.add(waterFlowTotal);
+	    environment.activeTick(WATERFLOW_PUSH);
     }
     return inWater;
   }

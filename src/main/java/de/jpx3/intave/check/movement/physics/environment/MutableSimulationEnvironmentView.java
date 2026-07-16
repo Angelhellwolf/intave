@@ -109,6 +109,8 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
   private float stepHeight;
   private boolean postTickMotionCandidatesOverridden;
   private List<Motion> postTickMotionCandidates;
+  private boolean sleepingOverridden;
+  private boolean sleeping;
 
   private final EnumMap<MoveMetric, Integer> activeTrackerOverrides = new EnumMap<>(MoveMetric.class);
   private final EnumMap<MoveMetric, Integer> pastTrackerOverrides = new EnumMap<>(MoveMetric.class);
@@ -163,6 +165,14 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
       newRotationYaw, newRotationPitch,
       hasMovement, hasRotation
     ));
+  }
+
+  @Override
+  public void setPosition(double x, double y, double z) {
+    setLastPosition(positionX(), positionY(), positionZ());
+    setPositionOverride(x, y, z);
+    setBoundingBox(BoundingBox.fromPosition(user(), this, x, y, z));
+    deferredMutations.add(environment -> environment.setPosition(x, y, z));
   }
 
   @Override
@@ -486,6 +496,18 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
   @Override
   public boolean sprintingAllowed() {
     return delegate.sprintingAllowed();
+  }
+
+  @Override
+  public boolean isSleeping() {
+    return sleepingOverridden ? sleeping : delegate.isSleeping();
+  }
+
+  @Override
+  public void setSleeping(boolean sleeping) {
+    sleepingOverridden = true;
+    this.sleeping = sleeping;
+    deferredMutations.add(environment -> environment.setSleeping(sleeping));
   }
 
   @Override

@@ -96,6 +96,7 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 	private final double baseMoveSpeed;
 	private final boolean areEyesInWater;
 	private final boolean clientElytraFlying;
+	private final boolean sleeping;
 	private final EnumMap<MoveMetric, Integer> activeTracker;
 	private final EnumMap<MoveMetric, Integer> pastTracker;
 
@@ -200,6 +201,7 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 		this.onGroundWithRiptide = source.onGroundWithRiptide();
 		this.baseMoveSpeed = source.baseMoveSpeed();
 		this.clientElytraFlying = source.shouldHaveFallFlyingPose();
+		this.sleeping = source.isSleeping();
 		this.postTickMotionCandidates =  new ArrayList<>(source.postTickMotionCandidates());
 		this.activeTracker = new EnumMap<>(MoveMetric.class);
 		this.pastTracker = new EnumMap<>(MoveMetric.class);
@@ -237,6 +239,11 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 		float newRotationYaw, float newRotationPitch,
 		boolean hasMovement, boolean hasRotation
 	) {
+		throw immutableCopyException();
+	}
+
+	@Override
+	public void setPosition(double x, double y, double z) {
 		throw immutableCopyException();
 	}
 
@@ -512,6 +519,16 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 
 	@Override
 	public void setLastSprinting(boolean lastSprinting) {
+		throw immutableCopyException();
+	}
+
+	@Override
+	public boolean isSleeping() {
+		return sleeping;
+	}
+
+	@Override
+	public void setSleeping(boolean sleeping) {
 		throw immutableCopyException();
 	}
 

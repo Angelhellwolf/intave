@@ -32,7 +32,7 @@ public final class PacketReaders {
 
   public static void setup() {
     setup(ABILITIES_OUT, AbilityOutReader::new);
-    setup(ANIMATION, EntityReader::new);
+    setup(ANIMATION, AnimationReader::new);
     setup(ATTACH_ENTITY, AttachEntityReader::new);
     setup(BLOCK_ACTION, BlockActionReader::new);
     setup(BLOCK_CHANGE, SingleBlockChangeReader::new);
@@ -78,7 +78,7 @@ public final class PacketReaders {
     setup(SPAWN_ENTITY_EXPERIENCE_ORB, EntityReader::new);
     setup(UPDATE_ATTRIBUTES, EntityReader::new);
     setup(UPDATE_ENTITY_NBT, EntityReader::new);
-    setup(USE_BED, EntityReader::new);
+    setup(USE_BED, BedUseReader::new);
     setup(WORLD_BORDER, WorldBorderReader::new);
     setup(SET_BORDER_CENTER, WorldBorderReader::new);
     setup(SET_BORDER_SIZE, WorldBorderReader::new);
