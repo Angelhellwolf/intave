@@ -69,6 +69,10 @@ public final class MovementSearchBranch {
 		);
 	}
 
+	public MovementSearchBranch setToOnlyUsableForImplicitFlyingPackets() {
+		return withExplicitTickFinishAllow(false);
+	}
+
 	public MovementSearchBranch withRotation(Rotation rotation) {
 		return modifyAfter(env -> {
 			env = env.mutableView();

@@ -38,18 +38,19 @@ public final class MetadataTracker extends Module {
 			return;
 		}
 		@Nullable BlockPosition sleepingBedPosition = sleepingBedPosition(reader);
-		boolean newGliding = newGlidingStatus(user, reader);
+		@Nullable Boolean newGliding = newGlidingStatus(user, reader);
 
 		user.packetTickFeedback(event, () -> {
 			MovementMetadata movement = user.meta().movement();
 			movement.sleepingBedPosition = sleepingBedPosition;
 			if (sleepingBedPosition != null) {
 				Position newPosition = positionFromBedPosition(sleepingBedPosition);
-//				user.sendMessage("[Intave] You are now sleeping at " + newPosition);
 				movement.setPosition(newPosition);
 				movement.setVerifiedLastPosition(newPosition, "Bed sleep");
 			}
-			movement.gliding = newGliding;
+			if (newGliding != null) {
+				movement.gliding = newGliding;
+			}
 		});
 	}
 
@@ -65,13 +66,13 @@ public final class MetadataTracker extends Module {
 		);
 	}
 
-	private boolean newGlidingStatus(User user, EntityMetadataReader reader) {
+	private Boolean newGlidingStatus(User user, EntityMetadataReader reader) {
 		if (!user.meta().protocol().canUseElytra()) {
 			return false;
 		}
 		Object elytraObject = reader.fetchRaw(0);
 		if (elytraObject == null) {
-			return false;
+			return null;
 		}
 		byte data = (byte) elytraObject;
 		return (data & 1 << 7) != 0;

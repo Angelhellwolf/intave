@@ -34,6 +34,6 @@ public final class RotationBrancher extends MovementSearchBrancher {
 			return;
 		}
 		outputBranches.add(inputBranch);
-		outputBranches.add(inputBranch.withRotation(environment.lastRotation()).withExplicitTickFinishAllow(false));
+		outputBranches.add(inputBranch.withRotation(environment.lastRotation()).setToOnlyUsableForImplicitFlyingPackets());
 	}
 }

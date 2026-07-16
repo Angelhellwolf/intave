@@ -17,7 +17,7 @@ public final class TraceImmutableMovementConfiguration implements MovementConfig
 	private boolean requiredJumpingState;
 	private boolean requiredReducingState;
 	private boolean requiredSprintingState;
-	private boolean requiredHorizontalMotionResetState;
+	private boolean requiredActualMotionOverride;
 
 	public TraceImmutableMovementConfiguration(MovementConfiguration delegate) {
 		this.delegate = delegate;
@@ -56,7 +56,7 @@ public final class TraceImmutableMovementConfiguration implements MovementConfig
 
 	@Override
 	public boolean overrideEndMotionToActualMotion() {
-		requiredHorizontalMotionResetState = true;
+		requiredActualMotionOverride = true;
 		return delegate.overrideEndMotionToActualMotion();
 	}
 
@@ -194,19 +194,19 @@ public final class TraceImmutableMovementConfiguration implements MovementConfig
 		return requiredReducingState;
 	}
 
-	public boolean requiredHorizontalMotionResetState() {
-		return requiredHorizontalMotionResetState;
+	public boolean requiredActualMotionOverride() {
+		return requiredActualMotionOverride;
 	}
 
 	public boolean requiredAnyState() {
-		return requiredJumpingState || requiredReducingState || requiredSprintingState || requiredHorizontalMotionResetState;
+		return requiredJumpingState || requiredReducingState || requiredSprintingState || requiredActualMotionOverride;
 	}
 
 	public void reset() {
 		requiredJumpingState = false;
 		requiredReducingState = false;
 		requiredSprintingState = false;
-		requiredHorizontalMotionResetState = false;
+		requiredActualMotionOverride = false;
 	}
 
 	@Override

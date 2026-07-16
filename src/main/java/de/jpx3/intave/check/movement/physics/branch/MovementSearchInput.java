@@ -70,10 +70,10 @@ public final class MovementSearchInput {
     return tracedAfterTickMovementConfig.requiredSprintingState();
   }
 
-  boolean horizontalMotionResetBranchNecessary() {
+  boolean actualMotionBranchNecessary() {
     if (tracedAfterTickMovementConfig == null) {
       return false;
     }
-    return tracedAfterTickMovementConfig.requiredHorizontalMotionResetState();
+    return tracedAfterTickMovementConfig.requiredActualMotionOverride();
   }
 }

@@ -16,7 +16,8 @@ import de.jpx3.intave.share.Motion;
 
 import java.util.List;
 
-public final class LastPostTickMotionCandidateBrancher extends MovementSearchBrancher {
+// Last Post-Tick Motion
+public final class LPTMCandidateBrancher extends MovementSearchBrancher {
 	@Override
 	public void branch(
 		MovementSearchInput input,
@@ -40,12 +41,11 @@ public final class LastPostTickMotionCandidateBrancher extends MovementSearchBra
 			return;
 		}
 		for (Motion candidate : candidates) {
-			outputBranches.add(
-				inputBranch.modifyBefore(env -> {
-					env.setBaseMotion(candidate);
-					return env;
-				})
-			);
+			MovementSearchBranch branch = inputBranch.modifyBefore(env -> {
+				env.setBaseMotion(candidate);
+				return env;
+			});
+			outputBranches.add(branch);
 		}
 	}
 }

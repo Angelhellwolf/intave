@@ -269,6 +269,7 @@ public final class AbilityMetadata {
         newMap.put(finalKey, new ArrayList<>(modifiers));
         return newMap;
       });
+      clearAttributeCaches();
     }
   }
 

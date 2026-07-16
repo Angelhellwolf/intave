@@ -304,34 +304,36 @@ public final class DefaultSimulationEvaluator implements SimulationEvaluator {
 
       double abuseVertically = Math.max(0, motionYDifference - motionYTolerance);
       boolean allowDeviation = fastMathAffected || movement.inLava() || movement.isInVehicle();
-      double multiplier;
+      double verticalMultiplier;
 
       if (abuseVertically > 0.1 && !allowDeviation) {
-        multiplier = 5000;
+        verticalMultiplier = 5000;
       } else if (abuseVertically > 0.009 && !allowDeviation) {
         abuseVertically = Math.max(abuseVertically, 0.1);
-        multiplier = 500;
+        verticalMultiplier = 500;
       } else {
-        multiplier = 100;
+        verticalMultiplier = 100;
       }
 
       // rethink me
       if (pose == Pose.FALL_FLYING) {
         if (!movement.inWater() && movement.ticksPast(IN_WATER) <= 2 && abs(motionY) < 0.1) {
-          multiplier *= 0.01;
-        } else if (motionY >= 0 && movement.onGround()) {
-          multiplier *= 0.1;
-        } else {
-          multiplier *= 0.25;
+          verticalMultiplier *= 0.01;
+        } else if (movement.isJumping() && (movement.onGround() || movement.lastOnGround()) && motionY < movement.jumpMotion() && motionY >= 0) {
+//          verticalMultiplier *= 0.001;
+          abuseVertically = 0;
         }
         tags.add(EvaluationTag.ELYTRA);
       } else if (movement.ticksPast(ELYTRA_FLYING) < 4 && motionY < movement.jumpMotion()) {
-        multiplier *= 0.1;
-        tags.add(EvaluationTag.ELYTRA);
+        boolean anythingNear = Collision.present(user, movement, movement.boundingBox().grow(1));
+        if (anythingNear) {
+          verticalMultiplier *= 0.1;
+          tags.add(EvaluationTag.ELYTRA);
+        }
       }
 
       if (criticalWeb) {
-//      multiplier *= 40;
+//      verticalMultiplier *= 40;
       }
 
       boolean justInPowderSnow = movement.ticksPast(IN_POWDER_SNOW) < 5;
@@ -350,7 +352,7 @@ public final class DefaultSimulationEvaluator implements SimulationEvaluator {
         }
       }
 
-      verticalViolationIncrease = abuseVertically * multiplier;
+      verticalViolationIncrease = abuseVertically * verticalMultiplier;
       Timings.CHECK_PHYSICS_EVAL_VERTICAL.stop();
     }
 

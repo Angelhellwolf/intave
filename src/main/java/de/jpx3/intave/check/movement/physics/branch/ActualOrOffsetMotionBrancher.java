@@ -11,17 +11,20 @@
 
 package de.jpx3.intave.check.movement.physics.branch;
 
+import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
+
 import java.util.List;
 
-public final class HorizontalResetBrancher extends MovementSearchBrancher {
+public final class ActualOrOffsetMotionBrancher extends MovementSearchBrancher {
 	@Override
 	public void branch(MovementSearchInput input, MovementSearchBranch inputBranch, List<MovementSearchBranch> outputBranches) {
-		if (!input.horizontalMotionResetBranchNecessary()) {
+		if (!input.actualMotionBranchNecessary()) {
 			outputBranches.add(inputBranch);
 			return;
 		}
 
-		outputBranches.add(inputBranch.withMoveConfig(inputBranch.moveConfig().allowOverrideToActualMotion()));
-		outputBranches.add(inputBranch.withMoveConfig(inputBranch.moveConfig().denyOverrideToActualMotion()));
+		MovementConfiguration config = inputBranch.moveConfig();
+		outputBranches.add(inputBranch.withMoveConfig(config.allowOverrideToActualMotion()));
+		outputBranches.add(inputBranch.withMoveConfig(config.denyOverrideToActualMotion()));
 	}
 }

@@ -23,7 +23,7 @@ public final class MovementSearchBranchers {
   public static List<SearchBrancher<MovementSearchInput, MovementSearchBranch>> tick() {
     return Arrays.asList(
       new RotationBrancher(),
-      new LastPostTickMotionCandidateBrancher(),
+      new LPTMCandidateBrancher(),
       new KeypressBrancher(),
       new SprintingBrancher(),
       new UpdateBrancher(),
@@ -37,7 +37,7 @@ public final class MovementSearchBranchers {
     return Arrays.asList(
       new UseLastMovementConfigBrancher(),
       new SprintingBrancher(),
-      new HorizontalResetBrancher(),
+      new ActualOrOffsetMotionBrancher(),
       JumpBrancher.unrestricted()
     );
   }
