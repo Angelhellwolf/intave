@@ -312,14 +312,25 @@ public class Entity {
   }
 
   public void handleEntityPositionSync(User user, PacketContainer packet) {
-    double newPosX;
-    double newPosY;
-    double newPosZ;
     PositionMoveRotation posMoveRot = PositionMoveRotation.firstFrom(packet);
     Position position = posMoveRot.position();
-    newPosX = position.getX();
-    newPosY = position.getY();
-    newPosZ = position.getZ();
+    handleEntityPositionSync(position);
+    if (entityName().toLowerCase().contains("chicken")) {
+      ProtocolMetadata protocol = user.meta().protocol();
+      protocol.lastEntityId = entityId;
+      protocol.lastEntityPosition = position;
+//      System.out.println("A-sync " + (System.currentTimeMillis() % 1000) + " " + entityName() + "/" + entityId + " " + position);
+    }
+  }
+
+  /**
+   * Applies an absolute position sync (e.g. ClientboundEntityPositionSyncPacket), decoupled from packet decoding
+   * so it can be replayed from recorded ground-truth data.
+   */
+  public void handleEntityPositionSync(Position position) {
+    double newPosX = position.getX();
+    double newPosY = position.getY();
+    double newPosZ = position.getZ();
     codec.setBase(position);
     serverPosX = ClientMath.positionLong(newPosX);
     serverPosY = ClientMath.positionLong(newPosY);
@@ -331,12 +342,6 @@ public class Entity {
     } else {
       setPositionAndRotationEntityLiving(newPosX, newPosY, newPosZ, 3);
       pushDebug("TP(Set lerp target) to " + formatDouble(newPosX, 3) + " " + formatDouble(newPosY, 3) + " " + formatDouble(newPosZ, 3));
-    }
-    if (entityName().toLowerCase().contains("chicken")) {
-      ProtocolMetadata protocol = user.meta().protocol();
-      protocol.lastEntityId = entityId;
-      protocol.lastEntityPosition = position;
-//      System.out.println("A-sync " + (System.currentTimeMillis() % 1000) + " " + entityName() + "/" + entityId + " " + position);
     }
   }
 
@@ -402,43 +407,46 @@ public class Entity {
    * @param packet contains information about the entity movement
    */
   public void handleEntityMovement(User user, PacketContainer packet, boolean sync) {
-    double newPosX;
-    double newPosY;
-    double alternativeNewPosY;
-    double newPosZ;
-
+    long dx, dy, dz;
+    double divisor;
     if (POSITION_PROCESSING_1_14) {
       StructureModifier<Short> shorts = packet.getShorts();
-      this.serverPosX += shorts.readSafely(0);
-      this.serverPosY += shorts.readSafely(1);
-      this.serverPosZ += shorts.readSafely(2);
-      newPosX = (double) serverPosX / 4096d;
-      newPosY = (double) serverPosY / 4096d;
-      alternativeNewPosY = newPosY;
-      newPosZ = (double) serverPosZ / 4096d;
+      dx = shorts.readSafely(0);
+      dy = shorts.readSafely(1);
+      dz = shorts.readSafely(2);
+      divisor = 4096d;
     } else if (POSITION_PROCESSING_1_9) {
       StructureModifier<Integer> integers = packet.getIntegers();
-      this.serverPosX += integers.readSafely(1);
-      this.serverPosY += integers.readSafely(2);
-      this.serverPosZ += integers.readSafely(3);
-      newPosX = (double) serverPosX / 4096d;
-      newPosY = (double) serverPosY / 4096d;
-      alternativeNewPosY = newPosY;
-      newPosZ = (double) serverPosZ / 4096d;
+      dx = integers.readSafely(1);
+      dy = integers.readSafely(2);
+      dz = integers.readSafely(3);
+      divisor = 4096d;
     } else {
       StructureModifier<Byte> bytes = packet.getBytes();
-      this.serverPosX += bytes.readSafely(0);
-      this.serverPosY += bytes.readSafely(1);
-      this.serverPosZ += bytes.readSafely(2);
-      newPosX = (double) serverPosX / 32d;
-      newPosY = (double) serverPosY / 32d;
-      alternativeNewPosY = (double) serverPosY / 32d;
-      newPosZ = (double) serverPosZ / 32d;
+      dx = bytes.readSafely(0);
+      dy = bytes.readSafely(1);
+      dz = bytes.readSafely(2);
+      divisor = 32d;
     }
+    applyRelativeMove(dx, dy, dz, divisor);
+  }
+
+  /**
+   * Applies a relative move delta (e.g. Pos/PosRot packets), decoupled from packet decoding so it can be
+   * replayed from recorded ground-truth data. {@code divisor} is the fixed-point scale of the protocol's
+   * move packet (4096 on 1.9+, 32 before that).
+   */
+  public void applyRelativeMove(long dx, long dy, long dz, double divisor) {
+    this.serverPosX += dx;
+    this.serverPosY += dy;
+    this.serverPosZ += dz;
+    double newPosX = (double) serverPosX / divisor;
+    double newPosY = (double) serverPosY / divisor;
+    double newPosZ = (double) serverPosZ / divisor;
 
     // 3 is used to interpolate the entity position in new client ticks
     setPositionAndRotationEntityLiving(newPosX, newPosY, newPosZ, 3);
-    setAlternativeYPosition(alternativeNewPosY);
+    setAlternativeYPosition(newPosY);
     pushDebug("REL(Set lerp target) to " + formatDouble(newPosX, 3) + " " + formatDouble(newPosY, 3) + " " + formatDouble(newPosZ, 3));
   }
 
