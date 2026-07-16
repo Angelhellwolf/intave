@@ -107,6 +107,9 @@ public final class ByteBufStreamCodecs {
       }
     }
     if (material == null) {
+      material = Material.getMaterial("LEGACY_" + name);
+    }
+    if (material == null) {
       throw new IllegalArgumentException("Unknown material: " + name);
     }
     return material;

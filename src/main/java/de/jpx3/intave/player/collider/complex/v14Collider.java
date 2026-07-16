@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.player.collider.complex;
 
 import de.jpx3.intave.block.collision.Collision;
@@ -11,10 +22,10 @@ import static de.jpx3.intave.share.Direction.Axis.*;
 
 public final class v14Collider implements Collider {
   @Override
-  public ColliderResult collide(
+  public SimulationResult collide(
     User user,
     SimulationEnvironment environment,
-    Motion motion,
+    Motion offsetMotion,
     double positionX,
     double positionY,
     double positionZ,
@@ -22,40 +33,49 @@ public final class v14Collider implements Collider {
   ) {
     // webs
     if (inWeb) {
-      motion.motionX *= 0.25D;
-      motion.motionY *= 0.05f;
-      motion.motionZ *= 0.25D;
+      offsetMotion.motionX *= 0.25D;
+      offsetMotion.motionY *= 0.05f;
+      offsetMotion.motionZ *= 0.25D;
     }
+
+    Motion actualMotion = inWeb ? Motion.newEmpty() : offsetMotion.copy();
 
     // "maybeBackOffFromEdge"
     boolean edgeSneak = false;
     if (environment.onGround() && environment.isSneaking()) {
-      edgeSneak = calculateBackOffFromEdge(user, environment, environment.stepHeight(), motion);
+      edgeSneak = calculateBackOffFromEdge(user, environment, environment.stepHeight(), offsetMotion);
     }
 
     // "collide"
-    double initialX = motion.motionX;
-    double initialY = motion.motionY;
-    double initialZ = motion.motionZ;
+    double afterBOFEMotionX = offsetMotion.motionX;
+    double afterBOFEMotionY = offsetMotion.motionY;
+    double afterBOFEMotionZ = offsetMotion.motionZ;
 
     boolean[] stepped = new boolean[1];
-    motion.setTo(motionAfterCollision(user, environment, motion, stepped));
+    offsetMotion.setTo(motionAfterCollision(user, environment, offsetMotion, stepped));
 
-    boolean collidedVertically = initialY != motion.motionY;
-    boolean collidedHorizontally = initialX != motion.motionX || initialZ != motion.motionZ;
-    boolean onGround = initialY != motion.motionY && initialY < 0.0;
-    boolean moveResetX = initialX != motion.motionX;
-    boolean moveResetZ = initialZ != motion.motionZ;
-
-    return new ColliderResult(
-      Motion.copyFrom(motion),
+    boolean collidedVertically = afterBOFEMotionY != offsetMotion.motionY;
+    boolean collidedHorizontally = !epsilonEquals(afterBOFEMotionX, offsetMotion.motionX) || !epsilonEquals(afterBOFEMotionZ, offsetMotion.motionZ);
+    boolean onGround = afterBOFEMotionY != offsetMotion.motionY && afterBOFEMotionY < 0.0;
+    boolean moveResetX = afterBOFEMotionX != offsetMotion.motionX;
+    boolean moveResetZ = afterBOFEMotionZ != offsetMotion.motionZ;
+//    if (moveResetX) {
+//      actualMotion.motionX = 0.0D;
+//    }
+//    if (moveResetZ) {
+//      actualMotion.motionZ = 0.0D;
+//    }
+    return new SimulationResult(
+      actualMotion.copy(),
+      offsetMotion.copy(),
       null,
       onGround,
       collidedHorizontally,
       collidedVertically,
       moveResetX,
       moveResetZ,
-      stepped[0], edgeSneak,
+      stepped[0],
+      edgeSneak,
       environment.stepHeight()
     );
   }
@@ -167,5 +187,9 @@ public final class v14Collider implements Collider {
       motionZ = collision.allowedOffset(Z_AXIS, playerBox, motionZ);
     }
     return new Motion(motionX, motionY, motionZ);
+  }
+
+  private static boolean epsilonEquals(double a, double b) {
+    return Math.abs(b - a) < (double) 0.00001f;
   }
 }

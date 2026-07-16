@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.command.stages;
 
 import de.jpx3.intave.IntaveControl;
@@ -274,34 +285,6 @@ public final class RootStage extends CommandStage {
   }
 
   @SubCommand(
-    selectors = "biasec",
-    usage = "",
-    description = "",
-    permission = "sibyl"
-  )
-  public void outputBiasSuccess(User user) {
-    Player player = user.player();
-
-    long biasPredCalls = Timings.CHECK_PHYSICS_PROC_PRED_BIA.recordedCalls();
-    long biasLKCalls = Timings.CHECK_PHYSICS_PROC_LK_BIA.recordedCalls();
-    long biasTotalCalls = biasPredCalls + biasLKCalls;
-    long iterativeCall = Timings.CHECK_PHYSICS_PROC_ITR.recordedCalls();
-    long successfulCalls = biasTotalCalls - iterativeCall;
-
-    double percentage = ((double) successfulCalls / ((double) biasTotalCalls)) * 100;
-
-    long successfulBias = biasPredCalls - (biasLKCalls + iterativeCall);
-    long successfulLK = biasLKCalls - iterativeCall;
-
-    player.sendMessage(successfulBias + "/" + biasPredCalls + " pred biased, " + successfulLK + "/" + biasLKCalls + " lk biased with " + iterativeCall + " iterative");
-    player.sendMessage(formatDouble(percentage, 2) + "% movements bias simulated");
-    double estimatedTimeIfAllBiasCallsWereIterative = biasTotalCalls * Timings.CHECK_PHYSICS_PROC_ITR.averageCallDurationInNanos();
-    double savedTime = (estimatedTimeIfAllBiasCallsWereIterative - (Timings.CHECK_PHYSICS_PROC_PRED_BIA.totalDurationNanos() + Timings.CHECK_PHYSICS_PROC_LK_BIA.totalDurationNanos())) / 1000000d;
-
-    player.sendMessage("Saved " + (savedTime > 0 ? ChatColor.GREEN : ChatColor.RED) + formatDouble(savedTime, 2) + ChatColor.WHITE + "ms");
-  }
-
-  @SubCommand(
     selectors = "keys",
     usage = "",
     description = "",
@@ -349,23 +332,6 @@ public final class RootStage extends CommandStage {
   public void outputAttackLatencies(User user) {
     Player player = user.player();
     player.sendMessage("The average attack latency is " + formatDouble(LatencyStudy.attackLatency(), 2) + " ticks");
-  }
-
-  @SubCommand(
-    selectors = "iter",
-    usage = "",
-    description = "",
-    permission = "sibyl"
-  )
-  public void outputIterative(User user) {
-    Player player = user.player();
-    player.sendMessage("");
-    player.sendMessage("Iterative Study");
-    player.sendMessage("Average runs: " + formatDouble(IterativeStudy.average(), 2));
-    IterativeStudy.ITERATORS.forEach((s, iterator) -> {
-      player.sendMessage(s + " -> " + iterator.totalRuns() + " with " + (iterator.successRate() * 100d) + "% sucess");
-    });
-    player.sendMessage("");
   }
 
   @SubCommand(

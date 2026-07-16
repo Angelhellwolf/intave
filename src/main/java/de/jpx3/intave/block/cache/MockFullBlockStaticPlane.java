@@ -1,7 +1,19 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.block.cache;
 
 import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.shape.BlockShapes;
+import de.jpx3.intave.share.BlockState;
 import it.unimi.dsi.fastutil.longs.Long2BooleanOpenHashMap;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -51,6 +63,16 @@ public final class MockFullBlockStaticPlane implements BlockCache {
   @Override
   public @NotNull Material typeAt(int posX, int posY, int posZ) {
     return isStone(posX, posY, posZ) ? Material.STONE : Material.AIR;
+  }
+
+  @Override
+  public @NotNull BlockState stateAt(int posX, int posY, int posZ) {
+    if (isStone(posX, posY, posZ)) {
+      BlockShape collisionShape = BlockShapes.cubeAt(posX, posY, posZ);
+      return new BlockState(collisionShape, collisionShape, Material.STONE, 0);
+    } else {
+      return new BlockState(BlockShapes.emptyShape(), BlockShapes.emptyShape(), Material.AIR, 0);
+    }
   }
 
   @Override

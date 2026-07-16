@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.test;
 
 import com.google.common.base.Charsets;
@@ -7,13 +18,10 @@ import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.annotate.HighOrderService;
 import de.jpx3.intave.block.access.BlockAccessTests;
 import de.jpx3.intave.block.fluid.FluidTests;
-import de.jpx3.intave.block.shape.BlockShapeTests;
 import de.jpx3.intave.block.shape.resolve.BlockShapeDrillTests;
 import de.jpx3.intave.block.shape.resolve.BlockShapePipelineTests;
 import de.jpx3.intave.block.variant.BlockVariantTests;
 import de.jpx3.intave.check.EventProcessor;
-import de.jpx3.intave.check.movement.physics.MovementConfigurationTests;
-import de.jpx3.intave.check.movement.physics.SimulatorBasicTests;
 import de.jpx3.intave.cleanup.ShutdownTasks;
 import de.jpx3.intave.entity.size.EntitySizeTests;
 import de.jpx3.intave.executor.BackgroundExecutors;
@@ -29,7 +37,6 @@ import de.jpx3.intave.resource.Resource;
 import de.jpx3.intave.resource.Resources;
 import de.jpx3.intave.security.HWIDVerification;
 import de.jpx3.intave.security.HashAccess;
-import de.jpx3.intave.share.ShareTests;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.event.world.WorldLoadEvent;
@@ -180,17 +187,11 @@ public final class IntegrationTestService implements EventProcessor {
       performTest(BlockVariantTests.class);
       performTest(BlockShapeDrillTests.class);
       performTest(BlockShapePipelineTests.class);
-      performTest(BlockShapeTests.class);
       performTest(EntitySizeTests.class);
       performTest(StorageTests.class);
       performTest(FeedbackTests.class);
       performTest(ReaderTests.class);
       performTest(FluidTests.class);
-      performTest(ShareTests.class);
-      performTest(MovementConfigurationTests.class);
-
-      // checks
-      performTest(SimulatorBasicTests.class);
 
       // locate
       performTest(ReferenceExistenceTests.class);

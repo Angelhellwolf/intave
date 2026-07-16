@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.world.raytrace;
 
 import de.jpx3.intave.check.movement.physics.Pose;
@@ -163,9 +174,9 @@ public final class Raytracing {
 
         RawVector3d interpolatedLookVec = wrappedVectorForRotation(pitch, prevYaw, fastMath);
         RawVector3d lookVector = eyeVector.addVector(
-          interpolatedLookVec.x * blockReachDistance,
-          interpolatedLookVec.y * blockReachDistance,
-          interpolatedLookVec.z * blockReachDistance
+          interpolatedLookVec.x() * blockReachDistance,
+          interpolatedLookVec.y() * blockReachDistance,
+          interpolatedLookVec.z() * blockReachDistance
         );
         BoundingBox hitBox = entityBoundingBox.grow(boundingBoxExpansion, boundingBoxExpansion, boundingBoxExpansion);
         if (alternativeYDifference != 0) {
@@ -226,7 +237,7 @@ public final class Raytracing {
   public static MovingObjectPosition blockShrinkRayTrace(Player player, Location location, Location prevLocation, double blockReachDistance, double eyeHeight, float partialTicks) {
     RawVector3d eyeVector = resolvePositionEyes(location, prevLocation, eyeHeight, partialTicks);
     RawVector3d lookVector = resolveLookVector(location, prevLocation, partialTicks);
-    RawVector3d targetVector = eyeVector.addVector(lookVector.x * blockReachDistance, lookVector.y * blockReachDistance, lookVector.z * blockReachDistance);
+    RawVector3d targetVector = eyeVector.addVector(lookVector.x() * blockReachDistance, lookVector.y() * blockReachDistance, lookVector.z() * blockReachDistance);
     return blockShrinkRayTrace(location.getWorld(), player, eyeVector, targetVector);
   }
 
@@ -254,7 +265,7 @@ public final class Raytracing {
   public static MovingObjectPosition blockRayTrace(Player player, Location location, Location prevLocation, double blockReachDistance, double eyeHeight, float partialTicks) {
     RawVector3d eyeVector = resolvePositionEyes(location, prevLocation, eyeHeight, partialTicks);
     RawVector3d vec4 = resolveLookVector(location, prevLocation, partialTicks);
-    RawVector3d targetVector = eyeVector.addVector(vec4.x * blockReachDistance, vec4.y * blockReachDistance, vec4.z * blockReachDistance);
+    RawVector3d targetVector = eyeVector.addVector(vec4.x() * blockReachDistance, vec4.y() * blockReachDistance, vec4.z() * blockReachDistance);
     return blockRayTrace(location.getWorld(), player, eyeVector, targetVector);
   }
 

@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check.other.protocolscanner;
 
 import com.comphenix.protocol.events.PacketContainer;
@@ -51,7 +62,7 @@ public final class SkinBlinker extends CheckPart<ProtocolScanner> {
     MovementMetadata movementData = user.meta().movement();
     int keyForward = movementData.keyForward;
     int keyStrafe = movementData.keyStrafe;
-    double distanceMoved = Hypot.fast(movementData.motionX(), movementData.motionZ());
+    double distanceMoved = Hypot.fast(movementData.offsetMotionX(), movementData.offsetMotionZ());
     if (movementData.inWeb || movementData.receivedFlyingPacketIn(2)) {
       return;
     }

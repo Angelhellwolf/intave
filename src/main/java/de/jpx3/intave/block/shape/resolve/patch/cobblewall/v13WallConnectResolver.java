@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.block.shape.resolve.patch.cobblewall;
 
 import de.jpx3.intave.block.access.VolatileBlockAccess;
@@ -18,7 +29,7 @@ public class v13WallConnectResolver implements WallConnectResolver {
   public boolean canConnectTo(
     org.bukkit.World world, de.jpx3.intave.share.BlockPosition position, Direction direction) {
     World worldIn = ((CraftWorld) world).getHandle();
-    BlockPosition pos = new BlockPosition(position.x, position.y, position.z);
+    BlockPosition pos = new BlockPosition(position.x(), position.y(), position.z());
     org.bukkit.block.Block bukkitBlock = VolatileBlockAccess.blockAccess(world, position);
     IBlockData data = (IBlockData) BlockVariantNativeAccess.nativeVariantAccess(bukkitBlock);
     Block block = data.getBlock();

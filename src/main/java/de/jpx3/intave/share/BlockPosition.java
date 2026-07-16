@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.share;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
@@ -271,6 +282,17 @@ public final class BlockPosition extends RawVector3d {
     return ((long) this.x & X_MASK) << X_SHIFT
       | ((long) this.y & Y_MASK) << Y_SHIFT
       | ((long) this.z & Z_MASK);
+  }
+
+  public static BlockPosition fromProtocolLib(com.comphenix.protocol.wrappers.BlockPosition blockPosition) {
+    return new BlockPosition(blockPosition.getX(), blockPosition.getY(), blockPosition.getZ());
+  }
+
+  public static BlockPosition fromNative(Object nativeBlockPosition) {
+    if (nativeBlockPosition instanceof com.comphenix.protocol.wrappers.BlockPosition) {
+      return fromProtocolLib((com.comphenix.protocol.wrappers.BlockPosition) nativeBlockPosition);
+    }
+    return fromProtocolLib(com.comphenix.protocol.wrappers.BlockPosition.getConverter().getSpecific(nativeBlockPosition));
   }
 
   /**

@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.module.linker.packet;
 
 import com.comphenix.protocol.PacketType;
@@ -137,10 +148,13 @@ public final class PacketSubscriptionLinker extends Module {
   }
 
   private boolean validParameters(Method method) {
-    return (method.getParameterCount() == 1 && method.getParameterTypes()[0] == PacketEvent.class) ||
-      Arrays.stream(method.getParameterTypes()).allMatch(type -> {
-        return validParameterTypes.stream().anyMatch(aClass -> aClass.isAssignableFrom(type) /*|| type.isAssignableFrom(aClass)*/);
-      });
+	  if (method.getParameterCount() == 1 && method.getParameterTypes()[0] == PacketEvent.class) {
+		  return true;
+	  }
+	  if (Arrays.stream(method.getParameterTypes()).allMatch(type -> validParameterTypes.stream().anyMatch(aClass -> aClass.isAssignableFrom(type) /*|| type.isAssignableFrom(aClass)*/))) {
+		  return true;
+	  }
+	  return false;
   }
 
   private boolean validModifiers(Method method) {
@@ -150,19 +164,25 @@ public final class PacketSubscriptionLinker extends Module {
 
   private void linkSubscription(SubscriptionInstanceProvider<User, ?, PacketEventSubscriber> instanceProvider, Method method) {
     PacketSubscription metadata = method.getAnnotation(PacketSubscription.class);
-    PacketSubscriptionMethodExecutor executor = assembleSubscriptionMethodCaller(instanceProvider.type(), method, metadata.identifier());
     String methodName = method.getName();
     ListenerPriority priority = metadata.priority();
-    PacketType[] packetTypes = translatePacketTypes(metadata.packetsIn(), metadata.packetsOut(), metadata.debug());
     boolean ignoreCancelled = metadata.ignoreCancelled();
-    if (metadata.engine() == Engine.ASYNC_INTERNAL) {
-      performCustomLinkage(instanceProvider, priority, packetTypes, ignoreCancelled, methodName, executor);
-    } else {
-      if (metadata.prioritySlot() == PrioritySlot.INTERNAL) {
-        performInternalLinkage(instanceProvider, priority, packetTypes, ignoreCancelled, methodName, executor);
-      } else {
-        performExternalLinkage(instanceProvider, priority, packetTypes, ignoreCancelled, methodName, executor);
-      }
+
+    switch (metadata.engine()) {
+      case INTERNAL:
+        PacketSubscriptionMethodExecutor executor = assemblePESubscriptionMethodCaller(instanceProvider.type(), method, metadata.engine());
+        PacketType[] packetTypes = translateProtocolLibPacketTypes(metadata.packetsIn(), metadata.packetsOut(), metadata.debug());
+        performCustomLinkage(instanceProvider, priority, packetTypes, ignoreCancelled, methodName, executor);
+        break;
+      case PROTOCOLLIB:
+        executor = assemblePESubscriptionMethodCaller(instanceProvider.type(), method, metadata.engine());
+        packetTypes = translateProtocolLibPacketTypes(metadata.packetsIn(), metadata.packetsOut(), metadata.debug());
+        if (metadata.prioritySlot() == PrioritySlot.INTERNAL) {
+          performInternalProtocolLibLinkage(instanceProvider, priority, packetTypes, ignoreCancelled, methodName, executor);
+        } else {
+          performExternalProtocolLibLinkage(instanceProvider, priority, packetTypes, ignoreCancelled, methodName, executor);
+        }
+        break;
     }
   }
 
@@ -175,7 +195,7 @@ public final class PacketSubscriptionLinker extends Module {
     }
   }
 
-  private PacketType[] translatePacketTypes(
+  private PacketType[] translateProtocolLibPacketTypes(
     PacketId.Client[] clientPackets,
     PacketId.Server[] serverPackets,
     boolean debug
@@ -310,10 +330,10 @@ public final class PacketSubscriptionLinker extends Module {
   private static final ThreadLocal<Map<Integer, Object[]>> argumentCache = ThreadLocal.withInitial(HashMap::new);
   private static final ThreadLocal<Map<Integer, Boolean>> argumentLocks = ThreadLocal.withInitial(HashMap::new);
 
-  private PacketSubscriptionMethodExecutor assembleSubscriptionMethodCaller(
+  private PacketSubscriptionMethodExecutor assemblePESubscriptionMethodCaller(
     Class<? extends PacketEventSubscriber> targetClass,
     Method calledMethod,
-    String identifier
+    Engine engine
   ) {
     if (calledMethod.getParameterCount() == 1 && calledMethod.getParameterTypes()[0] == PacketEvent.class) {
       String packetSubscriberSuperClassPath = canonicalRepresentation(className(PacketEventSubscriber.class));
@@ -486,7 +506,7 @@ public final class PacketSubscriptionLinker extends Module {
     }
   }
 
-  private void performInternalLinkage(
+  private void performInternalProtocolLibLinkage(
     SubscriptionInstanceProvider<User, ?, PacketEventSubscriber> subscriber,
     ListenerPriority priority, PacketType[] translatePacketTypes,
     boolean ignoreCancelled,
@@ -498,7 +518,7 @@ public final class PacketSubscriptionLinker extends Module {
     }
   }
 
-  private void performExternalLinkage(
+  private void performExternalProtocolLibLinkage(
     SubscriptionInstanceProvider<User, ?, PacketEventSubscriber> subscriber,
     ListenerPriority priority, PacketType[] translatePacketTypes,
     boolean ignoreCancelled,

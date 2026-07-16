@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.block.shape;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
@@ -164,6 +175,16 @@ final class ArrayBlockShape extends MemoryTraced implements BlockShape {
   @Override
   public boolean isCubic() {
     return contents.length == 1 && contents[0].isCubic();
+  }
+
+  @Override
+  public boolean strictlyInside(double positionX, double positionY, double positionZ) {
+    for (BlockShape content : contents) {
+      if (content.strictlyInside(positionX, positionY, positionZ)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override

@@ -1,6 +1,16 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.share;
 
-import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.math.Hypot;
@@ -61,6 +71,18 @@ public final class Motion {
 
 	public double motionZ() {
 		return motionZ;
+	}
+
+	public Motion copiedOverrideIfNotNaN(
+		double newMotionX,
+		double newMotionY,
+		double newMotionZ
+	) {
+		return new Motion(
+			Double.isNaN(newMotionX) ? this.motionX : newMotionX,
+			Double.isNaN(newMotionY) ? this.motionY : newMotionY,
+			Double.isNaN(newMotionZ) ? this.motionZ : newMotionZ
+		);
 	}
 
 	public Motion multiply(double factor) {
@@ -153,10 +175,6 @@ public final class Motion {
 		setTo(motion.motionX, motion.motionY, motion.motionZ);
 	}
 
-	public void setToBaseMotionFrom(SimulationEnvironment data) {
-		setTo(data.baseMotionX(), data.baseMotionY(), data.baseMotionZ());
-	}
-
 	public double length() {
 		return hypot3d(motionX, motionY, motionZ);
 	}
@@ -186,9 +204,22 @@ public final class Motion {
 		if (this == obj) return true;
 		if (obj == null || getClass() != obj.getClass()) return false;
 		Motion other = (Motion) obj;
-		return Double.compare(other.motionX, motionX) == 0 &&
-			Double.compare(other.motionY, motionY) == 0 &&
-			Double.compare(other.motionZ, motionZ) == 0;
+		return Math.abs(motionX - other.motionX) < 1E-10 &&
+			Math.abs(motionY - other.motionY) < 1E-10 &&
+			Math.abs(motionZ - other.motionZ) < 1E-10;
+	}
+
+	public boolean almostIdentical(Motion motion) {
+		return Math.abs(motionX - motion.motionX) < 1E-5 &&
+			Math.abs(motionY - motion.motionY) < 1E-5 &&
+			Math.abs(motionZ - motion.motionZ) < 1E-5;
+	}
+
+	public long almostIdenticalHash() {
+		long x = (long) (motionX * 10000);
+		long y = (long) (motionY * 10000);
+		long z = (long) (motionZ * 10000);
+		return x ^ y ^ z;
 	}
 
 	@Override
@@ -202,6 +233,14 @@ public final class Motion {
 	@Override
 	public String toString() {
 		return "(" + formatDouble(motionX, 4) + ", " + formatDouble(motionY, 4) + ", " + formatDouble(motionZ, 4) + ")";
+	}
+
+	public String shortString() {
+		int digits = 5;
+		return "" + (motionX < 0 ? "-" : "+") + (Math.abs(motionX) > 0.99 ? (int) motionX : "") + "." + formatDouble(motionX, digits).split("\\.")[1]
+			+ "," + (motionY < 0 ? "-" : "+") + (Math.abs(motionY) > 0.99 ? (int) motionY : "") + "." + formatDouble(motionY, digits).split("\\.")[1]
+			+ "," + (motionZ < 0 ? "-" : "+") + (Math.abs(motionZ) > 0.99 ? (int) motionZ : "") + "." + formatDouble(motionZ, digits).split("\\.")[1]
+			+ "";
 	}
 
 	public boolean isZero() {

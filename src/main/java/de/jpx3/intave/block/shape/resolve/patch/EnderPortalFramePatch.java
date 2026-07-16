@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.block.shape.resolve.patch;
 
 import de.jpx3.intave.block.shape.BlockShape;
@@ -36,7 +47,7 @@ final class EnderPortalFramePatch extends BlockShapePatch {
     boundingBoxes.add(baseShape);
     if (eye) {
       User user = UserRepository.userOf(player);
-      if (user.meta().protocol().waterUpdate()) {
+      if (user.meta().protocol().aquaticUpdate()) {
         boundingBoxes.add(eye13);
       } else {
         boundingBoxes.add(eye8);

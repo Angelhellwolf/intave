@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.block.shape.resolve.patch;
 
 import com.google.common.collect.Lists;
@@ -40,7 +51,7 @@ final class CauldronBlockPatch extends BlockShapePatch {
   @Override
   protected BlockShape collisionPatch(World world, Player player, int posX, int posY, int posZ, Material type, int blockState, BlockShape shape) {
     User user = UserRepository.userOf(player);
-    if (user.meta().protocol().waterUpdate()) {
+    if (user.meta().protocol().aquaticUpdate()) {
       if (SERVER_IS_1_13) {
         return shape;
       } else {

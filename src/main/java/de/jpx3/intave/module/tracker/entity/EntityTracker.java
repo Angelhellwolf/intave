@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.module.tracker.entity;
 
 import com.comphenix.protocol.PacketType;
@@ -533,6 +544,7 @@ public final class EntityTracker extends Module {
         movement.positionZ = movement.verifiedLastPositionZ = movement.lastPositionZ = originalZ;
         movement.verifiedPositionOrigin = "Riding pos sync (1.8)";
         movement.setBaseMotion(Motion.newEmpty());
+        movement.clearPostTickMotionCandidates();
       }
     }
   }
@@ -1110,7 +1122,7 @@ public final class EntityTracker extends Module {
     int entityId = optionalId.getAsInt();
     MovementMetadata movement = user.meta().movement();
     InventoryMetadata inventory = user.meta().inventory();
-    if ((movement.pose() == Pose.FALL_FLYING || movement.elytraFlying) && entityId == player.getEntityId()) {
+    if ((movement.pose() == Pose.FALL_FLYING || movement.gliding) && entityId == player.getEntityId()) {
       int power = 1;
       ItemStack firework = null;
       // Choose firework item

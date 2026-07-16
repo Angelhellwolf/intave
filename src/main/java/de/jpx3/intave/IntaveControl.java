@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave;
 
 import de.jpx3.intave.module.nayoro.OperationalMode;
@@ -21,7 +32,6 @@ public final class IntaveControl {
   public static final boolean DEBUG_INTERACTION_DISCREET = true;
   public static final boolean REMOVE_PLACED_BLOCKS_WITH_DELAY = false;
   public static final List<String> INTERACTION_DEBUG_NAMES = Collections.emptyList();
-  public static final boolean DEBUG_STUCK_REVIVAL = false;
   public static final boolean LATENCY_PING_AS_XP_LEVEL = false;
   public static boolean DEBUG_MOVEMENT_IGNORE = false; // if SG
   public static final boolean DEBUG_MOUNTING = false;
@@ -32,12 +42,11 @@ public final class IntaveControl {
   public static final boolean DEBUG_TELEPORT_CAUSE_AND_CAUSER = false;
   public static final boolean DEBUG_TELEPORT_PACKET_STACKTRACE = false;
   public static final boolean TELEPORT_FAR_AWAY_ON_Q_PRESS = false;
+  public static final boolean GIVE_VELOCITY_ON_Q_PRESS = false;
   public static final boolean DEBUG_INTAVE_TELEPORT_EVENT_CANCELS = false;
   public static final boolean DISABLE_BLOCK_CACHING_ENTIRELY = false;
   public static final boolean BLOCK_CACHE_DEBUG = false;
   public static final boolean IGNORE_CHUNK_PACKETS = false;
-  public static final boolean USE_MINING_STRATEGIES = false;
-  public static final boolean DISABLE_AUTOCLICKER_CHECK = true;
   public static final boolean RESET_HURT_TIME_ON_JOIN = true;
   public static final boolean IGNORE_CACHE_REFRESH_ON_SIMULATION_FAULT = false;
   public static final boolean SIBYL_DEBUG = false;
@@ -55,7 +64,6 @@ public final class IntaveControl {
   public static final boolean DEBUG_CMS = false;
   public static final boolean USE_DEBUG_LOCATE_RESOURCE = false;
   public static final boolean USE_DEBUG_TRUSTFACTOR_RESOURCE = false;
-  public static final boolean USE_DEBUG_SCRIPT_RESOURCES = false;
   public static final boolean DEBUG_OUTPUT_FOR_TESTS = false;
   public static final boolean DEBUG_VARIANT_COMPILATION = false;
   public static final boolean DEBUG_ENTITY_TRACKING = false;
@@ -63,11 +71,9 @@ public final class IntaveControl {
   public static final boolean DEBUG_MOVEMENT_BLOCK_FALLEN_UPON = false; // spams on testing
   public static final boolean GIVE_RIPTIDE_V_TRIDENT_ON_JOIN = false;
   public static final boolean DEBUG_FEEDBACK_PACKETS = false;
-  public static final boolean DEBUG_AMOUNT_FEEDBACK_XP = false;
   public static final boolean DEBUG_ITEM_USAGE = false;
   public static final boolean DEBUG_VELOCITY_RECEIVE = false;
   public static final boolean DEBUG_PLACE_AND_BREAK_PERMISSIONS = false;
-  public static final boolean DEBUG_SERVER_VERSION = false;
   public static final boolean CLOUD_LOCALHOST_MASTER_SHARD = !PRODUCTION && !GOMME;
   public static final boolean REPLACE_JOAP_SETBACK_WITH_CM = true;
   public static final boolean DISALLOW_ALL_BLOCK_PLACEMENTS = false;
@@ -77,6 +83,7 @@ public final class IntaveControl {
   public static final boolean AUTHENTICATION_DEBUG_MODE = AUTHTEST;
   public static final boolean CLIENT_KEEP_ALIVE_NETTY_CHECK = false;
   public static final boolean NOTIFY_MISSING_PACKET_FLUSHES = false;
+  public static final boolean FIRST_TICK_MUST_BE_FULLY_SIMULATED = false;
 
   public static final OperationalMode SAMPLE_OPERATIONAL_MODE = GOMME ? /*GOMME_UPLOAD*/CLOUD_STORAGE : (PRODUCTION ? CLOUD_STORAGE : LOCAL_STORAGE);
 

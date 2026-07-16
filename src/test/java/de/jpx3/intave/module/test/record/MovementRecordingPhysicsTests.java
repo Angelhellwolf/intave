@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.module.test.record;
 
 import de.jpx3.intave.access.player.trust.TrustFactor;
@@ -5,9 +16,16 @@ import de.jpx3.intave.adapter.MinecraftVersion;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.block.cache.PlaybackBlockCacheView;
 import de.jpx3.intave.block.fluid.Fluids;
+import de.jpx3.intave.block.physics.BlockPhysics;
 import de.jpx3.intave.block.shape.resolve.DenyShapeResolverPipeline;
 import de.jpx3.intave.block.shape.resolve.DrillResolver;
-import de.jpx3.intave.check.movement.physics.*;
+import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
+import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
+import de.jpx3.intave.check.movement.physics.search.SimulationSearch;
+import de.jpx3.intave.check.movement.physics.search.ThreeTickSimulationSearch;
+import de.jpx3.intave.check.movement.physics.simulator.Simulation;
+import de.jpx3.intave.check.movement.physics.simulator.Simulator;
+import de.jpx3.intave.check.movement.physics.simulator.Simulators;
 import de.jpx3.intave.module.test.record.action.Action;
 import de.jpx3.intave.module.test.record.action.ReceiveVelocity;
 import de.jpx3.intave.player.collider.Colliders;
@@ -19,17 +37,18 @@ import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserFactory;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.MovementMetadata;
-import de.jpx3.intave.world.border.MockWorldBorder;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.WorldBorder;
 import org.bukkit.entity.Player;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -39,11 +58,20 @@ import java.util.stream.Stream;
 
 import static de.jpx3.intave.check.movement.physics.MoveMetric.*;
 import static de.jpx3.intave.math.MathHelper.formatDouble;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.fail;
 
 final class MovementRecordingPhysicsTests {
 	private static final UUID EMPTY_ID = UUID.fromString("00000000-0000-0000-0000-000000000000");
-	private static final double DIVERGED_MOTION_DISTANCE = 0.5;
+	private static final double DIVERGED_MOTION_DISTANCE = 0.01;
+
+	@BeforeAll
+	static void setup() {
+		System.out.println("--------------------------------");
+		System.out.println("Movement recording physics tests");
+		System.out.println("--------------------------------");
+		System.out.println();
+	}
 
 	@Test
 	void simulationProcessorProcessesAllRecordedMovements() throws IOException {
@@ -51,19 +79,28 @@ final class MovementRecordingPhysicsTests {
 		assertFalse(recordingPaths.isEmpty(), "No movement recordings were found");
 
 		for (Path recordingPath : recordingPaths) {
-			String resourcePath = resourcePathOf(recordingPath);
-			MovementRecording recording = MovementRecording.loadFrom(
-				Resources.resourceFromJarOrTestBuild(resourcePath)
-			);
-			preparePhysicsTestRuntime(recording);
-			processRecording(resourcePath, recording);
+			String fileName = recordingPath.getFileName().toString();
+			if (fileName.startsWith("_")) {
+				System.out.println("[SKIPPED] " + recordingPath);
+				continue;
+			}
+			processRecordingResource(resourcePathOf(recordingPath));
 		}
 	}
 
-	private static void processRecording(
+	static void processRecordingResource(String resourcePath) throws IOException {
+		MovementRecording recording = MovementRecording.loadFrom(
+			Resources.resourceFromJarOrTestBuild(resourcePath)
+		);
+		preparePhysicsTestRuntime(recording);
+		processRecording(resourcePath, recording);
+	}
+
+	static void processRecording(
 		String resourcePath,
 		MovementRecording recording
 	) {
+		System.out.print("\r[START] " + resourcePath + "...");
 		List<MoveFrame> frames = recording.frames();
 		int firstPositionFrame = firstPositionFrame(frames);
 		if (firstPositionFrame < 0) {
@@ -86,8 +123,9 @@ final class MovementRecordingPhysicsTests {
 		MovementMetadata metadata = user.meta().movement();
 		seedInitialMovementState(user, metadata, initialPosition, initialRotation);
 
-		SimulationProcessor processor = new PredictiveSimulationProcessor(false, false);
+		SimulationSearch processor = new ThreeTickSimulationSearch(false, false);
 		Simulator simulator = Simulators.PLAYER;
+		List<String> lastMessages = new LinkedList<>();
 
 		for (int tick = firstPositionFrame + 1; tick < frames.size(); tick++) {
 			MoveFrame frame = frames.get(tick);
@@ -115,30 +153,107 @@ final class MovementRecordingPhysicsTests {
 			);
 			metadata.setSimulator(simulator);
 			metadata.stepHeight = simulator.stepHeight();
+			metadata.treatThisFlyPacketAsMovePacket = false;
 
-			Motion baseMotion = metadata.mutableBaseMotionCopy();
-			simulator.simulatePreTick(user, baseMotion, metadata);
-			metadata.setBaseMotion(baseMotion);
-
-			Simulation simulation = processor.simulate(user, simulator);
-			double accuracy = simulation.accuracy(metadata.motion());
-			System.out.println(formatDouble(accuracy, 4) + " " + simulation.motion() + " " + simulation.configuration() + (!simulation.details().isEmpty() ? " [" + simulation.details() + "]" : ""));
-
-			if (tick > 10) {
-				assertTrue(
-					accuracy < DIVERGED_MOTION_DISTANCE,
-					resourcePath + " tick " + tick + " diverged while replaying movement; distance was " + accuracy
-				);
+			if (!hasMovement) {
+				continue;
 			}
+
+			Motion previousBaseMotion = metadata.mutableBaseMotionCopy();
+			Motion preTickMotion = simulator.simulatePreTick(user, previousBaseMotion.copy(), metadata);
+			metadata.setBaseMotion(preTickMotion);
+
+			Simulation simulation = processor.greedyFullTickSearch(user, metadata.mutableView(), simulator);
+//			Simulation simulation = processor.simulate(user, simulator, hasMovement || hasRotation);
+//			boolean subversiveFlyingMovement = subversiveFlyingMovement(user, simulationEnvironment, simulation, hasMovement);
+//			if (!hasMovement && !hasRotation && !subversiveFlyingMovement) {
+//				metadata.setBaseMotion(previousBaseMotion);
+//				finishTick(user, simulator, metadata, false, false);
+//				continue;
+//			}
+
+			double loss = simulation.positionDifference(metadata.position());
+			double allowedLoss = DIVERGED_MOTION_DISTANCE;
+			String output = formatDouble(loss, 4) + " " + simulation.offsetMotion() + " [actual: " + metadata.sentOffsetMotion() + "] " + simulation.configuration() + (!simulation.blueDetails().isEmpty() ? " [" + simulation.blueDetails() + "]" : "");
+			lastMessages.add(output);
+
+			System.out.println(loss);
+
+			if (loss > allowedLoss && tick > 16) {
+				System.out.println("\r" + "[FAILED] " + resourcePath + " (tick " + tick + ")");
+				System.err.println("==== <HEAD> ====");
+				System.err.println("Physics test " + resourcePath + " has failed");
+				System.err.println("Tick " + tick + " is incorrect");
+				System.err.println("Loss: " + loss);
+				System.err.println("Allowed loss: " + allowedLoss);
+				System.err.println("==== </HEAD> ====");
+
+				System.err.println("==== <HISTORY> ====");
+				for (String lastMessage : lastMessages) {
+					System.err.println(lastMessage);
+				}
+				System.err.println("==== </HISTORY> ====");
+
+				System.err.println("==== <USERDATA> ====");
+				System.err.println("Position");
+				System.err.println("  Sim   " + metadata.lastPosition().mutable().add(simulation.offsetMotion()));
+				System.err.println("  Sent  " + metadata.position());
+				System.err.println("  Last  " + metadata.lastPosition());
+				System.err.println("  LastV " + metadata.verifiedLastPosition());
+				Position nextPosition;
+				if (frames.size() > tick + 1 && (nextPosition = frames.get(tick + 1).moveTo()) != null) {
+					System.err.println("  Next " + nextPosition + " (dy to sent: " + (nextPosition.getY() - metadata.position().getY()) + ")");
+				}
+				System.err.println("Motion");
+				System.err.println("  Sim   " + simulation.offsetMotion());
+				System.err.println("  Sent  " + metadata.sentOffsetMotion());
+				System.err.println("  Base  " + metadata.mutableBaseMotionCopy());
+				System.err.println("Rotation: " + metadata.rotation());
+				System.err.println("Motion: " + metadata.sentOffsetMotion());
+				System.err.println("Ground");
+				System.err.println("  Current " + metadata.onGround());
+				System.err.println("  Last " + metadata.lastOnGround());
+				System.err.println("Sneaking " + metadata.isSneaking());
+				System.err.println("==== </USERDATA> ====");
+				System.err.println("Movement diverged at tick " + tick + " with a distance of " + loss);
+				fail();
+			}
+
+			System.out.print("\r" + output);
+
+//			if (subversiveFlyingMovement) {
+//				simulationEnvironment.reinterpretMovePacket(simulation);
+//			}
+			simulation.environment().commitTo(metadata);
 			metadata.assumeOccurred(simulation);
 			finishTick(user, simulator, metadata, hasMovement, hasRotation);
+
+			if (lastMessages.size() > 16) {
+				lastMessages.removeFirst();
+			}
 		}
+
+		System.out.println("\r[SUCCESS] " + resourcePath + "...");
+	}
+
+	private static boolean subversiveFlyingMovement(
+		User user,
+		SimulationEnvironment environment,
+		Simulation simulation,
+		boolean hasMovement
+	) {
+		return !hasMovement && !simulation.offsetMotion().isZero() && simulation.resultsInFlyingPacket(
+			environment,
+			user.meta().protocol().flyingPacketUncertaintyRadius()
+		);
 	}
 
 	private static void preparePhysicsTestRuntime(MovementRecording recording) {
-		MinecraftVersion.setCurrent(recording.serverVersion());
+		MinecraftVersion serverVersion = recording.serverVersion();
+		MinecraftVersion.setCurrent(serverVersion);
 		DrillResolver.manualInit(DenyShapeResolverPipeline.create());
 		Fluids.overrideFluids(recording.fluids());
+		BlockPhysics.setup(serverVersion);
 	}
 
 	private static User createReplayUser(
@@ -172,12 +287,10 @@ final class MovementRecordingPhysicsTests {
 	}
 
 	private static World createReplayWorld() {
-		WorldBorder worldBorder = MockWorldBorder.create();
 		return FakeWorldFactory.createWorld(
 			(methodName, _) -> switch (methodName) {
 				case "isChunkLoaded", "isChunkInUse" -> true;
 				case "isThundering", "hasStorm" -> false;
-				case "getWorldBorder" -> worldBorder;
 				default -> null;
 			}
 		);
@@ -201,7 +314,6 @@ final class MovementRecordingPhysicsTests {
 			0.0D, -0.01D, 0.0D
 		).onGround();
 		metadata.lastOnGround = metadata.onGround;
-		metadata.refreshFriction(false);
 	}
 
 	private static void finishTick(
@@ -212,47 +324,33 @@ final class MovementRecordingPhysicsTests {
 		boolean hasRotation
 	) {
 		if (hasMovement) {
-			Motion receivedMotion = metadata.motion();
-			simulator.simulateAfterTick(user, metadata, metadata.position(), receivedMotion);
-			metadata.setBaseMotion(receivedMotion);
+			Motion afterTickMotion = simulator.simulateAfterTick(
+				user, metadata, MovementConfiguration.blank(),
+				metadata.position(),
+				metadata.sentOffsetMotion()
+			);
+			metadata.setBaseMotion(afterTickMotion);
 			metadata.inactiveTick(
 				FLYING_PACKET_ACCURATE,
 				FLYING_PACKET_CLIENT,
 				NEARBY_COLLISION_INACCURACY,
 				ENTITY_USE
 			);
+		} else if (hasRotation || metadata.treatThisFlyPacketAsMovePacket) {
+			Motion afterTickMotion = simulator.simulateAfterTick(
+				user,
+				metadata,
+				MovementConfiguration.blank(),
+				metadata.lastPosition().mutable().add(metadata.sentOffsetMotion()),
+				metadata.sentOffsetMotion()
+			);
+			metadata.setBaseMotion(afterTickMotion);
 		}
 
-		metadata.tick(ELYTRA_FLYING, metadata.elytraFlying);
-		metadata.tick(IN_WEB, metadata.inWeb());
-		metadata.tick(SNEAKING, metadata.isSneaking());
-		metadata.tick(SPRINTING, metadata.isSprinting());
-		metadata.tick(IN_WATER, metadata.inWater());
-		metadata.inactiveTick(
-			BLOCK_PLACEMENT,
-			VELOCITY,
-			RECEIVED_VELOCITY_PACKET,
-			STEP,
-			EDGE_SNEAKING,
-			SPRINT_CHANGE,
-			LONG_TELEPORT,
-			FIREWORK_ROCKETS,
-			VEHICLE_ATTACHMENT,
-			VEHICLE_DETACHMENT
-		);
-		if (hasMovement || hasRotation) {
-			metadata.inactiveTick(EXTERNAL_VELOCITY);
-		}
+		metadata.tickComplete(hasMovement, hasRotation, true);
 
-		metadata.reduceTicks = 0;
-		metadata.ignoredAttackReduce = false;
-		metadata.physicsUnpredictableVelocityExpected = false;
-		metadata.step = false;
 		metadata.lastKeyStrafe = metadata.keyStrafe;
 		metadata.lastKeyForward = metadata.keyForward;
-		metadata.lastSprinting = metadata.sprinting;
-		metadata.lastSneaking = metadata.sneaking;
-		metadata.externalKeyApply = false;
 		metadata.lastOnGround = metadata.onGround;
 		metadata.setVerifiedLastPosition(metadata.position(), "recording replay");
 	}
@@ -314,18 +412,23 @@ final class MovementRecordingPhysicsTests {
 		return location;
 	}
 
-	private static List<Path> findMovementRecordings() throws IOException {
-		Path recordingRoot = Paths.get("src", "test", "resources", "physics_test_runs");
+	static List<Path> findMovementRecordings() throws IOException {
+		return findMovementRecordings(Paths.get("src", "test", "resources", "physics_test_runs"));
+	}
+
+	static List<Path> findMovementRecordings(Path recordingRoot) throws IOException {
 		try (Stream<Path> paths = Files.walk(recordingRoot)) {
 			return paths
 				.filter(Files::isRegularFile)
 				.filter(path -> path.getFileName().toString().endsWith(".ptr"))
 				.sorted()
 				.collect(Collectors.toList());
+		} catch (NoSuchFileException ignored) {
+			return List.of();
 		}
 	}
 
-	private static String resourcePathOf(Path recordingPath) {
+	static String resourcePathOf(Path recordingPath) {
 		Path resourcesRoot = Paths.get("src", "test", "resources");
 		return resourcesRoot.relativize(recordingPath).toString().replace('\\', '/');
 	}

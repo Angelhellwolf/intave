@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.share;
 
 import de.jpx3.intave.block.shape.BlockRaytrace;
@@ -395,6 +406,13 @@ public final class BoundingBox extends MemoryTraced implements BlockShape {
     }
   }
 
+  @Override
+  public boolean strictlyInside(double positionX, double positionY, double positionZ) {
+    return positionX > minX && positionX < maxX &&
+      positionY > minY && positionY < maxY &&
+      positionZ > minZ && positionZ < maxZ;
+  }
+
   /**
    * Returns whether the given bounding box intersects with this one. Args: axisAlignedBB
    */
@@ -763,7 +781,11 @@ public final class BoundingBox extends MemoryTraced implements BlockShape {
   }
 
   public BoundingBox copy() {
-    return new BoundingBox(minX, minY, minZ, maxX, maxY, maxZ);
+    BoundingBox boundingBox = new BoundingBox(minX, minY, minZ, maxX, maxY, maxZ);
+    if (originBox) {
+      boundingBox.makeOriginBox();
+    }
+    return boundingBox;
   }
 
   @Override

@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.user.meta;
 
 import de.jpx3.intave.adapter.MinecraftVersion;
@@ -122,7 +133,7 @@ public final class ProtocolMetadata {
 
   private static final boolean SERVER_DROPPED_FLYING_PACKETS = MinecraftVersions.VER1_9_0.atOrAbove();
 
-  public boolean flyingPacketsAreSent() {
+  public boolean emptyFlyingPacketsAreExplicitlySent() {
     // flying packets are guaranteed in 1.8 and below, removed in 1.9
     // but if the server is 1.9+, via version/backwards will drop them even for 1.8 clients
     return protocolVersion <= VER_1_8 && !SERVER_DROPPED_FLYING_PACKETS;
@@ -192,6 +203,10 @@ public final class ProtocolMetadata {
     return protocolVersion >= VER_1_17 && protocolVersion <= VER_1_21_5;
   }
 
+  public boolean maskedMotionPossible() {
+    return protocolVersion >= VER_1_14 && protocolVersion <= VER_1_17;
+  }
+
   public boolean beeUpdate() {
     return protocolVersion >= VER_1_15;
   }
@@ -200,7 +215,7 @@ public final class ProtocolMetadata {
     return protocolVersion <= VER_1_11_1;
   }
 
-  public boolean waterUpdate() {
+  public boolean aquaticUpdate() {
     return protocolVersion >= VER_1_13;
   }
 

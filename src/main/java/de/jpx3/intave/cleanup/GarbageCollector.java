@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.cleanup;
 
 import com.google.common.collect.Lists;
@@ -8,6 +19,7 @@ import java.lang.ref.WeakReference;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 public final class GarbageCollector {
@@ -27,6 +39,11 @@ public final class GarbageCollector {
 
   public static <K, V> Map<K, V> watch(Map<K, V> initialMap) {
     boundMaps.add(new WeakReference<>(initialMap));
+    return initialMap;
+  }
+
+  public static <K, V> AtomicReference<Map<K, V>> watch(AtomicReference<Map<K, V>> initialMap) {
+    boundMaps.add(new WeakReference<>(initialMap.get()));
     return initialMap;
   }
 
