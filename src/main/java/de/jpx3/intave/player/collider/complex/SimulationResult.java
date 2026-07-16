@@ -286,8 +286,8 @@ public final class SimulationResult {
 		return INVALID_SIMULATION;
 	}
 
-	public static SimulationResult untouched(Motion offsetMotion) {
-		return new SimulationResult(null, offsetMotion, null, false, false, false, false, false, false, false, 0);
+	public static SimulationResult untouched(Motion motion) {
+		return new SimulationResult(motion, motion, null, false, false, false, false, false, false, false, 0);
 	}
 
 	public SimulationResult copy() {

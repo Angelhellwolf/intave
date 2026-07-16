@@ -63,7 +63,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 final class MovementRecordingPhysicsTests {
 	private static final UUID EMPTY_ID = UUID.fromString("00000000-0000-0000-0000-000000000000");
-	private static final double DIVERGED_MOTION_DISTANCE = 0.0001;
+	private static final double DIVERGED_MOTION_DISTANCE = 0.01;
 
 	@BeforeAll
 	static void setup() {

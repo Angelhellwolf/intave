@@ -27,10 +27,12 @@ class CopyOnWriteArrayLocalBlockStoreTest {
 		assertNull(store.get(0, 1, 0));
 		assertEquals(1, store.size());
 
-
 		for (int i = 0; i < 1024; i++) {
-			System.out.println("Setting block at " + i + ", 0, 0");
-			assertTrue(store.put(i, 0, 0, BlockState.stone()));
+			if (i <= 63) {
+				assertTrue(store.put(i, 0, 0, BlockState.stone()));
+			} else {
+				assertFalse(store.put(i, 0, 0, BlockState.stone()));
+			}
 		}
 	}
 

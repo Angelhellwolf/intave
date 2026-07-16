@@ -158,7 +158,9 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
         positionY() - verifiedLastPositionY(),
         positionZ() - verifiedLastPositionZ()
       );
-      updatePose();
+      if (user() != null) {
+        updatePose();
+      }
     }
     deferredMutations.add(environment -> environment.updateMovement(
       newPositionX, newPositionY, newPositionZ,
