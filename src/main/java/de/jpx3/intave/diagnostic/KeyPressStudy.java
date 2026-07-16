@@ -1,4 +1,17 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.diagnostic;
+
+import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -10,6 +23,13 @@ public final class KeyPressStudy {
   public static void enterKeyPress(int forward, int strafe) {
     String keys = resolveKeysFromInput(forward, strafe);
     KeyPressStudy.keys.put(keys, KeyPressStudy.keys.getOrDefault(keys, 0L) + 1);
+  }
+
+  public static void enterKeyPressFrom(MovementConfiguration configuration) {
+    enterKeyPress(
+      configuration.forward(),
+      configuration.strafe()
+    );
   }
 
   public static Map<String, Long> result() {

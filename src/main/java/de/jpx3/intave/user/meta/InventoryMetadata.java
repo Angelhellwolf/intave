@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.user.meta;
 
 import de.jpx3.intave.IntaveControl;
@@ -87,6 +98,22 @@ public final class InventoryMetadata {
 
   public boolean usableItemInEitherHand() {
     return ItemProperties.canItemBeUsed(player, heldItem()) || ItemProperties.canItemBeUsed(player, offhandItem());
+  }
+
+  public boolean usableItemInEitherHandOrHotbar() {
+    if (player == null) {
+      return false;
+    }
+    if (usableItemInEitherHand()) {
+      return true;
+    }
+    for (int i = 0; i < 9; i++) {
+      ItemStack item = player.getInventory().getItem(i);
+      if (ItemProperties.canItemBeUsed(player, item)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @Nullable

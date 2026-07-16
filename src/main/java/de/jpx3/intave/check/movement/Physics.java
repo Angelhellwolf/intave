@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check.movement;
 
 import com.comphenix.protocol.PacketType;
@@ -5,12 +16,10 @@ import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
 import de.jpx3.intave.IntaveControl;
-import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.check.MitigationStrategy;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.adapter.MinecraftVersion;
 import de.jpx3.intave.adapter.MinecraftVersions;
-import de.jpx3.intave.analytics.GlobalStatisticsRecorder;
 import de.jpx3.intave.annotate.DispatchTarget;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.cache.BlockCache;
@@ -25,8 +34,20 @@ import de.jpx3.intave.check.Check;
 import de.jpx3.intave.check.CheckConfiguration.CheckSettings;
 import de.jpx3.intave.check.CheckStatistics;
 import de.jpx3.intave.check.CheckViolationLevelDecrementer;
-import de.jpx3.intave.check.movement.physics.*;
+import de.jpx3.intave.check.movement.physics.MovementCharacteristics;
+import de.jpx3.intave.check.movement.physics.Pose;
+import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
+import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
+import de.jpx3.intave.check.movement.physics.evaluation.DefaultSimulationEvaluator;
 import de.jpx3.intave.check.movement.physics.evaluation.EvaluationTag;
+import de.jpx3.intave.check.movement.physics.evaluation.SimulationEvaluator;
+import de.jpx3.intave.check.movement.physics.search.RedoSimulationSearch;
+import de.jpx3.intave.check.movement.physics.search.SimulationSearch;
+import de.jpx3.intave.check.movement.physics.search.ThreeTickSimulationSearch;
+import de.jpx3.intave.check.movement.physics.simulator.Simulation;
+import de.jpx3.intave.check.movement.physics.simulator.Simulator;
+import de.jpx3.intave.check.movement.physics.simulator.Simulators;
+import de.jpx3.intave.diagnostic.KeyPressStudy;
 import de.jpx3.intave.diagnostic.message.DebugBroadcast;
 import de.jpx3.intave.diagnostic.message.MessageSeverity;
 import de.jpx3.intave.diagnostic.timings.Timings;
@@ -42,7 +63,7 @@ import de.jpx3.intave.module.violation.ViolationContext;
 import de.jpx3.intave.packet.PacketSender;
 import de.jpx3.intave.player.FaultKicks;
 import de.jpx3.intave.player.collider.Colliders;
-import de.jpx3.intave.player.collider.complex.ColliderResult;
+import de.jpx3.intave.player.collider.complex.SimulationResult;
 import de.jpx3.intave.player.collider.simple.SimpleColliderResult;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
@@ -64,6 +85,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static de.jpx3.intave.check.movement.physics.MoveMetric.*;
+import static de.jpx3.intave.check.movement.physics.search.PostTickMotionType.SENT_OFFSET_MOTION;
 import static de.jpx3.intave.diagnostic.message.MessageCategory.SIMFLT;
 import static de.jpx3.intave.diagnostic.message.MessageCategory.SIMFUL;
 import static de.jpx3.intave.math.MathHelper.*;
@@ -79,9 +101,8 @@ public final class Physics extends Check {
   private static final long BURST_WINDOW = 8000;
   private static final long BURST_CONGESTION = 2;
 
-  private final IntavePlugin plugin;
-  private final CheckViolationLevelDecrementer decrementer;
-  private final SimulationProcessor simulationProcessor;
+	private final CheckViolationLevelDecrementer decrementer;
+  private final SimulationSearch simulationSearch;
   private final SimulationEvaluator simulationEvaluator;
   private final boolean highToleranceMode;
   private final boolean resetItemUsage;
@@ -89,10 +110,9 @@ public final class Physics extends Check {
   private final boolean closeInventorySilentMode;
   private final boolean refreshNearbyBlocks;
 
-  public Physics(IntavePlugin plugin) {
+  public Physics() {
     super("Physics", "physics");
-    this.plugin = plugin;
-    this.decrementer = new CheckViolationLevelDecrementer(this, VL_DECREMENT_PER_VALID_MOVE * 20);
+	  this.decrementer = new CheckViolationLevelDecrementer(this, VL_DECREMENT_PER_VALID_MOVE * 20);
 
     CheckSettings settings = configuration().settings();
     this.highToleranceMode = settings.boolBy("high-tolerance", false);
@@ -121,8 +141,13 @@ public final class Physics extends Check {
     }
 
     boolean detectNoSlowdown = settings.boolBy("enforce-item-slowdown", true);
-    this.simulationProcessor = new PredictiveSimulationProcessor(resetItemUsage, detectNoSlowdown);
-    this.simulationEvaluator = new SimulationEvaluator();
+    this.simulationEvaluator = new DefaultSimulationEvaluator();
+
+    SimulationSearch search = new ThreeTickSimulationSearch(resetItemUsage, detectNoSlowdown);
+    search = RedoSimulationSearch.of(search, simulationEvaluator);
+//    search = RollbackSimulationSearch.of(search, simulationEvaluator);
+    this.simulationSearch = search;
+
     setDefaultMitigationStrategy(MitigationStrategy.CAREFUL);
   }
 
@@ -132,40 +157,86 @@ public final class Physics extends Check {
     MovementMetadata movementData = meta.movement();
 	  Simulator simulator = selectSimulator(user);
     movementData.setSimulator(simulator);
-    movementData.stepHeight = simulator.stepHeight();
+    movementData.setStepHeight(simulator.stepHeight());
 
-    Motion baseMotion = movementData.mutableBaseMotionCopy();
-    simulator.simulatePreTick(user, baseMotion, movementData);
-    movementData.setBaseMotion(baseMotion);
+    /*
+     * Run simulatePreTick on last base motion
+     */
+    SimulationEnvironment firstTickBranch = movementData.mutableView();
+    Motion previousBaseMotion = firstTickBranch.mutableBaseMotionCopy();
+    Motion preTickMotion = simulator.simulatePreTick(user, previousBaseMotion.copy(), firstTickBranch);
+    firstTickBranch.setBaseMotion(preTickMotion);
 
-    Timings.CHECK_PHYSICS_PROC_TOT.start();
-    predictFlyingPacketBeforeVelocity(user);
+    /*
+     * Run simulatePreTick on all postTickMotionCandidates, discarding the environment changes
+     */
+    List<Motion> candidates = movementData.postTickMotionCandidates();
+    if (!candidates.isEmpty()) {
+      // micro optimization
+      if (candidates.size() == 1 && candidates.get(0).equals(previousBaseMotion)) {
+        movementData.setPostTickMotionCandidates(
+          Collections.singletonList(preTickMotion)
+        );
+      } else {
+        List<Motion> newCandidates = new ArrayList<>();
+        for (Motion candidate : candidates) {
+          newCandidates.add(
+            simulator.simulatePreTick(user, candidate.copy(), movementData.mutableView())
+          );
+        }
+        movementData.setPostTickMotionCandidates(newCandidates);
+      }
+    }
+
+    firstTickBranch.commitTo(movementData);
+
+    movementData.treatThisFlyPacketAsMovePacket = false;
+
+    Timings.CHECK_PHYSICS_PROC.start();
     // simulation
     Simulation simulation;
+
+    SimulationEnvironment simulationEnvironment = movementData.mutableView();
+
     try {
-      simulation = simulationProcessor.simulate(user, simulator);
+      simulation = simulationSearch.greedyFuzzyTickSearch(user, simulationEnvironment, simulator);
     } catch (IllegalStateException exception) {
       user.kick("Exception while simulating movement");
       exception.printStackTrace();
       return;
     }
-    movementData.assumeOccurred(simulation);
 
-    Timings.CHECK_PHYSICS_PROC_TOT.stop();
+    // since the simulation-search possibly modified its mutableView(),
+    // we pull the fresh version from the best simulation and commit it to
+    // the active movementData
+    simulationEnvironment = simulation.environment();
+
+    KeyPressStudy.enterKeyPressFrom(simulation.configuration());
+    boolean reinterpretToMovePacket = !withMovement && simulationEnvironment.tryMoveReinterpretation(
+      simulation, user.meta().protocol().flyingPacketUncertaintyRadius()
+    );
+    if (!withMovement && !reinterpretToMovePacket) {
+      Timings.CHECK_PHYSICS_PROC.stop();
+      movementData.setBaseMotion(previousBaseMotion);
+      updateOnGroundIfFlying(user);
+      return;
+    }
+
+    // commit happens here!
+    simulationEnvironment.commitTo(movementData);
+    movementData.assumeOccurred(simulation);
     Timings.CHECK_PHYSICS_EVAL.start();
     // evaluation
     evaluateBestSimulation(user, simulation);
     Timings.CHECK_PHYSICS_EVAL.stop();
-    if (withMovement && movementData.motion().length() > 0.1) {
-      movementData.lastMovement = System.currentTimeMillis();
-    }
+    Timings.CHECK_PHYSICS_PROC.stop();
     if (withRotation) {
       if (movementData.rotationYaw != movementData.lastRotationYaw || movementData.rotationPitch != movementData.lastRotationPitch) {
         movementData.lastRotation = System.currentTimeMillis();
       }
     }
-    movementData.lastKeyStrafe = movementData.keyStrafe;
-    movementData.lastKeyForward = movementData.keyForward;
+    movementData.lastKeyStrafe = simulation.configuration().strafe();
+    movementData.lastKeyForward = simulation.configuration().forward();
     if (movementData.ticksPast(RIPTIDE_SPIN) > 40) {
       movementData.highestLocalRiptideLevel = 0;
     }
@@ -183,7 +254,7 @@ public final class Physics extends Check {
     } else {
       boolean inLava = movementData.inLava();
       boolean inWater = movementData.inWater();
-      if (movementData.elytraFlying && !inWater && !inLava) {
+      if (movementData.gliding && !inWater && !inLava) {
         return Simulators.ELYTRA;
       }
     }
@@ -191,15 +262,24 @@ public final class Physics extends Check {
   }
 
   @DispatchTarget
-  public void endMovement(User user, boolean hasMovement) {
+  public void endMovement(User user, boolean hasMovement, boolean hasRotation) {
 	  MovementMetadata movementData = user.meta().movement();
     ViolationMetadata violationMetadata = user.meta().violationLevel();
 
-    double motionX = !Double.isNaN(movementData.endMotionXOverride) ? movementData.endMotionXOverride : movementData.motionX();
-    double motionY = !Double.isNaN(movementData.endMotionYOverride) ? movementData.endMotionYOverride : movementData.motionY();
-    double motionZ = !Double.isNaN(movementData.endMotionZOverride) ? movementData.endMotionZOverride : movementData.motionZ();
+    Motion usedMotion = movementData.sentOffsetMotion();
+//    SimulationResult lastSimulationResult = movementData.simulationResult();
+//    if (lastSimulationResult != null && lastSimulationResult.offsetMotionDiffersFromActualMotion()) {
+//      usedMotion = lastSimulationResult.actualMotion();
+//    }
+
+    usedMotion = usedMotion.copiedOverrideIfNotNaN(
+      movementData.endMotionXOverride,
+      movementData.endMotionYOverride,
+      movementData.endMotionZOverride
+    );
+
+    Simulator simulator = movementData.simulator();
     if (hasMovement) {
-      Simulator simulator = movementData.simulator();
       if (movementData.ticksPast(VELOCITY) == 0) {
         if (movementData.physicsJumped && movementData.lastVelocityApplicableForJumpDenial()) {
           movementData.physicsJumpedOverrideVL++;
@@ -207,22 +287,39 @@ public final class Physics extends Check {
           movementData.physicsJumpedOverrideVL = Math.max(0, movementData.physicsJumpedOverrideVL - 0.5);
         }
       }
-      Motion motion = new Motion(motionX, motionY, motionZ);
-      simulator.simulateAfterTick(
-        user,
-        movementData,
-        movementData.position(),
-        motion
-      );
+
+//      Motion afterTickMotion = simulator.simulateAfterTick(
+//        user,
+//        movementData,
+//        MovementConfiguration.blank(),
+//        movementData.position(),
+//        usedMotion
+//      );
+
+      Motion beforeBaseMotion = movementData.mutableBaseMotionCopy();
+      Motion afterBaseMotion;
+
+      try {
+        List<Motion> candidates = simulationSearch.afterTickMotionCandidates(
+          user, movementData, simulator,
+          movementData.position(), SENT_OFFSET_MOTION
+        );
+//        ActionBar.sendActionBar(user.player(), ChatColor.YELLOW + "Candidates: " + candidates);
+        movementData.setPostTickMotionCandidates(candidates);
+        afterBaseMotion = movementData.mutableBaseMotionCopy();
+      } catch (Exception exception) {
+        user.kick("Exception while simulating after movement");
+        exception.printStackTrace();
+        return;
+      }
 
       if (!violationMetadata.isInActiveTeleportBundle) {
-        if (violationMetadata.doNotVerifyBaseMotion) {
-          violationMetadata.doNotVerifyBaseMotion = false;
-        } else {
-          PacketLogging logging = Modules.tracker().packetLogging();
-          logging.logSystemMessage(user, () -> "MOTION LOGIC: Base motion override: " + motion.motionX + " " + motion.motionY + " " + motion.motionZ);
-          movementData.setBaseMotion(motion);
-        }
+        PacketLogging logging = Modules.tracker().packetLogging();
+	      logging.logSystemMessage(user, () -> "MOTION LOGIC: Base afterTickMotion override: " + afterBaseMotion.motionX + " " + afterBaseMotion.motionY + " " + afterBaseMotion.motionZ);
+//        movementData.setBaseMotion(afterBaseMotion);
+      } else {
+        movementData.setBaseMotion(beforeBaseMotion);
+        movementData.clearPostTickMotionCandidates();
       }
       movementData.inactiveTick(
         FLYING_PACKET_ACCURATE,
@@ -230,7 +327,8 @@ public final class Physics extends Check {
         NEARBY_COLLISION_INACCURACY,
         ENTITY_USE,
         ATTACK_REDUCE,
-        WATERFLOW_PUSH
+        WATERFLOW_PUSH,
+        SLIME_BLOCK
       );
       if (movementData.onGround()) {
         movementData.resetPhysicsPacketRelinkFlyVL();
@@ -239,6 +337,25 @@ public final class Physics extends Check {
       boolean climbingInPowderSnow = type == BlockTypeAccess.POWDER_SNOW && PowderSnowCollisionModifier.canWalkOnPowderSnow(user);
       movementData.tick(IN_POWDER_SNOW, climbingInPowderSnow);
       movementData.inactiveTick(EDGE_SNEAKING_TICK_GRANTS);
+    } else if (hasRotation || movementData.treatThisFlyPacketAsMovePacket) {
+      Position newPosition = movementData.lastPosition().mutable().add(usedMotion.copy());
+//      Motion motion = simulator.simulateAfterTick(
+//        user, movementData,
+//        MovementConfiguration.blank(),
+//        newPosition, usedMotion.copy()
+//      );
+//      movementData.setBaseMotion(motion);
+
+      try {
+        List<Motion> candidates = simulationSearch.afterTickMotionCandidates(
+          user, movementData, simulator, newPosition, SENT_OFFSET_MOTION
+        );
+        movementData.setPostTickMotionCandidates(candidates);
+      } catch (Exception exception) {
+        user.kick("Exception while simulating after movement");
+        exception.printStackTrace();
+        return;
+      }
     }
     movementData.endMotionXOverride = Double.NaN;
     movementData.endMotionYOverride = Double.NaN;
@@ -272,35 +389,6 @@ public final class Physics extends Check {
     movementData.onGround = colliderResult.onGround();
   }
 
-  private void predictFlyingPacketBeforeVelocity(User user) {
-    MovementMetadata movementData = user.meta().movement();
-    if (movementData.ticksPast(VELOCITY) != 0) {
-      return;
-    }
-    double motionX = movementData.baseMotionXBeforeVelocity * 0.91f;
-    double motionY = (movementData.baseMotionYBeforeVelocity - 0.08) * 0.98f;
-    double motionZ = movementData.baseMotionZBeforeVelocity * 0.91f;
-    if (motionX != 0 && motionY != 0 && motionZ != 0) {
-      SimpleColliderResult colliderResult = Colliders.simplifiedCollision(
-        user.player(),
-        movementData,
-        movementData.verifiedLastPositionX, movementData.verifiedLastPositionY, movementData.verifiedLastPositionZ,
-        motionX, motionY, motionZ
-      );
-      motionX = colliderResult.motionX();
-      motionY = colliderResult.motionY();
-      motionZ = colliderResult.motionZ();
-
-      if (colliderResult.onGround() || movementData.onGround) {
-        double distance = motionX * motionX + motionY * motionY + motionZ * motionZ;
-        if (distance < 0.009) {
-          movementData.physicsUnpredictableVelocityExpected = true;
-          movementData.setPast(FLYING_PACKET_ACCURATE, 0);
-        }
-      }
-    }
-  }
-
   /**
    * This method is too big, please refactor
    */
@@ -316,8 +404,8 @@ public final class Physics extends Check {
     AbilityMetadata abilityData = meta.abilities();
     BlockCache blockStateAccess = user.blockCache();
 
-    ColliderResult expectedMovement = simulation.collider();
-    Motion context = expectedMovement.motion();
+    SimulationResult expectedMovement = simulation.result();
+    Motion offsetMotion = expectedMovement.offsetMotion();
 
     int keyForward = movementData.keyForward;
     int keyStrafe = movementData.keyStrafe;
@@ -325,15 +413,15 @@ public final class Physics extends Check {
     boolean flying = abilityData.probablyFlying() || abilityData.allowFlying();
     StringBuilder key = new StringBuilder(resolveKeysFromInput(keyForward, keyStrafe));
 
-    double receivedMotionX = movementData.motionX();
-    double receivedMotionY = movementData.motionY();
-    double receivedMotionZ = movementData.motionZ();
-    double predictedX = context.motionX();
-    double predictedY = context.motionY();
-    double predictedZ = context.motionZ();
-    double differenceX = predictedX - receivedMotionX;
-    double differenceY = predictedY - receivedMotionY;
-    double differenceZ = predictedZ - receivedMotionZ;
+    double receivedOffsetMotionX = movementData.offsetMotionX();
+    double receivedOffsetMotionY = movementData.offsetMotionY();
+    double receivedOffsetMotionZ = movementData.offsetMotionZ();
+    double predictedOffsetX = offsetMotion.motionX();
+    double predictedOffsetY = offsetMotion.motionY();
+    double predictedOffsetZ = offsetMotion.motionZ();
+    double differenceX = predictedOffsetX - receivedOffsetMotionX;
+    double differenceY = predictedOffsetY - receivedOffsetMotionY;
+    double differenceZ = predictedOffsetZ - receivedOffsetMotionZ;
     double distance = MathHelper.hypot3d(differenceX, differenceY, differenceZ);
     double receivedPositionX = movementData.positionX();
     double receivedPositionY = movementData.positionY();
@@ -341,6 +429,7 @@ public final class Physics extends Check {
     double positionX = movementData.verifiedLastPositionX();
     double positionY = movementData.verifiedLastPositionY();
     double positionZ = movementData.verifiedLastPositionZ();
+    Motion actualMotion = simulation.actualMotion();
 
     boolean onLadderCurrent = MovementCharacteristics.onClimbable(user, positionX, positionY, positionZ);
     boolean onLadder = onLadderCurrent || movementData.onLadderLast;
@@ -353,8 +442,16 @@ public final class Physics extends Check {
     Set<EvaluationTag> verticalTags = EnumSet.noneOf(EvaluationTag.class);
     Set<EvaluationTag> horizontalTags = EnumSet.noneOf(EvaluationTag.class);
 
-    double verticalViolationIncrease = skipVLCalculation ? 0 : simulationEvaluator.calculateVerticalViolationLevelIncrease(user, predictedY, onLadder, collidedWithBoat, verticalTags);
-    double horizontalViolationIncrease = skipVLCalculation ? 0 : simulationEvaluator.calculateHorizontalViolationIncrease(user, predictedX, predictedZ, onLadder, collidedWithBoat, horizontalTags);
+    double verticalViolationIncrease = skipVLCalculation ? 0 : simulationEvaluator.calculateVerticalViolationIncrease(
+      user, movementData, predictedOffsetY,
+      onLadder, collidedWithBoat, verticalTags
+    );
+    double horizontalViolationIncrease = skipVLCalculation ? 0 : simulationEvaluator.calculateHorizontalViolationIncrease(
+      user, movementData,
+      predictedOffsetX, predictedOffsetZ,
+      receivedOffsetMotionX, receivedOffsetMotionZ,
+      onLadder, collidedWithBoat, horizontalTags
+    );
 
     if (onLadder) {
       movementData.artificialFallDistance = 0;
@@ -362,7 +459,7 @@ public final class Physics extends Check {
 
     double biasedDistance = MathHelper.hypot3d(differenceX, differenceY * 2, differenceZ);
     violationLevelData.physicsOffset += biasedDistance;
-    violationLevelData.physicsOffset -= movementData.receivedFlyingPacketIn(2) && movementData.motion().length() < 0.1 ? Math.min(0.03, biasedDistance) : 0;
+    violationLevelData.physicsOffset -= movementData.receivedFlyingPacketIn(2) && movementData.sentOffsetMotion().length() < 0.1 ? Math.min(0.03, biasedDistance) : 0;
     violationLevelData.physicsOffset -= violationLevelData.physicsOffset > 0.6 ? 0.002 : 0.001;
     violationLevelData.physicsOffset -= movementData.ticksPast(ELYTRA_FLYING) < 3 ? 0.025 : 0;
 
@@ -377,16 +474,16 @@ public final class Physics extends Check {
     boolean velocityDetected = false;
     boolean checkVelocity = !skipVLCalculation
       && movementData.ticksPast(IN_WEB) > 5
-      && !movementData.inWater
+      && !movementData.inWater()
       && !movementData.collidedWithBoat();
 
-    if (checkVelocity && !movementData.elytraFlying && movementData.ticksPast(EXTERNAL_VELOCITY) < 10 && !movementData.receivedFlyingPacketIn(2)) {
-      boolean actuallyMoved = (Math.abs(predictedX) > 0.01 || Math.abs(predictedZ) > 0.01);
+    if (checkVelocity && !movementData.gliding && movementData.ticksPast(EXTERNAL_VELOCITY) < 10 && !movementData.receivedFlyingPacketIn(2)) {
+      boolean actuallyMoved = (Math.abs(predictedOffsetX) > 0.01 || Math.abs(predictedOffsetZ) > 0.01);
 
       boolean noCollisionOnHighVersion = !(protocol.cavesAndCliffsUpdate()
         && Collision.present(user, movementData, movementData.boundingBox().growHorizontally(0.3)));
 
-      if (distance > 0.005 && !onLadder && noCollisionOnHighVersion) {
+      if (distance > 0.005 && horizontalViolationIncrease > 0.001 && !onLadder && noCollisionOnHighVersion) {
         if (actuallyMoved) {
           boolean aggressive = violationLevelData.physicsVelocityVL++ >= VELOCITY_VL_THRESHOLD || movementData.ticksPast(EXTERNAL_VELOCITY) == 0;
           if (aggressive || distance > 0.01) {
@@ -405,29 +502,29 @@ public final class Physics extends Check {
     }
 
 //    if (differenceY > 0.01/* && differenceY < 0.03*/ && (movementData.lastOnGround() || movementData.onGround())) {
-//      player.sendMessage(differenceY + " " + Math.abs(predictedX) + "/" + Math.abs(predictedZ) + " @" +Math.abs(predictedY - movementData.jumpMotion()) + " " + movementData.receivedFlyingPacketIn(6) + " " + movementData.past(FLYING_PACKET_ACCURATE));
+//      player.sendMessage(differenceY + " " + Math.abs(predictedOffsetX) + "/" + Math.abs(predictedOffsetZ) + " @" +Math.abs(predictedOffsetY - movementData.jumpMotion()) + " " + movementData.receivedFlyingPacketIn(6) + " " + movementData.past(FLYING_PACKET_ACCURATE));
 //    }
     boolean flyingJump = false;
-    if ((Math.abs(predictedX) < 0.1 && Math.abs(predictedZ) < 0.1) && Math.abs(predictedY - movementData.jumpMotion()) < 0.05 &&
+    if ((Math.abs(predictedOffsetX) < 0.1 && Math.abs(predictedOffsetZ) < 0.1) && Math.abs(predictedOffsetY - movementData.jumpMotion()) < 0.05 &&
       differenceY > 0.01 && differenceY < 0.03 /* only allow positive differenceY */ && (movementData.lastOnGround() || movementData.onGround()) /*&& movementData.receivedFlyingPacketIn(6)*/) {
 //      player.sendMessage(ChatColor.RED + "Flying jump detected, " + movementData.past(FLYING_PACKET_ACCURATE));
       flyingJump = true;
       verticalViolationIncrease = 0;
 
-      movementData.endMotionYOverride = predictedY;
+      movementData.endMotionYOverride = predictedOffsetY;
     }
 
     boolean expectProblems = movementData.ticksPast(ELYTRA_FLYING) <= 2 || movementData.ticksPast(IN_WATER) <= 2;
 
     if (distance > 0.01 && !expectProblems && (verticalViolationIncrease > 5 || horizontalViolationIncrease > 5)) {
-      if (Math.abs(receivedMotionX) > 0.15 && differenceX > 0.025) {
-        movementData.endMotionXOverride = predictedX * 0.98;
+      if (Math.abs(receivedOffsetMotionX) > 0.15 && differenceX > 0.025) {
+        movementData.endMotionXOverride = predictedOffsetX * 0.98;
       }
-      if (Math.abs(receivedMotionY) > 0.1 && differenceY > 0.1) {
-        movementData.endMotionYOverride = (predictedY - 0.08) * 0.98;
+      if (Math.abs(receivedOffsetMotionY) > 0.1 && differenceY > 0.1) {
+        movementData.endMotionYOverride = (predictedOffsetY - 0.08) * 0.98;
       }
-      if (Math.abs(receivedMotionZ) > 0.15 && differenceZ > 0.025) {
-        movementData.endMotionZOverride = predictedZ * 0.98;
+      if (Math.abs(receivedOffsetMotionZ) > 0.15 && differenceZ > 0.025) {
+        movementData.endMotionZOverride = predictedOffsetZ * 0.98;
       }
     }
 
@@ -441,7 +538,7 @@ public final class Physics extends Check {
     // trustfactor limit is just temporary
     boolean suspectSafeWalk = user.trustFactor().atOrBelow(TrustFactor.YELLOW);
     if (distance > 0.008 && suspectSafeWalk && movementData.ticksPast(BLOCK_PLACEMENT) <= 8 && horizontalViolationIncrease > 0.1 && !movementData.isSneaking()) {
-      boolean smallMovement = (Math.abs(movementData.motionX()) < 0.08 || Math.abs(movementData.motionZ()) < 0.08) && movementData.onGround();
+      boolean smallMovement = (Math.abs(movementData.offsetMotionX()) < 0.08 || Math.abs(movementData.offsetMotionZ()) < 0.08) && movementData.onGround();
       if (smallMovement && !movementData.receivedFlyingPacketIn(3)) {
         horizontalViolationIncrease = Math.max(100, horizontalViolationIncrease * 50);
       }
@@ -464,13 +561,16 @@ public final class Physics extends Check {
     }
     if (distance > 0.001) {
       movementData.suspiciousMovement = true;
-      Simulation otherSimulation;
+
+      Simulator simulator = selectSimulator(user);
+      Motion motion = movementData.mutableBaseMotionCopy();
+      MovementConfiguration config = MovementConfiguration.blank();
       if (IntaveControl.SETBACK_WITH_PRESSED_KEYS) {
-        otherSimulation = simulationProcessor.simulateWithKeyPress(user, selectSimulator(user), movementData.keyForward, movementData.keyStrafe, false);
-      } else {
-        otherSimulation = simulationProcessor.simulateWithoutKeyPress(user, selectSimulator(user));
+        config = config.withKeypress(movementData.lastKeyForward, movementData.lastKeyStrafe);
       }
-      Motion setbackMotion = otherSimulation.motion();
+      Simulation otherSimulation = simulator.simulateTick(user, motion, user.meta().movement().immutableView(), config);
+
+      Motion setbackMotion = otherSimulation.offsetMotion();
       /*
        * This will patch the hit-player-sneaking-on-a-block-edge bug (https://youtu.be/ONGnOwhQyac)
        */
@@ -479,14 +579,14 @@ public final class Physics extends Check {
         !movementData.onGround() &&
         lastVelocity != null
       ) {
-        predictedX = Math.abs(setbackMotion.motionX) < 0.05 ? setbackMotion.motionX + MathHelper.minmax(-0.05, lastVelocity.motionX, 0.05) : setbackMotion.motionX;
-        predictedY = setbackMotion.motionY;
-        predictedZ = Math.abs(setbackMotion.motionZ) < 0.05 ? setbackMotion.motionZ + MathHelper.minmax(-0.05, lastVelocity.motionZ, 0.05) : setbackMotion.motionZ;
-        movementData.sneakPatchVelocity = null;
+//        predictedOffsetX = Math.abs(setbackMotion.motionX) < 0.05 ? setbackMotion.motionX + MathHelper.minmax(-0.05, lastVelocity.motionX, 0.05) : setbackMotion.motionX;
+//        predictedOffsetY = setbackMotion.motionY;
+//        predictedOffsetZ = Math.abs(setbackMotion.motionZ) < 0.05 ? setbackMotion.motionZ + MathHelper.minmax(-0.05, lastVelocity.motionZ, 0.05) : setbackMotion.motionZ;
+//        movementData.sneakPatchVelocity = null;
       } else {
-        predictedX = setbackMotion.motionX;
-        predictedY = setbackMotion.motionY;
-        predictedZ = setbackMotion.motionZ;
+        predictedOffsetX = setbackMotion.motionX;
+        predictedOffsetY = setbackMotion.motionY;
+        predictedOffsetZ = setbackMotion.motionZ;
       }
     }
 
@@ -496,11 +596,11 @@ public final class Physics extends Check {
 
     if (violationLevelData.physicsInsignificantBufferVL < 3 &&
       violationLevelData.physicsVL + violationLevelIncrease > 50 &&
-      violationLevelIncrease > 0 && !movementData.inWeb && !movementData.inWater &&
+      violationLevelIncrease > 0 && !movementData.inWeb() && !movementData.inWater() &&
       distance > 0.001
     ) {
-      boolean predictedNoHorizontalMovement = Math.abs(predictedX) < 0.05 && Math.abs(predictedZ) < 0.05;
-      boolean horizontalFasterThanExpected = Math.abs(predictedX) < Math.abs(receivedMotionX) - 0.05 || Math.abs(predictedZ) < Math.abs(receivedMotionZ) - 0.05;
+      boolean predictedNoHorizontalMovement = Math.abs(predictedOffsetX) < 0.05 && Math.abs(predictedOffsetZ) < 0.05;
+      boolean horizontalFasterThanExpected = Math.abs(predictedOffsetX) < Math.abs(receivedOffsetMotionX) - 0.05 || Math.abs(predictedOffsetZ) < Math.abs(receivedOffsetMotionZ) - 0.05;
 
       double gainMultiplier = 1;
       if (predictedNoHorizontalMovement) {
@@ -510,7 +610,7 @@ public final class Physics extends Check {
         gainMultiplier *= 0.5;
       }
 
-      if (Math.abs(differenceY) < 0.1 && receivedMotionY < predictedY + 0.01 &&
+      if (Math.abs(differenceY) < 0.1 && receivedOffsetMotionY < predictedOffsetY + 0.01 &&
         Math.abs(differenceX) < 0.15 * gainMultiplier && Math.abs(differenceZ) < 0.15 * gainMultiplier &&
         Math.abs(differenceX) + Math.abs(differenceZ) < 0.2 * gainMultiplier &&
         distance < 0.25
@@ -545,7 +645,7 @@ public final class Physics extends Check {
         boolean altered = BlockTypeAccess.hasTranslation(user, BlockTypeAccess.typeAccess(block));
 
         String colliderName;
-        if (!Collision.blockInsideBorder(user, player.getWorld(), blockPositionX, blockPositionZ)) {
+        if (!Collision.blockInsideBorder(movementData, blockPositionX, blockPositionZ)) {
           colliderName = "world border";
         } else {
           String prefix = (currentlyInOverride ? "emulated " : "") + (altered ? "altered " : "");
@@ -562,7 +662,7 @@ public final class Physics extends Check {
         Violation violation = Violation.builderFor(Physics.class)
           .forPlayer(player).withMessage(message).withDetails(details).withVL(0).build();
         Modules.violationProcessor().processViolation(violation);
-        Motion emulationMotion = new Motion(predictedX, predictedY, predictedZ);
+        Motion emulationMotion = new Motion(predictedOffsetX, predictedOffsetY, predictedOffsetZ);
         Modules.mitigate().movement().emulationSetBack(player, emulationMotion, 2, true);
       }
     }
@@ -585,7 +685,7 @@ public final class Physics extends Check {
         || movementData.ticksPast(ELYTRA_FLYING) < 20;
       if (uncommonArea) {
         violationLevelIncrease /= 2;
-      } else if (protocol.waterUpdate()) {
+      } else if (protocol.aquaticUpdate()) {
         violationLevelIncrease /= 2;
       }
       violationLevelIncrease = Math.min(200.0, violationLevelIncrease);
@@ -600,7 +700,7 @@ public final class Physics extends Check {
     } else {
       if (violationLevelData.physicsInvalidMovementsInRow >= 0) {
         violationLevelData.physicsInvalidMovementsInRow *= 0.95;
-        violationLevelData.physicsInvalidMovementsInRow -= movementData.motion().horizontalLength() > 0.1 ? .15 : .05;
+        violationLevelData.physicsInvalidMovementsInRow -= movementData.sentOffsetMotion().horizontalLength() > 0.1 ? .15 : .05;
       }
       statisticApply(user, CheckStatistics::increasePasses);
     }
@@ -612,16 +712,41 @@ public final class Physics extends Check {
     PacketLogging logging = Modules.tracker().packetLogging();
     double finalVerticalViolationIncrease = verticalViolationIncrease;
     double finalHorizontalViolationIncrease = horizontalViolationIncrease;
-    logging.logSystemMessage(user, () -> "MOVEMENT PROCESS: " + receivedMotionX + " " + receivedMotionY + " " + receivedMotionZ + " vl" + violationLevelData.physicsVL + " acc/off" +  violationLevelData.physicsOffset + " d" + distance + " h/v:" + finalHorizontalViolationIncrease +"/" + finalVerticalViolationIncrease + " spec" + spectator + " fly" + flying  + " " + verticalTags + " " + horizontalTags);
+    logging.logSystemMessage(user, () -> "MOVEMENT PROCESS: " + receivedOffsetMotionX + " " + receivedOffsetMotionY + " " + receivedOffsetMotionZ + " vl" + violationLevelData.physicsVL + " acc/off" +  violationLevelData.physicsOffset + " d" + distance + " h/v:" + finalHorizontalViolationIncrease +"/" + finalVerticalViolationIncrease + " spec" + spectator + " fly" + flying  + " " + verticalTags + " " + horizontalTags);
 
     // santiy checks
-    performMovementSanityChecks(user, receivedMotionX, receivedMotionY, receivedMotionZ);
+    performMovementSanityChecks(user, receivedOffsetMotionX, receivedOffsetMotionY, receivedOffsetMotionZ);
 
     if (offsetRequirement && !spectator && violationLevelData.physicsVL > 50 && violationLevelIncrease > 0) {
-      String received = formatPosition(receivedMotionX, receivedMotionY, receivedMotionZ);
-      String expected = formatPosition(predictedX, predictedY, predictedZ);
+      String received = formatPosition(receivedOffsetMotionX, receivedOffsetMotionY, receivedOffsetMotionZ);
+      String expected = formatPosition(predictedOffsetX, predictedOffsetY, predictedOffsetZ);
+      String actual = formatPosition(actualMotion.motionX, actualMotion.motionY, actualMotion.motionZ);
+
       String message = "moved incorrectly";
-      String details = received + " actual: " + expected;
+//      String details = received + " actual: " + expected;
+      String details = "";
+
+      details += formatDouble(distance, 6) + " / ";
+
+      String vlInfo = "";
+      if (verticalViolationIncrease > 500) {
+        vlInfo += "mv";
+      } else if (verticalViolationIncrease < 0.1) {
+        vlInfo += "0v";
+      } else {
+        vlInfo += formatDouble(verticalViolationIncrease, 1) + "v";
+      }
+      if (horizontalViolationIncrease > 500) {
+        vlInfo += "mh";
+      } else if (horizontalViolationIncrease < 0.1) {
+        vlInfo += "0h";
+      } else {
+        vlInfo += formatDouble(horizontalViolationIncrease, 1) + "h";
+      }
+      details += vlInfo + " / ";
+
+      details += simulation.blueDetails().replace('/', '_');
+//      details += formatDouble(-differenceX, 4) + "dx " + formatDouble(-differenceY, 4) + "dy " + formatDouble(-differenceZ, 4) + "dz";
 
       if (velocityDetected) {
         details += ", strict";
@@ -636,17 +761,22 @@ public final class Physics extends Check {
       Map<String, String> granularDebugs = new LinkedHashMap<>();
       granularDebugs.put("received", received);
       granularDebugs.put("expected", expected);
+      granularDebugs.put("actual", actual);
       granularDebugs.put("distance", formatDouble(distance, 3));
       granularDebugs.put("pose", movementData.pose().name());
-      granularDebugs.put("vehicle", movementData.isInVehicle() ? (movementData.isInRidingVehicle() ? "riding" : "passive") : "none");
+      if (movementData.isInVehicle()) {
+        granularDebugs.put("vehicle", movementData.isInVehicle() ? (movementData.isInRidingVehicle() ? "riding" : "passive") : "none");
+      }
       granularDebugs.put("insig", formatDouble(violationLevelData.physicsInsignificantBufferVL, 1));
       granularDebugs.put("acc/off", formatDouble(violationLevelData.physicsOffset, 2));
       granularDebugs.put("s/c v", MinecraftVersion.current().getVersion() + " / " + user.protocolVersion());
       BlockShape collShape = Collision.shape(user, movementData, currentBoundingBox);
       granularDebugs.put("coll", collShape.toString());
       granularDebugs.put("coll_out", collShape.outline().toCompactString());
-      granularDebugs.put("v/tags", verticalTags.stream().map(EvaluationTag::toString).map(String::toUpperCase).distinct().collect(Collectors.joining(",")));
-      granularDebugs.put("h/tags", horizontalTags.stream().map(EvaluationTag::toString).map(String::toUpperCase).distinct().collect(Collectors.joining(",")));
+      granularDebugs.put("simtgx", simulation.result().tagString());
+      granularDebugs.put("config", simulation.configuration().toCompactString());
+      granularDebugs.put("v/tags", evalTagsToString(verticalTags));
+      granularDebugs.put("h/tags", evalTagsToString(horizontalTags));
 
       double vl = violationLevelIncrease / (violationLevelData.physicsVL >= 100 && !highToleranceMode() ? 20 : 50);
       Violation violation = Violation.builderFor(Physics.class)
@@ -667,7 +797,7 @@ public final class Physics extends Check {
       // a few helpful states
       boolean isMidAir = !movementData.onGround && !movementData.collidedHorizontally && !movementData.collidedVertically;
       boolean isOnGround = movementData.onGround;
-      double distanceMoved = MathHelper.hypot3d(movementData.motionX(), movementData.motionY(), movementData.motionZ());
+      double distanceMoved = MathHelper.hypot3d(movementData.offsetMotionX(), movementData.offsetMotionY(), movementData.offsetMotionZ());
 
       boolean deepPitchViolationOverflow = violationContext.shouldCounterThreat();
       int highPitchLimit = trustFactorSetting("pa-override-threshold", player);
@@ -689,24 +819,24 @@ public final class Physics extends Check {
           break;
         case CAREFUL:
           setback = deepPitchViolationOverflow || (highPitchViolationOverflow && (violationLevelAfter > 20 || highPitchAggressiveViolationOverflow || user.justJoined()));
-          if (receivedMotionY > Math.max(0.42f, movementData.jumpMotion()) + 0.01) {
+          if (receivedOffsetMotionY > Math.max(0.42f, movementData.jumpMotion()) + 0.01) {
             setback = true;
           }
           manualOverrideDistance = 0.75;
           break;
         case LENIENT:
           setback = deepPitchViolationOverflow || (highPitchViolationOverflow && (freeOfColliders || violationLevelIncrease > 50) && (violationLevelAfter > 30 || highPitchAggressiveViolationOverflow || user.justJoined()));
-          if (receivedMotionY > Math.max(0.42f, movementData.jumpMotion()) + 0.01) {
+          if (receivedOffsetMotionY > Math.max(0.42f, movementData.jumpMotion()) + 0.01) {
             setback = true;
           }
           manualOverrideDistance = 0.75;
           break;
         case BARELY:
-          boolean flagAnywayss = freeOfColliders && ((isMidAir && violationLevelAfter > 60) || (verticalViolationIncrease >= 100 && predictedY < 0 && violationLevelAfter >= 100));
+          boolean flagAnywayss = freeOfColliders && ((isMidAir && violationLevelAfter > 60) || (verticalViolationIncrease >= 100 && predictedOffsetY < 0 && violationLevelAfter >= 100));
           boolean velocityFlag = velocityDetected && violationLevelAfter > 30 && (verticalViolationIncrease >= 100 || horizontalViolationIncrease >= 100);
           setback =
             (distanceMoved > (violationLevelAfter > 80 ? 0.5 : 0.7) || violationLevelAfter > 200 || flagAnywayss || velocityFlag)
-            && deepPitchViolationOverflow && (highPitchAggressiveViolationOverflow || violationLevelAfter > 200 || user.justJoined());
+              && deepPitchViolationOverflow && (highPitchAggressiveViolationOverflow || violationLevelAfter > 200 || user.justJoined());
           manualOverrideDistance = 1;
           break;
         case SILENT:
@@ -725,13 +855,13 @@ public final class Physics extends Check {
       // reduce setbacks
       if (
         setback && !velocityDetected &&
-        Math.abs(predictedX - receivedMotionX) < 0.25 &&
-        Math.abs(predictedY - receivedMotionY) < 0.25 &&
-        Math.abs(predictedZ - receivedMotionZ) < 0.25 &&
-        distance < 0.4 &&
-        movementData.ticksPast(BLOCK_PLACEMENT) >= 8 &&
-        user.trustFactor().atLeast(TrustFactor.ORANGE) &&
-        violationLevelAfter < 100
+          Math.abs(predictedOffsetX - receivedOffsetMotionX) < 0.25 &&
+          Math.abs(predictedOffsetY - receivedOffsetMotionY) < 0.25 &&
+          Math.abs(predictedOffsetZ - receivedOffsetMotionZ) < 0.25 &&
+          distance < 0.4 &&
+          movementData.ticksPast(BLOCK_PLACEMENT) >= 8 &&
+          user.trustFactor().atLeast(TrustFactor.ORANGE) &&
+          violationLevelAfter < 100
       ) {
         ViolationBufferStorage buffer = user.storageOf(ViolationBufferStorage.class);
         // check for reset
@@ -769,7 +899,7 @@ public final class Physics extends Check {
 
         MovementMetadata movement = user.meta().movement();
         Simulator simulator = movement.simulator();
-        simulator.setback(user, movement, predictedX, predictedY, predictedZ);
+        simulator.setback(user, movement, predictedOffsetX, predictedOffsetY, predictedOffsetZ);
         refreshNearbyBlocks(user, positionX, positionY, positionZ);
         movementData.invalidMovement = true;
       }
@@ -799,7 +929,6 @@ public final class Physics extends Check {
       movementData.artificialFallDistance *= 0.5F;
     }
 
-    GlobalStatisticsRecorder recorder = plugin.analytics().recorderOf(GlobalStatisticsRecorder.class);
 //    recorder.recordMovement();
 //    recorder.recordBlockMoved(Hypot.fast(movementData.motionX(), movementData.motionZ()));
 
@@ -828,9 +957,21 @@ public final class Physics extends Check {
       while (key.length() < 2) {
         key.append(" ");
       }
-      if (fly) {
+      if (fly && distance >= 0.001) {
         debug += ChatColor.STRIKETHROUGH;
       }
+      boolean moved = movementData.lastPosition().distance(movementData.position()) > 0.001;
+      boolean rotated = movementData.lastRotation().distanceTo(movementData.rotation()) > 0.001;
+//      debug += (moved ? "M" : "-") + (rotated ? "R" : "-") + " | ";
+
+
+      String distanceOutput = formatDouble(distance, /*distance < 0.1 && violationLevelIncrease > 0 ? 9 : 3*/6);
+      if (movementData.receivedFlyingPacketIn(1)) {
+        distanceOutput = distanceOutput.substring(0, distanceOutput.length() - 1) + ChatColor.ITALIC + "f" + chatColor;
+      } else if (distance >= 0.01 && violationLevelIncrease == 0) {
+        distanceOutput = ChatColor.STRIKETHROUGH + distanceOutput + chatColor;
+      }
+      debug += distanceOutput + " ";
       debug += /*"(" +*/ key /*+ ")"*/;
       if (fly) {
         debug += chatColor;
@@ -861,15 +1002,26 @@ public final class Physics extends Check {
         debug += ChatColor.BOLD + poseName + chatColor;
       }
 
-      debug += " y:" + formatDouble(movementData.motionY(), 4) + "@" + decimalPlacesOf(receivedPositionY, 4);
+      debug += " y:" + formatDouble(movementData.offsetMotionY(), 4) + "@" + decimalPlacesOf(receivedPositionY, 4);
+
+      if (verticalViolationIncrease > 0) {
+        debug += "r" +formatDouble(simulation.offsetMotion().motionY, 4);
+      }
 
 //      debug += " x:" + formatDouble(movementData.motionX(), 4) + " z:" + formatDouble(movementData.motionZ(), 4);
-      if (!simulation.details().isEmpty()) {
-        debug += ChatColor.ITALIC + " " + simulation.details() + chatColor;
+      if (!simulation.blueDetails().isEmpty()) {
+        debug += ChatColor.AQUA + " " + ChatColor.ITALIC + " " + simulation.blueDetails() + chatColor;
       }
-      if (simulation.resultsInFlyingPacket(movementData, 0.03)) {
+      if (!simulation.purpleDetails().isEmpty()) {
+        debug += ChatColor.LIGHT_PURPLE + " " + ChatColor.ITALIC + " " + simulation.purpleDetails() + chatColor;
+      }
+
+      if (simulation.resultsInFlyingPacket(movementData, protocol.flyingPacketUncertaintyRadius())) {
         debug += " nwbf";
       }
+
+      sendPacketWithExperience(player, movementData.simulationRateLimiter.counter());
+
       if (movementData.ticksPast(FIREWORK_ROCKETS) < 100) {
         debug += ChatColor.ITALIC + " frt:" + movementData.ticksPast(FIREWORK_ROCKETS) + " frp: " + movementData.fireworkRocketsPower + chatColor;
       }
@@ -886,8 +1038,14 @@ public final class Physics extends Check {
       if (movementData.ticksPast(RIPTIDE_SPIN) < 4) {
         debug += ChatColor.ITALIC + " rt:" + movementData.ticksPast(RIPTIDE_SPIN) + "@" + movementData.highestLocalRiptideLevel + chatColor;
       }
+      if (simulation.offsetMotionDiffersFromActualMotionInXZ()) {
+        debug += ChatColor.ITALIC + " om.xz!=am.xz" + chatColor;
+      }
       if (inventory.handActive()) {
         debug += ChatColor.ITALIC + " hnd:" + inventory.handActiveTicks + chatColor;
+      }
+      if (movementData.isSleeping()) {
+        debug += ChatColor.ITALIC + " slp" + chatColor;
       }
       if (velocityDetected) {
         // velocity low tolerance
@@ -917,7 +1075,7 @@ public final class Physics extends Check {
       if (movementData.ticksPast(ENTITY_USE) < 5) {
         debug += ChatColor.ITALIC + " eu" + movementData.ticksPast(ENTITY_USE) + chatColor;
       }
-      if (movementData.inWater) {
+      if (movementData.inWater()) {
         Fluid fluid = Fluids.fluidAt(user, positionX, positionY, positionZ);
         debug += ChatColor.ITALIC + " "+(fluid.falling() ? "falling" : "")+"water@" + MathHelper.formatDouble(fluid.height(),2) + "/"+fluid.level() + chatColor;
       }
@@ -943,10 +1101,10 @@ public final class Physics extends Check {
 
       // display tags
       if (!verticalTags.isEmpty()) {
-        debug += "; V" + verticalTags.stream().map(EvaluationTag::toString).map(String::toLowerCase).distinct().collect(Collectors.joining(","));
+        debug += "; V" + evalTagsToString(verticalTags);
       }
       if (!horizontalTags.isEmpty()) {
-        debug += "; H" + horizontalTags.stream().map(EvaluationTag::toString).map(String::toLowerCase).distinct().collect(Collectors.joining(","));
+        debug += "; H" + evalTagsToString(horizontalTags);
       }
 
 //      if (Math.abs(movementData.motionY()) > 0.01) {
@@ -965,10 +1123,10 @@ public final class Physics extends Check {
 //      debug += " gliding:" + shortenBoolean(movementData.elytraFlying);
 
 //        if (violationLevelIncrease > 0) {
-//          debug += " yexp:" + formatDouble(predictedY, 4) + "@" + decimalPlacesOf(movementData.verifiedPositionY(), 4);
+//          debug += " yexp:" + formatDouble(predictedOffsetY, 4) + "@" + decimalPlacesOf(movementData.verifiedPositionY(), 4);
 //        }
 
-      Map<String, Double> serverDebugData = simulation.collider().debugData();
+      Map<String, Double> serverDebugData = simulation.result().debugData();
       Map<String, Double> clientDebugData = movementData.clientMovementDebugValues;
       if (!serverDebugData.isEmpty()) {
         debug += ChatColor.ITALIC + " " + serverDebugData.entrySet().stream().map(entry -> {
@@ -986,7 +1144,7 @@ public final class Physics extends Check {
       }
 
 //      if (violationLevelIncrease > 0) {
-//        player.sendMessage("Expected " + formatPosition(predictedX, predictedY, predictedZ) + " received " + formatPosition(receivedMotionX, receivedMotionY, receivedMotionZ));
+//        player.sendMessage("Expected " + formatPosition(predictedOffsetX, predictedOffsetY, predictedOffsetZ) + " received " + formatPosition(receivedOffsetMotionX, receivedOffsetMotionY, receivedOffsetMotionZ));
 //      }
 
 //      List<String> tags = new ArrayList<>();
@@ -1022,14 +1180,6 @@ public final class Physics extends Check {
         debug += " g:" + displayPhysicsVL;
       }
 
-      String distanceOutput = formatDouble(distance, distance < 0.1 && violationLevelIncrease > 0 ? 9 : 3);
-      if (movementData.receivedFlyingPacketIn(1)) {
-        distanceOutput = "~" + distanceOutput;
-      } else if (distance >= 0.01 && violationLevelIncrease == 0) {
-        distanceOutput = ChatColor.STRIKETHROUGH + distanceOutput + chatColor;
-      }
-      debug += " d:" + distanceOutput;
-
       // horizontal and vertical distance difference
 //      debug += " h:" + formatDouble(Math.abs(differenceX) + Math.abs(differenceZ), 3);
 //      debug += " v:" + formatDouble(Math.abs(differenceY), 3);
@@ -1052,6 +1202,54 @@ public final class Physics extends Check {
       }
 //      Synchronizer.synchronize(() -> player.sendMessage(finalDebug));
     }
+
+    if (user.receives(MessageChannel.DEBUG_MOTION)) {
+      ChatColor chatColor = ChatColor.GRAY;
+      String symbol = "";
+
+      double distance1 = movementData.sentOffsetMotion().distance(simulation.offsetMotion());
+      if (setback) {
+        chatColor = ChatColor.DARK_RED;
+        symbol = "!! ";
+      } else if (violationLevelIncrease > 0) {
+        chatColor = ChatColor.RED;
+        symbol = "! ";
+      } else if (distance1 > 0.1) {
+	      chatColor = ChatColor.YELLOW;
+	      symbol = "? ";
+      }
+
+      String string = chatColor + symbol + " rom:" + movementData.sentOffsetMotion().shortString()
+        + " som:" + simulation.offsetMotion().shortString()
+        + " sam:" + simulation.actualMotion().shortString();
+//      List<Motion> candidates = movementData.postTickMotionCandidates();
+//      if (!candidates.isEmpty() && candidates.size() > 1) {
+//        string += " cands:" + candidates.stream().map(Motion::toString).collect(Collectors.joining(","));
+//      }
+      string += " " + formatDouble(distance1, 6);
+      user.sendMessage(string);
+    }
+  }
+
+  private String evalTagsToString(Set<EvaluationTag> horizontalTags) {
+    StringJoiner result = new StringJoiner(",");
+    Set<String> uniqueValues1 = new HashSet<>();
+    for (EvaluationTag horizontalTag : horizontalTags) {
+      String string = horizontalTag.toString();
+      String upperCase = string.toUpperCase();
+      if (uniqueValues1.add(upperCase)) {
+        result.add(upperCase);
+      }
+    }
+    return result.toString();
+  }
+
+  private void sendPacketWithExperience(Player player, int level) {
+    PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.EXPERIENCE);
+    packet.getFloat().write(0, 0f);
+    packet.getIntegers().write(0, 0);
+    packet.getIntegers().write(1, level);
+    PacketSender.sendServerPacket(player, packet);
   }
 
   private void refreshNearbyBlocks(User user, double x, double y, double z) {
@@ -1116,8 +1314,7 @@ public final class Physics extends Check {
   }
 
   private void performMovementSanityChecks(User user, double receivedMotionX, double receivedMotionY, double receivedMotionZ) {
-    MovementMetadata movementData = user.meta().movement();
-    ViolationMetadata violationMetadata = user.meta().violationLevel();
+	  ViolationMetadata violationMetadata = user.meta().violationLevel();
 
     if ((Double.isNaN(violationMetadata.physicsOffset) || Double.isInfinite(violationMetadata.physicsOffset)) && FaultKicks.POSITION_FAULTS) {
       user.kick("Intolerable position fault (sanity check #3)");
@@ -1147,10 +1344,6 @@ public final class Physics extends Check {
 
   public boolean highToleranceMode() {
     return highToleranceMode;
-  }
-
-  public boolean resetItemUsageOnDetection() {
-    return resetItemUsage;
   }
 
   public boolean closeInventoryOnDetection() {

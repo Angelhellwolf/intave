@@ -1,0 +1,71 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
+package de.jpx3.intave.check.movement.physics;
+
+import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
+import de.jpx3.intave.check.movement.physics.environment.MockSimulationEnvironment;
+import de.jpx3.intave.check.movement.physics.simulator.Simulation;
+import de.jpx3.intave.player.collider.complex.SimulationResult;
+import de.jpx3.intave.share.Motion;
+import de.jpx3.intave.user.User;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Proxy;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+final class SimulationTest {
+  @Test
+  void reusableCopyPreservesBlueDetails() {
+    Simulation simulation = simulation();
+
+    simulation.appendBlue("1f");
+
+    assertEquals("1f", simulation.reusableCopy().blueDetails());
+  }
+
+  @Test
+  void flushClearsBlueDetails() {
+    Simulation simulation = simulation();
+    simulation.appendBlue("1f");
+
+    simulation.flush(
+      MovementConfiguration.blank(),
+      new MockSimulationEnvironment(),
+      SimulationResult.untouched(Motion.newEmpty())
+    );
+
+    assertEquals("", simulation.blueDetails());
+  }
+
+  private Simulation simulation() {
+    return Simulation.of(
+      userWithoutPlayer(),
+      MovementConfiguration.blank(),
+      new MockSimulationEnvironment(),
+      SimulationResult.untouched(Motion.newEmpty())
+    );
+  }
+
+  private User userWithoutPlayer() {
+    return (User) Proxy.newProxyInstance(
+      User.class.getClassLoader(),
+      new Class<?>[]{User.class},
+      (proxy, method, args) -> {
+        if ("hasPlayer".equals(method.getName())) {
+          return false;
+        }
+        return null;
+      }
+    );
+  }
+}

@@ -76,7 +76,7 @@ public final class BlockingHeuristic extends ClassicHeuristic<BlockingHeuristic.
     BlockingMeta meta = metaOf(user);
     PacketContainer packet = event.getPacket();
 
-    if (!user.meta().protocol().flyingPacketsAreSent() || user.meta().abilities().ignoringMovementPackets() || user.meta().movement().ticksPast(TELEPORT) < 10) {
+    if (!user.meta().protocol().emptyFlyingPacketsAreExplicitlySent() || user.meta().abilities().ignoringMovementPackets() || user.meta().movement().ticksPast(TELEPORT) < 10) {
       return;
     }
 

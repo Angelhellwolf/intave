@@ -1,21 +1,72 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check.movement.physics.environment;
 
 import de.jpx3.intave.annotate.Nullable;
+import de.jpx3.intave.block.access.VolatileBlockAccess;
+import de.jpx3.intave.block.collision.Collision;
 import de.jpx3.intave.block.fluid.Fluid;
 import de.jpx3.intave.check.movement.physics.MoveMetric;
 import de.jpx3.intave.check.movement.physics.Pose;
-import de.jpx3.intave.check.movement.physics.Simulation;
-import de.jpx3.intave.player.collider.complex.ColliderResult;
+import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
+import de.jpx3.intave.check.movement.physics.simulator.Simulation;
+import de.jpx3.intave.check.movement.physics.simulator.Simulator;
+import de.jpx3.intave.check.movement.physics.update.TickAmbiguousUpdate;
+import de.jpx3.intave.module.tracker.entity.Entity;
+import de.jpx3.intave.player.collider.complex.SimulationResult;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.share.Rotation;
+import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.meta.InventoryMetadata;
+import de.jpx3.intave.user.meta.MetadataBundle;
+import de.jpx3.intave.user.meta.ProtocolMetadata;
+import de.jpx3.intave.world.border.WorldBorder;
 import org.bukkit.Material;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import static de.jpx3.intave.share.ClientMath.floor;
+import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_14;
 
 public interface SimulationEnvironment {
-  Pose pose();
+  User user();
+
+  default Position position() {
+    return new Position(positionX(), positionY(), positionZ());
+  }
+  double positionX();
+  double positionY();
+  double positionZ();
+
   Vector lookVector();
+
+  default Position lastPosition() {
+    return new Position(lastPositionX(), lastPositionY(), lastPositionZ());
+  }
+  double lastPositionX();
+  double lastPositionY();
+  double lastPositionZ();
+
+  default Rotation lastRotation() {
+    return new Rotation(lastRotationYaw(), lastRotationPitch());
+  }
+  float lastRotationYaw();
+  float lastRotationPitch();
 
   void updateMovement(
 	  double newPositionX, double newPositionY, double newPositionZ,
@@ -35,33 +86,40 @@ public interface SimulationEnvironment {
       hasMovement ? newPosition.getZ() : 0,
       hasRotation ? newRotation.yaw() : 0,
       hasRotation ? newRotation.pitch() : 0,
-      hasMovement,
-      hasRotation
+      hasMovement, hasRotation
     );
   }
 
-  default Position position() {
-    return new Position(positionX(), positionY(), positionZ());
-  }
-  double positionX();
-  double positionY();
-  double positionZ();
+  void setPosition(double x, double y, double z);
 
+  default void setPosition(@Nullable Position position) {
+    if (position != null) {
+      setPosition(position.getX(), position.getY(), position.getZ());
+    }
+  }
+
+  void setRotation(float newRotationYaw, float newRotationPitch);
+
+  default void setRotation(@Nullable Rotation newRotation) {
+    if (newRotation != null) {
+      setRotation(newRotation.yaw(), newRotation.pitch());
+    }
+  }
   default Position verifiedLastPosition() {
     return new Position(verifiedLastPositionX(), verifiedLastPositionY(), verifiedLastPositionZ());
   }
   double verifiedLastPositionX();
   double verifiedLastPositionY();
+
   double verifiedLastPositionZ();
 
   void setVerifiedLastPosition(Position position, String reason);
 
-  default Position lastPosition() {
-    return new Position(lastPositionX(), lastPositionY(), lastPositionZ());
+  default void setLastRotation(Rotation rotation) {
+    setLastRotation(rotation.yaw(), rotation.pitch());
   }
-  double lastPositionX();
-  double lastPositionY();
-  double lastPositionZ();
+
+  void setLastRotation(float lastRotationYaw, float lastRotationPitch);
 
   default void setLastPosition(Position position) {
     setLastPosition(position.getX(), position.getY(), position.getZ());
@@ -72,12 +130,63 @@ public interface SimulationEnvironment {
   void setBoundingBox(BoundingBox boundingBox);
   BoundingBox boundingBox();
 
-  default Motion motion() {
-    return new Motion(motionX(), motionY(), motionZ());
+  Pose pose();
+  void setPose(Pose pose);
+
+  default void updatePose() {
+    User user = user();
+    Pose suggestedPose;
+    if (shouldHaveSwimmingPose()) {
+      suggestedPose = Pose.SWIMMING;
+    } else if (shouldBeInSleepingPose()) {
+      suggestedPose = Pose.SLEEPING;
+    } else if (shouldHaveFallFlyingPose()) {
+      suggestedPose = Pose.FALL_FLYING;
+    } else if (shouldHaveSneakingPose()) {
+      suggestedPose = Pose.CROUCHING;
+    } else {
+      suggestedPose = Pose.STANDING;
+    }
+    Pose actualPose;
+    if (user.protocolVersion() >= VER_1_14) {
+      if (!isPoseClear(Pose.SWIMMING)) {
+        return;
+      }
+      if (!isPoseClear(suggestedPose)) {
+        if (isPoseClear(Pose.CROUCHING)) {
+          actualPose = Pose.CROUCHING;
+        } else {
+          actualPose = Pose.SWIMMING;
+        }
+      } else {
+        actualPose = suggestedPose;
+      }
+    } else {
+      actualPose = suggestedPose;
+    }
+    setPose(actualPose);
   }
-  double motionX();
-  double motionY();
-  double motionZ();
+
+  default boolean isPoseClear(Pose pose) {
+    User user = user();
+    return Collision.nonePresent(
+      user, this, pose.boundingBoxOf(user, this).shrink(0.0000001)
+    );
+  }
+
+  default Motion sentOffsetMotion() {
+    return new Motion(offsetMotionX(), offsetMotionY(), offsetMotionZ());
+  }
+  double offsetMotionX();
+  double offsetMotionY();
+  double offsetMotionZ();
+
+  List<Motion> postTickMotionCandidates();
+  void setPostTickMotionCandidates(@NotNull List<Motion> postTickMotionCandidates);
+
+  default void clearPostTickMotionCandidates() {
+    setPostTickMotionCandidates(Collections.emptyList());
+  }
 
   default Motion mutableBaseMotionCopy() {
     return new Motion(baseMotionX(), baseMotionY(), baseMotionZ());
@@ -101,6 +210,13 @@ public interface SimulationEnvironment {
   Vector motionMultiplier();
   void resetMotionMultiplier();
 
+  WorldBorder border();
+  void setWorldBorder(@NotNull WorldBorder worldBorder);
+
+  default Rotation rotation() {
+    return new Rotation(rotationYaw(), rotationPitch());
+  }
+
   float rotationYaw();
   float yawSine();
   float yawCosine();
@@ -108,19 +224,34 @@ public interface SimulationEnvironment {
   float rotationPitch();
 
   float aiMoveSpeed(boolean sprinting);
-  float friction();
+
+  boolean shouldHaveFallFlyingPose();
+
+  float friction(boolean sprinting);
   double stepHeight();
+  void setStepHeight(float stepHeight);
   double resetMotion();
 
   double jumpMotion();
   void setJumpMotion(double jumpMotion);
+  boolean isJumping();
 
   double gravity();
 
   float blockSpeedFactor();
+  float jumpMovementFactor();
 
-  boolean isSneaking();
   boolean isSprinting();
+  boolean isSneaking();
+  void setSneaking(boolean sneaking);
+  boolean lastSprinting();
+  void setLastSprinting(boolean lastSprinting);
+
+  boolean isSleeping();
+  void setSleeping(boolean sleeping);
+
+  boolean hasSprintSpeed();
+  boolean sprintingAllowed();
   boolean inWater();
   void setInWater(boolean inWater);
   boolean inLava();
@@ -129,13 +260,18 @@ public interface SimulationEnvironment {
   boolean onGround();
 
   boolean lastOnGround();
+  void setLastOnGround(boolean lastOnGround);
   boolean collidedHorizontally();
   boolean collidedVertically();
 
   void checkSupportingBlock(Motion motion);
+  void clearSupportingBlock();
+  void compileSpecialBlocks();
 
   boolean collidedWithBoat();
   double frictionPosSubtraction();
+
+  float frictionMultiplier();
   boolean receivedFlyingPacketIn(int ticks);
 
   Material collideMaterial();
@@ -146,15 +282,27 @@ public interface SimulationEnvironment {
 
   double fallDistance();
   void resetFallDistance();
+  void addFallDistance(double fallDistance);
 
   boolean isInVehicle();
+
   void dismountRidingEntity(String boatSetback);
+
+  default Entity vehicle() {
+    return null;
+  }
+
+  Simulator simulator();
+  void setSimulator(Simulator simulator);
 
   void setPushedByEntity(boolean pushedByEntity);
   boolean pushedByEntity();
 
-  void setBeforeMoveColliderResult(ColliderResult result);
-  ColliderResult beforeMoveColliderResult();
+  void setSimulationResult(SimulationResult result);
+  SimulationResult simulationResult();
+
+  void setLastMovementConfiguration(MovementConfiguration configuration);
+  MovementConfiguration lastMovementConfiguration();
 
   int ticks(MoveMetric metric);
   int ticksPast(MoveMetric metric);
@@ -184,23 +332,244 @@ public interface SimulationEnvironment {
     }
   }
 
+  @Deprecated
+  int reduceTicks();
+
+  @Deprecated
+  boolean denyJump();
+
+  void setEyesInWater(boolean eyesInWater);
+  boolean areEyesInWater();
+  void setInteractingFluid(Fluid interactingFluid);
+  Fluid interactingFluid();
+
+  default void updateEyesInWater() {
+    double yPos = positionY() + eyeHeight() - (double) 0.11111f;
+    this.setEyesInWater(interactingFluid() != null && interactingFluid().isOfWater());
+    this.setInteractingFluid(null);
+
+    Fluid fluid = VolatileBlockAccess.fluidAccess(user(), positionX(), yPos, positionZ());
+    if (fluid.isOfWater()) {
+      double d1 = (float) floor(yPos) + 1.0f;
+      if (d1 > yPos) {
+        setInteractingFluid(fluid);
+      }
+    }
+  }
+
   void resetPhysicsPacketRelinkFlyVL();
 
-  void updateEyesInWater();
+  default int physicsPacketRelinkFlyVL() {
+    return 0;
+  }
+
+  default void setPhysicsPacketRelinkFlyVL(int physicsPacketRelinkFlyVL) {
+    throw new UnsupportedOperationException("setPhysicsPacketRelinkFlyVL is not supported for this SimulationEnvironment");
+  }
+
+  default boolean motionResetX() {
+    return motionXReset();
+  }
+
+  default void setMotionResetX(boolean reset) {
+    throw new UnsupportedOperationException("setMotionResetX is not supported for this SimulationEnvironment");
+  }
+
+  default boolean motionResetZ() {
+    return motionZReset();
+  }
+
+  default void setMotionResetZ(boolean reset) {
+    throw new UnsupportedOperationException("setMotionResetZ is not supported for this SimulationEnvironment");
+  }
+
+  default double baseMoveSpeed() {
+    return 0.271;
+  }
+
+  default int fireworkRocketsPower() {
+    return 1;
+  }
+
+  default int shulkerXToleranceRemaining() {
+    return 0;
+  }
+
+  default int shulkerYToleranceRemaining() {
+    return 0;
+  }
+
+  default int shulkerZToleranceRemaining() {
+    return 0;
+  }
+
+  default int lowestShulkerY() {
+    return Integer.MAX_VALUE;
+  }
+
+  default int highestShulkerY() {
+    return Integer.MIN_VALUE;
+  }
+
+  default int pistonMotionToleranceRemaining() {
+    return 0;
+  }
+
+  default double pistonVerticalAllowance() {
+    return 0.0;
+  }
+
+  default double pistonHorizontalAllowance() {
+    return 0.0;
+  }
+
+  default BoundingBox pistonCollisionArea() {
+    return null;
+  }
+
+  default boolean physicsUnpredictableVelocityExpected() {
+    return false;
+  }
+
+  default boolean enforceBoatStep() {
+    return false;
+  }
+
+  default void setEnforceBoatStep(boolean enforceBoatStep) {
+    throw new UnsupportedOperationException("setEnforceBoatStep is not supported for this SimulationEnvironment");
+  }
+
+  default boolean lastSneaking() {
+    return false;
+  }
+
+  default boolean currentlyInBlock() {
+    return false;
+  }
+
+  default int highestLocalRiptideLevel() {
+    return 0;
+  }
+
+  default boolean onGroundWithRiptide() {
+    return false;
+  }
+
   void aquaticUpdateLavaReset();
 
   float height();
-  float width();
+  void setHeight(float height);
   double heightRounded();
+
+  float width();
+  void setWidth(float width);
   double widthRounded();
+
+  default void updateSize() {
+    User user = user();
+    Pose pose = pose();
+    setWidth(pose.width(user, this));
+    setHeight(pose.height(user, this));
+  }
+
   float eyeHeight();
 
-  Fluid interactingFluid();
-
   void assumeOccurred(Simulation simulation);
-  void tickComplete(boolean hasMovement, boolean hasRotation);
+  void tickComplete(boolean hasMovement, boolean hasRotation, boolean isRealClientTick);
 
-  default SimulationEnvironment unmodifiable() {
-    return UnmodifiableSimulationEnvironmentView.of(this);
+  long currentTick();
+  long activeSequence();
+  void setActiveSequence(long activeSequence);
+
+  List<TickAmbiguousUpdate> allTickAmbiguousUpdates();
+
+  default List<TickAmbiguousUpdate> possibleTickAmbiguousUpdates() {
+    List<TickAmbiguousUpdate> updates = new ArrayList<>();
+    for (TickAmbiguousUpdate update : allTickAmbiguousUpdates()) {
+      if (update.possible(this)) {
+        updates.add(update);
+      }
+    }
+    return updates;
+  }
+
+  void setTreatThisFlyPacketAsMovePacket(boolean treatThisFlyPacketAsMovePacket);
+
+  default boolean tryMoveReinterpretation(Simulation simulation, double flyingLimit) {
+    if (!simulation.resultsInFlyingPacket(this, flyingLimit)) {
+      return false;
+    }
+    reinterpretMovePacket(simulation);
+    return true;
+  }
+
+  default void reinterpretMovePacket(Simulation simulation) {
+    Position verifiedLastPosition = verifiedLastPosition();
+    Rotation lastRotation = lastRotation();
+    Position subversivePosition = verifiedLastPosition.add(simulation.offsetMotion());
+
+    updateMovement(subversivePosition, null);
+    setLastPosition(verifiedLastPosition);
+    setLastRotation(lastRotation);
+    activeTick(MoveMetric.FLYING_PACKET_ACCURATE);
+    setTreatThisFlyPacketAsMovePacket(true);
+  }
+
+  default boolean shouldBeInSleepingPose() {
+    return isSleeping();
+  }
+
+  default boolean shouldHaveSwimmingPose() {
+    ProtocolMetadata protocol = user().meta().protocol();
+    if (!protocol.swimmingMechanics()) {
+      return false;
+    }
+    boolean sprinting = lastSprinting();
+    boolean swimming = pose() == Pose.SWIMMING;
+    if (swimming) {
+      return sprinting && inWater();
+    } else {
+      return sprinting && ((pose() == Pose.FALL_FLYING && inWater()) || areEyesInWater());
+    }
+  }
+
+  default boolean shouldHaveSneakingPose() {
+    MetadataBundle meta = user().meta();
+    ProtocolMetadata protocol = meta.protocol();
+    InventoryMetadata inventoryData = meta.inventory();
+    boolean sneakingAllowed = isSneaking() && !inventoryData.inventoryOpen();
+    boolean actualSneaking;
+    if (protocol.delayedSneak()) {
+      actualSneaking = lastSneaking();
+    } else if (protocol.alternativeSneak()) {
+      actualSneaking = lastSneaking() || sneakingAllowed;
+    } else {
+      actualSneaking = sneakingAllowed;
+    }
+    return actualSneaking;
+  }
+
+  default SimulationEnvironment immutableView() {
+    return ImmutableSimulationEnvironmentView.of(this);
+  }
+
+  default SimulationEnvironment immutableCopy() {
+    return ImmutableSimulationEnvironmentCopy.of(this);
+  }
+
+  default SimulationEnvironment mutableView() {
+    return MutableSimulationEnvironmentView.of(this);
+  }
+
+  default void commitTo(SimulationEnvironment other) {
+    throw new UnsupportedOperationException("commitTo is not supported for this SimulationEnvironment");
+  }
+
+  default int depth() {
+    return 0;
+  }
+
+  static SimulationEnvironment invalid() {
+    return null;
   }
 }

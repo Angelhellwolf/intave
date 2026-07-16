@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.block.shape.resolve.patch;
 
 import de.jpx3.intave.IntavePlugin;
@@ -10,6 +21,7 @@ import de.jpx3.intave.klass.rewrite.PatchyLoadingInjector;
 import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Direction;
+import de.jpx3.intave.share.RawVector3d;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -109,9 +121,10 @@ class CobbleStoneWallPatch extends BlockShapePatch {
   private List<Direction> surroundedFacings(World world, int posX, int posY, int posZ) {
     List<Direction> connected = new ArrayList<>();
     Direction direction = UP;
-    int blockX = (int) (posX + direction.directionVector().x);
-    int blockY = (int) (posY + direction.directionVector().y);
-    int blockZ = (int) (posZ + direction.directionVector().z);
+    RawVector3d directionVector = direction.directionVector();
+    int blockX = (int) (posX + directionVector.x());
+    int blockY = (int) (posY + directionVector.y());
+    int blockZ = (int) (posZ + directionVector.z());
     Block block = VolatileBlockAccess.blockAccess(world, blockX, blockY, blockZ);
     Material blockType = block.getType();
     if (blockType != Material.AIR) {

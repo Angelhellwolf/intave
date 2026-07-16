@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.share;
 
 import de.jpx3.intave.klass.Lookup;
@@ -11,7 +22,7 @@ import java.lang.reflect.InvocationTargetException;
 
 public class RawVector3d {
   public static final RawVector3d ZERO = new RawVector3d(0.0D, 0.0D, 0.0D);
-  public final double x, y, z;
+  final double x, y, z;
 
   public RawVector3d(double x, double y, double z) {
     if (x == -0.0D) {
@@ -202,6 +213,25 @@ public class RawVector3d {
       double d3 = (z - this.z) / d2;
       return d3 >= 0.0D && d3 <= 1.0D ? new RawVector3d(this.x + d0 * d3, this.y + d1 * d3, this.z + d2 * d3) : null;
     }
+  }
+
+  public BlockPosition toBlockPosition() {
+    if (this instanceof BlockPosition) {
+      return (BlockPosition) this;
+    }
+    return new BlockPosition((int) Math.floor(x), (int) Math.floor(y), (int) Math.floor(z));
+  }
+
+  public double x() {
+    return x;
+  }
+
+  public double y() {
+    return y;
+  }
+
+  public double z() {
+    return z;
   }
 
   public static RawVector3d fromNative(Object vec3d) {

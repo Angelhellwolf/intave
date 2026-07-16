@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.command.stages;
 
 import com.comphenix.protocol.PacketType;
@@ -41,6 +52,7 @@ import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.ConnectionMetadata;
+import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
 import de.jpx3.intave.user.meta.PunishmentMetadata;
 import de.jpx3.intave.user.storage.PlaytimeStorage;
@@ -527,6 +539,7 @@ public final class DiagnosticsStage extends CommandStage {
   )
   public void teleportSpam(User user) {
     Player player = user.player();
+    MovementMetadata movement = user.meta().movement();
     player.sendMessage(ChatColor.RED + "Logout to stop");
 
     int[] id = {0};
@@ -537,22 +550,22 @@ public final class DiagnosticsStage extends CommandStage {
       }
       int attempts = 100;
       BoundingBox playerBox = BoundingBox.fromPosition(
-        user, user.meta().movement(), player.getLocation()
+        user, movement, player.getLocation()
       );
       double moveX;
       do {
         moveX = ThreadLocalRandom.current().nextGaussian();
-      } while (Collision.present(player, playerBox.move(moveX, 0, 0)) && attempts-- > 0);
+      } while (Collision.present(user, movement, playerBox.move(moveX, 0, 0)) && attempts-- > 0);
       if (attempts <= 0) moveX = 0;
       attempts = 100;
       double moveY;
       do {
         moveY = ThreadLocalRandom.current().nextGaussian();
-      } while (Collision.present(player, playerBox.move(0, moveY, 0)) && attempts-- > 0);
+      } while (Collision.present(user, movement, playerBox.move(0, moveY, 0)) && attempts-- > 0);
       double moveZ;
       do {
         moveZ = ThreadLocalRandom.current().nextGaussian();
-      } while (Collision.present(player, playerBox.move(0, 0, moveZ)) && attempts-- > 0);
+      } while (Collision.present(user, movement, playerBox.move(0, 0, moveZ)) && attempts-- > 0);
       if (attempts <= 0) moveZ = 0;
       if (attempts <= 0) moveY = 0;
       player.teleport(player.getLocation().clone().add(moveX, moveY, moveZ));

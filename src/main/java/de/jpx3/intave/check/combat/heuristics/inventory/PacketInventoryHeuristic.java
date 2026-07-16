@@ -62,7 +62,7 @@ public final class PacketInventoryHeuristic extends ClassicHeuristic<PacketInven
       return;
     }
 
-    if (clientData.flyingPacketsAreSent() && meta.inventoryTicks == 0 && meta.performedInventoryOpenOperation) {
+    if (clientData.emptyFlyingPacketsAreExplicitlySent() && meta.inventoryTicks == 0 && meta.performedInventoryOpenOperation) {
       flag(player, "closed inventory too quickly (" + meta.inventoryTicks + ")");
       user.nerf(BURN_LONGER, nerfId);
       user.nerf(DMG_HIGH, nerfId);
@@ -86,7 +86,7 @@ public final class PacketInventoryHeuristic extends ClassicHeuristic<PacketInven
     SimulationEnvironment movementData = user.meta().movement();
     ProtocolMetadata clientData = user.meta().protocol();
 
-    if (!clientData.flyingPacketsAreSent() || movementData.isInVehicle()) {
+    if (!clientData.emptyFlyingPacketsAreExplicitlySent() || movementData.isInVehicle()) {
       return;
     }
 

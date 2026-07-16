@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.module.mitigate;
 
 import de.jpx3.intave.IntaveControl;
@@ -238,7 +249,7 @@ public final class SetbackSimulator extends Module {
       movementData.artificialFallDistance += (float) -motion.motionY;
     }
 
-    if (!Collision.present(player, BoundingBox.fromPosition(user, movementData, futurePosition.clone().add(motion.toBukkitVector())))) {
+    if (!Collision.present(user, movementData, BoundingBox.fromPosition(user, movementData, futurePosition.clone().add(motion.toBukkitVector())))) {
       futurePosition = futurePosition.clone().add(motion.toBukkitVector());
     }
     futurePosition.setYaw(movementData.rotationYaw);
@@ -366,7 +377,7 @@ public final class SetbackSimulator extends Module {
         motionY *= 0.98f;
         motionZ *= 0.99f;
       } else {
-        if (movementData.inWater) {
+        if (movementData.inWater()) {
           motionY = lastMotion.motionY * 0.8f;
           motionY -= 0.02;
         } else {
@@ -391,7 +402,7 @@ public final class SetbackSimulator extends Module {
     motionY = collisionVector.motionY;
     double multiplier;
     if (applyPhysics && movementData.pose() != Pose.FALL_FLYING) {
-      if (movementData.inWater) {
+      if (movementData.inWater()) {
         multiplier = 0.8f;
       } else {
         multiplier = onGround ? 0.546f : 0.91f;
@@ -399,7 +410,7 @@ public final class SetbackSimulator extends Module {
     } else {
       multiplier = 1;
     }
-    if (movementData.lastOnGround && !movementData.onGround) {
+    if (movementData.lastOnGround() && !movementData.onGround) {
       multiplier *= 0.6f;
     }
     motionX *= multiplier;
@@ -430,7 +441,7 @@ public final class SetbackSimulator extends Module {
         motionY *= 0.25f;
         motionZ *= 0.25D;
       }
-      movementData.lastOnGround = movementData.onGround;
+      movementData.setLastOnGround(movementData.onGround());
       movementData.onGround = onGround;
     }
     collisionVector = resolveCollisionVector(player, boundingBox, motionX, motionY, motionZ);
@@ -467,6 +478,7 @@ public final class SetbackSimulator extends Module {
 
   private void updateMovementStatus(User user) {
     MovementMetadata movementData = user.meta().movement();
+    // this is shit, no?
     movementData.inWater = Collision.rasterizedLiquidPresentSearch(user, movementData.boundingBox());
   }
 
@@ -556,8 +568,8 @@ public final class SetbackSimulator extends Module {
 
   private Vector resolvePushVector(Player player, double positionX, double positionY, double positionZ) {
     BlockPosition blockPosition = new BlockPosition(positionX, positionY, positionZ);
-    double d0 = positionX - blockPosition.x;
-    double d1 = positionZ - blockPosition.z;
+    double d0 = positionX - blockPosition.x();
+    double d1 = positionZ - blockPosition.z();
     Vector vector = new Vector();
     int i = -1;
     double d2 = 9999.0D;

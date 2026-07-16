@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.module.tracker.player;
 
 import com.comphenix.protocol.events.PacketContainer;
@@ -21,7 +32,7 @@ import static de.jpx3.intave.module.linker.packet.PacketId.Client.WINDOW_CLICK;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.SET_SLOT;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.WINDOW_ITEMS;
 
-public class ItemCrashTracker extends Module {
+public final class ItemCrashTracker extends Module {
   @PacketSubscription(
     packetsOut = {
       WINDOW_ITEMS, SET_SLOT

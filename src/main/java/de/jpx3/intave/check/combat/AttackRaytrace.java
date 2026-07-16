@@ -303,7 +303,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
 
         boolean hasNotTimedOut = !entityInTimeout(user, attackedEntity, pendingAttack.pendingFeedbackPackets());
         boolean unsafeSynchronization = movement.dropPostTickMotionProcessing && protocol.protocolVersion() >= 755;
-        boolean entityOutOfSync = (!protocol.flyingPacketsAreSent() && !protocol.sendsClientTickEnd() && movement.receivedFlyingPacketIn(2))
+        boolean entityOutOfSync = (!protocol.emptyFlyingPacketsAreExplicitlySent() && !protocol.sendsClientTickEnd() && movement.receivedFlyingPacketIn(2))
           || !attackedEntity.clientSynchronized || unsafeSynchronization;
 
         // As entity attack redirections are processed inside this, we don't need to do anything extra to block hits besides
@@ -818,7 +818,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
     double x = currentPosition ? movementData.positionX : movementData.lastPositionX;
     double y = currentPosition ? movementData.positionY : movementData.lastPositionY;
     double z = currentPosition ? movementData.positionZ : movementData.lastPositionZ;
-    boolean requiresAlternativeY = clientData.flyingPacketsAreSent();
+    boolean requiresAlternativeY = clientData.emptyFlyingPacketsAreExplicitlySent();
     boolean fixedMouseDelay = clientData.protocolVersion() >= 314;
     float yaw = movementData.rotationYaw % 360f;
     float lastYaw = movementData.lastRotationYaw % 360f;
@@ -849,7 +849,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
 
     float baseline;
     // Process 1.8 and lower
-    if (clientData.flyingPacketsAreSent()) {
+    if (clientData.emptyFlyingPacketsAreExplicitlySent()) {
       baseline = attackRaytraceMeta.flyingPacketCounter > 0 ? 0.13f : 0.1f;
     } else {
       baseline = sendsClientTickEnd ? 0.04f : 0.13f;

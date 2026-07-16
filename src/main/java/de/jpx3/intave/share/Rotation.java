@@ -52,7 +52,7 @@ public final class Rotation implements Serializable {
 
 	@Override
 	public String toString() {
-		return "{" + yaw + ", " + pitch + "}";
+		return "Rot{" + yaw + ", " + pitch + "}";
 	}
 
 	public Rotation filtered(Set<Relative> relativeSet) {

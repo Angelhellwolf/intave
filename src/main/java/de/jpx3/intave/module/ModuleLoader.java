@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.module;
 
 import de.jpx3.intave.IntavePlugin;
@@ -44,6 +55,7 @@ final class ModuleLoader {
     prepareModule("de.jpx3.intave.module.tracker.player.InventoryTracker", defaultBoot);
     prepareModule("de.jpx3.intave.module.tracker.player.ItemCrashTracker", defaultBoot);
     prepareModule("de.jpx3.intave.module.tracker.player.MovementDebugTracker", defaultBoot);
+    prepareModule("de.jpx3.intave.module.tracker.player.MetadataTracker", defaultBoot);
     prepareModule("de.jpx3.intave.module.tracker.player.PlayerHandTracker", defaultBoot);
     prepareModule("de.jpx3.intave.module.tracker.player.SettingsTracker", defaultBoot);
     prepareModule("de.jpx3.intave.module.tracker.player.PacketLogging", defaultBoot);
@@ -61,9 +73,6 @@ final class ModuleLoader {
     prepareModule("de.jpx3.intave.module.dispatch.AttackDispatcher", lateBoot);
     prepareModule("de.jpx3.intave.module.dispatch.MovementDispatcher", lateBoot);
     prepareModule("de.jpx3.intave.module.dispatch.DesyncWatchdog", lateBoot);
-
-    // emulate
-//    prepareModule("de.jpx3.intave.module.emulate.MovementEmulation", lateBoot);
 
     prepareModule("de.jpx3.intave.module.test.ChestLootProvider", lateBoot);
     prepareModule("de.jpx3.intave.module.test.PhysicsTestRecorder", lateBoot);

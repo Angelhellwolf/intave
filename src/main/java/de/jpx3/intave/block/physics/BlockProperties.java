@@ -1,8 +1,19 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.block.physics;
 
 import org.bukkit.Material;
 
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
@@ -10,9 +21,9 @@ import static org.bukkit.Material.*;
 
 public final class BlockProperties {
   private static final Property DEFAULT_PROPERTY = Property.builderFor(AIR).build();
-  private static final Map<Material, Property> registry = new HashMap<>();
+  private static final Map<Material, Property> registry = new EnumMap<>(Material.class);
 
-  public static void setup() {
+  static {
     Property.builderFor(ICE, PACKED_ICE, "FROSTED_ICE").slipperiness(0.98f).buildAndSave();
     Property.builderFor("BLUE_ICE").slipperiness(0.989f).buildAndSave();
     Property.builderFor(SLIME_BLOCK).slipperiness(0.8f).buildAndSave();
@@ -31,7 +42,10 @@ public final class BlockProperties {
   }
 
   public static Property of(Material material) {
-    return registry.getOrDefault(material, DEFAULT_PROPERTY);
+    return registry.computeIfAbsent(
+      material,
+      m -> DEFAULT_PROPERTY
+    );
   }
 
   public static final class Property {

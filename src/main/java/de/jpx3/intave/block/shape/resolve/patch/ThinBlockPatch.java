@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.block.shape.resolve.patch;
 
 import de.jpx3.intave.adapter.MinecraftVersions;
@@ -91,7 +102,7 @@ final class ThinBlockPatch extends BlockShapePatch {
           west |= index == 5 || index == 0;
         }
         // via version emulates 1.8 behaviour of panes, we can account for it
-        if (!(north || east || south || west) && user.meta().protocol().waterUpdate()) {
+        if (!(north || east || south || west) && user.meta().protocol().aquaticUpdate()) {
           north = south = east = west = true;
         }
         List<BoundingBox> bbList = new ArrayList<>(count);

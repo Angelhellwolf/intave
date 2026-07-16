@@ -48,7 +48,7 @@ public final class PacketOrderSwingHeuristic extends ClassicHeuristic<PacketOrde
     if (user.meta().abilities().ignoringMovementPackets()) {
       return;
     }
-    if (reader.isAttackPacket() && protocol.flyingPacketsAreSent() && !heuristicMeta.swingTick) {
+    if (reader.isAttackPacket() && protocol.emptyFlyingPacketsAreExplicitlySent() && !heuristicMeta.swingTick) {
       String description = "swing not correlated with attack (" + user.meta().protocol().versionString() + ")";
       flag(user.player(), description);
       //dmc11

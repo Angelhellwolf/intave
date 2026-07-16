@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.block.shape;
 
 import de.jpx3.intave.block.shape.voxel.IndexMerger;
@@ -17,6 +28,8 @@ import java.util.function.BinaryOperator;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+
+import static de.jpx3.intave.share.Direction.Axis.*;
 
 public final class VoxelShape implements BlockShape {
 	private static final BitSet FILLED_BLOCK_BITSET = new BitSet(1);
@@ -153,18 +166,18 @@ public final class VoxelShape implements BlockShape {
 
 	private boolean isSetAndInSector(AxisRotation rotation, int xSector, int ySector, int zSector) {
 		return isSetAndInSector(
-			rotation.cycle(xSector, ySector, zSector, Direction.Axis.X_AXIS),
-			rotation.cycle(xSector, ySector, zSector, Direction.Axis.Y_AXIS),
-			rotation.cycle(xSector, ySector, zSector, Direction.Axis.Z_AXIS)
+			rotation.cycle(xSector, ySector, zSector, X_AXIS),
+			rotation.cycle(xSector, ySector, zSector, Y_AXIS),
+			rotation.cycle(xSector, ySector, zSector, Z_AXIS)
 		);
 	}
 
 	private boolean isSetAndInSector(AxisRotation rotation, BitSet sectorBits, int xSector, int ySector, int zSector) {
 		return isSetAndInSector(
 			sectorBits,
-			rotation.cycle(xSector, ySector, zSector, Direction.Axis.X_AXIS),
-			rotation.cycle(xSector, ySector, zSector, Direction.Axis.Y_AXIS),
-			rotation.cycle(xSector, ySector, zSector, Direction.Axis.Z_AXIS)
+			rotation.cycle(xSector, ySector, zSector, X_AXIS),
+			rotation.cycle(xSector, ySector, zSector, Y_AXIS),
+			rotation.cycle(xSector, ySector, zSector, Z_AXIS)
 		);
 	}
 
@@ -214,7 +227,7 @@ public final class VoxelShape implements BlockShape {
 
 	@Override
 	public double allowedOffset(Direction.Axis axis, BoundingBox entity, double offset) {
-		AxisRotation differential = AxisRotations.inverse(AxisRotation.differential(axis, Direction.Axis.X_AXIS));
+		AxisRotation differential = AxisRotations.inverse(AxisRotation.differential(axis, X_AXIS));
 		double output = allowedOffsetX(differential, entity, offset);
 		if (Math.abs(output) < EPSILON) {
 			output = 0;
@@ -233,9 +246,9 @@ public final class VoxelShape implements BlockShape {
 		if (Math.abs(offset) < EPSILON) {
 			return 0;
 		}
-		Direction.Axis projectionXAxis = rotation.cycle(Direction.Axis.X_AXIS);
-		Direction.Axis projectionYAxis = rotation.cycle(Direction.Axis.Y_AXIS);
-		Direction.Axis projectionZAxis = rotation.cycle(Direction.Axis.Z_AXIS);
+		Direction.Axis projectionXAxis = rotation.cycle(X_AXIS);
+		Direction.Axis projectionYAxis = rotation.cycle(Y_AXIS);
+		Direction.Axis projectionZAxis = rotation.cycle(Z_AXIS);
 		int startX = findIndex(projectionXAxis, entity.min(projectionXAxis) + EPSILON);
 		int endX = findIndex(projectionXAxis, entity.max(projectionXAxis) - EPSILON);
 		int startY = Math.max(0, findIndex(projectionYAxis, entity.min(projectionYAxis) + EPSILON));
@@ -404,12 +417,12 @@ public final class VoxelShape implements BlockShape {
 					if (isSetAndInSector(sectorCopy, xSector, ySector, zSector)) {
 						if (!merge) {
 							boolean cont = shapeConsumer.accept(
-								positionOf(Direction.Axis.X_AXIS, xSector),
-								positionOf(Direction.Axis.Y_AXIS, ySector),
-								positionOf(Direction.Axis.Z_AXIS, zSector),
-								positionOf(Direction.Axis.X_AXIS, xSector + 1),
-								positionOf(Direction.Axis.Y_AXIS, ySector + 1),
-								positionOf(Direction.Axis.Z_AXIS, zSector + 1)
+								positionOf(X_AXIS, xSector),
+								positionOf(Y_AXIS, ySector),
+								positionOf(Z_AXIS, zSector),
+								positionOf(X_AXIS, xSector + 1),
+								positionOf(Y_AXIS, ySector + 1),
+								positionOf(Z_AXIS, zSector + 1)
 							);
 							if (!cont) {
 								return;
@@ -434,12 +447,12 @@ public final class VoxelShape implements BlockShape {
 							yEnd++;
 						}
 						boolean cont = shapeConsumer.accept(
-							positionOf(Direction.Axis.X_AXIS, xSector),
-							positionOf(Direction.Axis.Y_AXIS, ySector),
-							positionOf(Direction.Axis.Z_AXIS, zStart),
-							positionOf(Direction.Axis.X_AXIS, xEnd + 1),
-							positionOf(Direction.Axis.Y_AXIS, yEnd + 1),
-							positionOf(Direction.Axis.Z_AXIS, zSector)
+							positionOf(X_AXIS, xSector),
+							positionOf(Y_AXIS, ySector),
+							positionOf(Z_AXIS, zStart),
+							positionOf(X_AXIS, xEnd + 1),
+							positionOf(Y_AXIS, yEnd + 1),
+							positionOf(Z_AXIS, zSector)
 						);
 						if (!cont) {
 							return;
@@ -465,6 +478,13 @@ public final class VoxelShape implements BlockShape {
 		return xSectors == 1 && ySectors == 1 && zSectors == 1 && this.sectorBits.cardinality() == 1 &&
 			Math.abs(xSectorOffsets[0]) < EPSILON && Math.abs(ySectorOffsets[0]) < EPSILON && Math.abs(zSectorOffsets[0]) < EPSILON &&
 			Math.abs(xSectorOffsets[1] - 1.0D) < EPSILON && Math.abs(ySectorOffsets[1] - 1.0D) < EPSILON && Math.abs(zSectorOffsets[1] - 1.0D) < EPSILON;
+	}
+
+	@Override
+	public boolean strictlyInside(double positionX, double positionY, double positionZ) {
+		return positionX > min(X_AXIS) && positionX < max(X_AXIS) &&
+			positionY > min(Y_AXIS) && positionY < max(Y_AXIS) &&
+			positionZ > min(Z_AXIS) && positionZ < max(Z_AXIS);
 	}
 
 	private int maxSector(Direction.Axis axis) {
@@ -575,9 +595,9 @@ public final class VoxelShape implements BlockShape {
 		}
 		boolean first = mergeFunction.apply(true, false);
 		boolean second = mergeFunction.apply(false, true);
-		IndexMerger xMerger = indexMergerOf(Direction.Axis.X_AXIS, firstShape, secondShape, first, second);
-		IndexMerger yMerger = indexMergerOf(Direction.Axis.Y_AXIS, firstShape, secondShape, first, second);
-		IndexMerger zMerger = indexMergerOf(Direction.Axis.Z_AXIS, firstShape, secondShape, first, second);
+		IndexMerger xMerger = indexMergerOf(X_AXIS, firstShape, secondShape, first, second);
+		IndexMerger yMerger = indexMergerOf(Y_AXIS, firstShape, secondShape, first, second);
+		IndexMerger zMerger = indexMergerOf(Z_AXIS, firstShape, secondShape, first, second);
 		return mergeSectors(firstShape, secondShape, xMerger, yMerger, zMerger, mergeFunction);
 	}
 

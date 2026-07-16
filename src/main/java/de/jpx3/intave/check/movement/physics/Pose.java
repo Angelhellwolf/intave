@@ -1,11 +1,23 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check.movement.physics;
 
 import com.google.common.collect.ImmutableMap;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
+import de.jpx3.intave.check.movement.physics.simulator.Simulator;
+import de.jpx3.intave.check.movement.physics.simulator.Simulators;
 import de.jpx3.intave.entity.size.HitboxSize;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.meta.MovementMetadata;
 
 import java.util.Map;
 
@@ -53,32 +65,37 @@ public enum Pose {
     }
   }
 
-  public BoundingBox boundingBoxOf(User user) {
-    SimulationEnvironment movementData = user.meta().movement();
-    return boundingBoxOf(user, movementData.positionX(), movementData.positionY(), movementData.positionZ());
+  public BoundingBox boundingBoxOf(
+    User user, SimulationEnvironment environment
+  ) {
+    return boundingBoxOf(
+      user, environment,
+      environment.positionX(), environment.positionY(), environment.positionZ()
+    );
   }
 
-  public BoundingBox boundingBoxOf(User user, double x, double y, double z) {
-    float halfWidth = width(user) / 2.0F;
-    float height = height(user);
+  public BoundingBox boundingBoxOf(
+    User user, SimulationEnvironment environment,
+    double x, double y, double z
+  ) {
+    float halfWidth = width(user, environment) / 2.0F;
+    float height = height(user, environment);
     return new BoundingBox(
       x - (double) halfWidth, y, z - (double) halfWidth,
       x + (double) halfWidth, y + (double) height, z + (double) halfWidth
     );
   }
 
-  public float width(User user) {
-    MovementMetadata movement = user.meta().movement();
-    Simulator simulator = movement.simulator();
+  public float width(User user, SimulationEnvironment environment) {
+    Simulator simulator = environment.simulator();
     if (simulator == Simulators.BOAT) {
       return 1.375F;
     }
     return size(user).width();
   }
 
-  public float height(User user) {
-    MovementMetadata movement = user.meta().movement();
-    Simulator simulator = movement.simulator();
+  public float height(User user, SimulationEnvironment environment) {
+    Simulator simulator = environment.simulator();
     if (simulator == Simulators.BOAT) {
       return 0.5625F;
     }

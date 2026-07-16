@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.block.fluid;
 
 import de.jpx3.intave.block.access.VolatileBlockAccess;
@@ -80,12 +91,12 @@ final class v8Waterflow implements FluidFlow {
           j = resolveEffectiveFlowDecay(user, position.down());
           if (j >= 0) {
             int k = j - (i - 8);
-            flowVector.add((position.x - pos.x) * k, (position.y - pos.y) * k, (position.z - pos.z) * k);
+            flowVector.add((position.x() - pos.x()) * k, (position.y() - pos.y()) * k, (position.z() - pos.z()) * k);
           }
         }
       } else {
         int l = j - i;
-        flowVector.add((position.x - pos.x) * l, (position.y - pos.y) * l, (position.z - pos.z) * l);
+        flowVector.add((position.x() - pos.x()) * l, (position.y() - pos.y()) * l, (position.z() - pos.z()) * l);
       }
     }
     if (VolatileBlockAccess.fluidAccess(user, pos).falling()) {
@@ -107,21 +118,21 @@ final class v8Waterflow implements FluidFlow {
 
   private static int resolveLevel(User user, BlockPosition pos) {
     World world = user.player().getWorld();
-    Material clientSideBlock = VolatileBlockAccess.typeAccess(user, world, pos.x, pos.y, pos.z);
-    int variantIndex = VolatileBlockAccess.variantIndexAccess(user, world, pos.x, pos.y, pos.z);
+    Material clientSideBlock = VolatileBlockAccess.typeAccess(user, world, pos.x(), pos.y(), pos.z());
+    int variantIndex = VolatileBlockAccess.variantIndexAccess(user, world, pos.x(), pos.y(), pos.z());
     Fluid fluid = Fluids.fluidStateOf(clientSideBlock, variantIndex);
     return fluid.isOfWater() ? fluid.level() : -1;
   }
 
   private static boolean blocksMovement(User user, BlockPosition position) {
-    Material type = VolatileBlockAccess.typeAccess(user, user.player().getWorld(), position.x, position.y, position.z);
+    Material type = VolatileBlockAccess.typeAccess(user, user.player().getWorld(), position.x(), position.y(), position.z());
     return MaterialMagic.blocksMovement(type);
   }
 
   private static boolean isBlockSolid(User user, BlockPosition pos, Direction side) {
     World world = user.player().getWorld();
-    Material type = VolatileBlockAccess.typeAccess(user, world, pos.x, pos.y, pos.z);
-    int variantIndex = VolatileBlockAccess.variantIndexAccess(user, world, pos.x, pos.y, pos.z);
+    Material type = VolatileBlockAccess.typeAccess(user, world, pos.x(), pos.y(), pos.z());
+    int variantIndex = VolatileBlockAccess.variantIndexAccess(user, world, pos.x(), pos.y(), pos.z());
     return !MaterialMagic.couldContainLiquid(type, variantIndex) && (side == Direction.UP || (type != Material.ICE && MaterialMagic.blockSolid(type)));
   }
 
