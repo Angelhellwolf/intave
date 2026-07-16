@@ -193,7 +193,7 @@ class ObsidianRecordingReplayTest {
     }
     RawVector3d look = lookVectorFor(player.pitch, player.yaw);
     RawVector3d target = eye.addVector(
-      look.x * MAX_REACH_PROBE_BLOCKS, look.y * MAX_REACH_PROBE_BLOCKS, look.z * MAX_REACH_PROBE_BLOCKS
+      look.x() * MAX_REACH_PROBE_BLOCKS, look.y() * MAX_REACH_PROBE_BLOCKS, look.z() * MAX_REACH_PROBE_BLOCKS
     );
     MovingObjectPosition hit = hitbox.calculateIntercept(eye, target);
     return hit == null ? Double.MAX_VALUE : eye.distanceTo(hit.hitVec);
