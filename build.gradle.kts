@@ -277,7 +277,7 @@ fun dumpBuildConfig() {
 }
 
 val paperRunConfigs = mapOf(
-  Pair("1.8.8", 21),
+  Pair("1.8.8", 17),
   Pair("1.9.4", 8),
   Pair("1.12.2", 17),
   Pair("1.14.4", 11),
