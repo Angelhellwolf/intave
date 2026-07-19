@@ -636,6 +636,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
     ViolationMetadata violationMeta = meta.violationLevel();
     String entityName = attacked.entityName();
     double blockReachDistance = Raytracing.reachDistanceOf(meta);
+    meta.attack().setLastReach(raytrace.reach());
     RaytraceResult result = RaytraceResult.of(raytrace, blockReachDistance);
     int vl = calculateVlFor(user, raytrace, result, attacked, expansion, estimated);
     String estimationSuffix = estimated ? " (estimated)" : "";
