@@ -65,6 +65,7 @@ import de.jpx3.intave.player.FaultKicks;
 import de.jpx3.intave.player.collider.Colliders;
 import de.jpx3.intave.player.collider.complex.SimulationResult;
 import de.jpx3.intave.player.collider.simple.SimpleColliderResult;
+import de.jpx3.intave.report.PhysicsReport;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.Position;
@@ -403,6 +404,7 @@ public final class Physics extends Check {
     ViolationMetadata violationLevelData = meta.violationLevel();
     AbilityMetadata abilityData = meta.abilities();
     BlockCache blockStateAccess = user.blockCache();
+    PhysicsReport physicsReport = null;
 
     SimulationResult expectedMovement = simulation.result();
     Motion offsetMotion = expectedMovement.offsetMotion();
@@ -657,6 +659,7 @@ public final class Physics extends Check {
         boolean multipleBoxes = intersectionBoundingBoxesCurrent.size() > 1;
         String details = (multipleBoxes ? intersectionBoundingBoxesCurrent.size() : "one") + " box" + (multipleBoxes ? "es" : "");
         if (!IntaveControl.IGNORE_CACHE_REFRESH_ON_SIMULATION_FAULT) {
+          physicsReport = new PhysicsReport(user);
           blockStateAccess.invalidateAll();
         }
         Violation violation = Violation.builderFor(Physics.class)
@@ -677,6 +680,7 @@ public final class Physics extends Check {
       movementData.setVerifiedLocation(location);
     }
 
+    double latantDistance = 0.7;
     if (violationLevelIncrease > 0) {
       boolean uncommonArea = //movementData.past(WATER_MOVEMENT) < 20
         movementData.collidedHorizontally
@@ -692,6 +696,16 @@ public final class Physics extends Check {
       violationLevelIncrease = Math.max(1, violationLevelIncrease);
       violationLevelData.physicsVL = MathHelper.minmax(0, violationLevelData.physicsVL + violationLevelIncrease, 200);
       violationLevelData.physicsInvalidMovementsInRow += (distance < 0.01 ? 0.25 : (distance < 0.05 ? 0.5 : 1));
+      if (
+        violationLevelData.physicsOffset > latantDistance
+          && distance > 0.001
+          && !spectator
+          && violationLevelData.physicsVL > 50
+      ) {
+        if (physicsReport == null) {
+          physicsReport = new PhysicsReport(user);
+        }
+      }
       if (violationLevelData.physicsVL > 20) {
         if (!IntaveControl.IGNORE_CACHE_REFRESH_ON_SIMULATION_FAULT) {
           blockStateAccess.invalidateAll();
@@ -706,7 +720,6 @@ public final class Physics extends Check {
     }
 
     boolean setback = false;
-    double latantDistance = 0.7;
     boolean offsetRequirement = violationLevelData.physicsOffset > latantDistance && distance > 0.001;
 
     PacketLogging logging = Modules.tracker().packetLogging();
@@ -722,7 +735,23 @@ public final class Physics extends Check {
       String expected = formatPosition(predictedOffsetX, predictedOffsetY, predictedOffsetZ);
       String actual = formatPosition(actualMotion.motionX, actualMotion.motionY, actualMotion.motionZ);
 
-      String message = "moved incorrectly";
+//      PhysicsReport report = physicsReport == null ? new PhysicsReport(user) : physicsReport;
+//      try {
+//        ReportFileWriter.writeNew(
+//          IntavePlugin.singletonInstance().getDataFolder().toPath().resolve("physicsreports"),
+//          "intave-physicsreport",
+//          report
+//        );
+//      } catch (IOException | RuntimeException exception) {
+//        IntaveLogger.logger().error(
+//          "Unable to write physics report: "
+//            + exception.getClass().getSimpleName()
+//            + ": "
+//            + exception.getMessage()
+//        );
+//      }
+
+	    String message = "moved incorrectly";
 //      String details = received + " actual: " + expected;
       String details = "";
 

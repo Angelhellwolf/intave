@@ -11,8 +11,11 @@
 
 package de.jpx3.intave.player.collider.complex;
 
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
+import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.share.Motion;
 
 import java.util.Collections;
@@ -22,6 +25,7 @@ import java.util.Objects;
 
 public final class SimulationResult {
 	private static final SimulationResult INVALID_SIMULATION = new SimulationResult();
+	public static final StreamCodec<JsonReader, JsonWriter, SimulationResult> JSON_CODEC = SimulationResultJsonCodec.INSTANCE;
 
 	private final Motion offsetMotion;
 	private final Motion intermittentResult;

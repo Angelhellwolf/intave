@@ -11,9 +11,33 @@
 
 package de.jpx3.intave.check.movement.physics.evaluation;
 
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
+import de.jpx3.intave.codec.StreamCodec;
+
+import static de.jpx3.intave.codec.JsonStreamCodecs.doubleField;
+import static de.jpx3.intave.codec.JsonStreamCodecs.object;
+
 public final class MaskedMotionTolerance {
+	public static final StreamCodec<JsonReader, JsonWriter, MaskedMotionTolerance> JSON_CODEC = object(
+		doubleField("motionXTarget", MaskedMotionTolerance::motionXTarget),
+		doubleField("motionZTarget", MaskedMotionTolerance::motionZTarget),
+		MaskedMotionTolerance::new
+	)
+	.encodeOnly(doubleField("motionXTolerance", MaskedMotionTolerance::motionXTolerance))
+	.encodeOnly(doubleField("motionZTolerance", MaskedMotionTolerance::motionZTolerance));
+
 	private double motionXTarget;
 	private double motionZTarget;
+
+	public MaskedMotionTolerance() {
+		this(0, 0);
+	}
+
+	public MaskedMotionTolerance(double motionXTarget, double motionZTarget) {
+		this.motionXTarget = motionXTarget;
+		this.motionZTarget = motionZTarget;
+	}
 
 	public void set(
 		double motionXLimit,

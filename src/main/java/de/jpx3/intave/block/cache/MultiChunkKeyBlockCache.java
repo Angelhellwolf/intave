@@ -63,6 +63,15 @@ final class MultiChunkKeyBlockCache implements BlockCache {
   }
 
   @Override
+  public BlockState peekStateAt(int posX, int posY, int posZ) {
+    if (posY < WorldHeight.LOWER_WORLD_LIMIT || WorldHeight.UPPER_WORLD_LIMIT < posY) {
+      return BlockState.empty();
+    }
+    BlockState replacement = replacementCache.byKey(bigKey(posX, posY, posZ));
+    return replacement == null ? blockCache.get(posX, posY, posZ) : replacement;
+  }
+
+  @Override
   public @NotNull BlockState stateAt(int posX, int posY, int posZ) {
     if (posY < WorldHeight.LOWER_WORLD_LIMIT || WorldHeight.UPPER_WORLD_LIMIT < posY) {
       return BlockState.empty();

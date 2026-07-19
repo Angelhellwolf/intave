@@ -68,7 +68,7 @@ final class ArrayBlockShape extends MemoryTraced implements BlockShape {
     double max = Integer.MIN_VALUE;
     boolean hasMax = false;
     for (BlockShape content : contents) {
-      max = Math.max(content.min(axis), max);
+      max = Math.max(content.max(axis), max);
       hasMax = true;
     }
     return hasMax ? max : 0;

@@ -11,20 +11,34 @@
 
 package de.jpx3.intave.share;
 
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
+import de.jpx3.intave.codec.JsonStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.packet.Relative;
 import io.netty.buffer.ByteBuf;
 import org.bukkit.util.Vector;
 
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
+import static de.jpx3.intave.codec.JsonStreamCodecs.doubleField;
+import static de.jpx3.intave.codec.JsonStreamCodecs.object;
 import static de.jpx3.intave.math.MathHelper.formatDouble;
 import static de.jpx3.intave.math.MathHelper.hypot3d;
 
 public final class Motion {
+	public static final StreamCodec<JsonReader, JsonWriter, Motion> JSON_CODEC = object(
+		doubleField("x", Motion::motionX),
+		doubleField("y", Motion::motionY),
+		doubleField("z", Motion::motionZ),
+		Motion::new
+	);
+	public static final StreamCodec<JsonReader, JsonWriter, List<Motion>> LIST_JSON_CODEC =
+		JsonStreamCodecs.listCodecOf(JSON_CODEC);
 	public static final StreamCodec<ByteBuf, ByteBuf, Motion> STREAM_CODEC = StreamCodec.compound(
 		ByteBufStreamCodecs.DOUBLE, Motion::motionX,
 		ByteBufStreamCodecs.DOUBLE, Motion::motionY,

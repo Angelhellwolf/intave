@@ -15,6 +15,7 @@ import de.jpx3.intave.block.fluid.Fluid;
 import de.jpx3.intave.check.movement.physics.MoveMetric;
 import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
+import de.jpx3.intave.check.movement.physics.simulator.BoatSimulator.Status;
 import de.jpx3.intave.check.movement.physics.simulator.Simulation;
 import de.jpx3.intave.check.movement.physics.simulator.Simulator;
 import de.jpx3.intave.check.movement.physics.update.TickAmbiguousUpdate;
@@ -89,6 +90,9 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 	private final BoundingBox pistonCollisionArea;
 	private final boolean physicsUnpredictableVelocityExpected;
 	private final boolean enforceBoatStep;
+	private final Status boatStatus, previousBoatStatus;
+	private final float boatGlide;
+	private final double boatWaterLevel;
 	private final int physicsPacketRelinkFlyVL;
 	private final boolean lastSneaking, currentlyInBlock;
 	private final int highestLocalRiptideLevel;
@@ -194,6 +198,10 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 		this.pistonCollisionArea = copyBoundingBox(source.pistonCollisionArea());
 		this.physicsUnpredictableVelocityExpected = source.physicsUnpredictableVelocityExpected();
 		this.enforceBoatStep = source.enforceBoatStep();
+		this.boatStatus = source.boatStatus();
+		this.previousBoatStatus = source.previousBoatStatus();
+		this.boatGlide = source.boatGlide();
+		this.boatWaterLevel = source.boatWaterLevel();
 		this.physicsPacketRelinkFlyVL = source.physicsPacketRelinkFlyVL();
 		this.lastSneaking = source.lastSneaking();
 		this.currentlyInBlock = source.currentlyInBlock();
@@ -866,6 +874,46 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 	}
 
 	@Override
+	public Status boatStatus() {
+		return boatStatus;
+	}
+
+	@Override
+	public void setBoatStatus(Status boatStatus) {
+		throw immutableCopyException();
+	}
+
+	@Override
+	public Status previousBoatStatus() {
+		return previousBoatStatus;
+	}
+
+	@Override
+	public void setPreviousBoatStatus(Status previousBoatStatus) {
+		throw immutableCopyException();
+	}
+
+	@Override
+	public float boatGlide() {
+		return boatGlide;
+	}
+
+	@Override
+	public void setBoatGlide(float boatGlide) {
+		throw immutableCopyException();
+	}
+
+	@Override
+	public double boatWaterLevel() {
+		return boatWaterLevel;
+	}
+
+	@Override
+	public void setBoatWaterLevel(double boatWaterLevel) {
+		throw immutableCopyException();
+	}
+
+	@Override
 	public boolean lastSneaking() {
 		return lastSneaking;
 	}
@@ -1018,6 +1066,10 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 		other.setMotionResetX(motionXReset);
 		other.setMotionResetZ(motionZReset);
 		other.setEnforceBoatStep(enforceBoatStep);
+		other.setBoatStatus(boatStatus);
+		other.setPreviousBoatStatus(previousBoatStatus);
+		other.setBoatGlide(boatGlide);
+		other.setBoatWaterLevel(boatWaterLevel);
 		other.setPhysicsPacketRelinkFlyVL(physicsPacketRelinkFlyVL);
 		applyMetricsTo(other);
 	}

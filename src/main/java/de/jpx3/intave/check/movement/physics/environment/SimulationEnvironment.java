@@ -18,6 +18,7 @@ import de.jpx3.intave.block.fluid.Fluid;
 import de.jpx3.intave.check.movement.physics.MoveMetric;
 import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
+import de.jpx3.intave.check.movement.physics.simulator.BoatSimulator.Status;
 import de.jpx3.intave.check.movement.physics.simulator.Simulation;
 import de.jpx3.intave.check.movement.physics.simulator.Simulator;
 import de.jpx3.intave.check.movement.physics.update.TickAmbiguousUpdate;
@@ -438,6 +439,18 @@ public interface SimulationEnvironment {
   default void setEnforceBoatStep(boolean enforceBoatStep) {
     throw new UnsupportedOperationException("setEnforceBoatStep is not supported for this SimulationEnvironment");
   }
+
+  Status boatStatus();
+  void setBoatStatus(Status boatStatus);
+
+  Status previousBoatStatus();
+  void setPreviousBoatStatus(Status previousBoatStatus);
+
+  float boatGlide();
+  void setBoatGlide(float boatGlide);
+
+  double boatWaterLevel();
+  void setBoatWaterLevel(double boatWaterLevel);
 
   default boolean lastSneaking() {
     return false;

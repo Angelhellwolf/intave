@@ -11,8 +11,11 @@
 
 package de.jpx3.intave.block.shape;
 
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
 import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
+import de.jpx3.intave.codec.JsonStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.BoundingBox;
@@ -34,6 +37,12 @@ public interface BlockShape {
       .subtype(5, MergeBlockShape.class, () -> MergeBlockShape.STREAM_CODEC)
       .subtype(6, ComparisonAlertShape.class, () -> ComparisonAlertShape.STREAM_CODEC)
       .build();
+  StreamCodec<JsonReader, JsonWriter, BlockShape> JSON_CODEC = JsonStreamCodecs.lazy(() ->
+    JsonStreamCodecs.listCodecOf(BoundingBox.JSON_CODEC).beforeAndAfter(
+      BlockShapes::fromElementaryBoxes,
+      BlockShape::elementaryBoxes
+    )
+  );
 
   double allowedOffset(Direction.Axis axis, BoundingBox entity, double offset);
   double min(Direction.Axis axis);

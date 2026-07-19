@@ -1,12 +1,38 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.share;
 
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.codec.StreamCodec;
 import io.netty.buffer.ByteBuf;
 
 import java.util.concurrent.ThreadLocalRandom;
 
+import static de.jpx3.intave.codec.JsonStreamCodecs.booleanField;
+import static de.jpx3.intave.codec.JsonStreamCodecs.object;
+
 public final class Input {
+  public static final StreamCodec<JsonReader, JsonWriter, Input> JSON_CODEC = object(
+    booleanField("forward", Input::forward),
+    booleanField("backward", Input::backward),
+    booleanField("left", Input::left),
+    booleanField("right", Input::right),
+    booleanField("jump", Input::jump),
+    booleanField("sneaking", Input::sneaking),
+    booleanField("sprinting", Input::sprinting),
+    Input::new
+  );
   public static final StreamCodec<ByteBuf, ByteBuf, Input> STREAM_CODEC = StreamCodec.of(
     (buf, value) -> {
       byte flags = 0;

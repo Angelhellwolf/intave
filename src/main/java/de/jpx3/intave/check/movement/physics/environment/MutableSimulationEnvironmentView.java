@@ -15,6 +15,7 @@ import de.jpx3.intave.block.fluid.Fluid;
 import de.jpx3.intave.check.movement.physics.MoveMetric;
 import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
+import de.jpx3.intave.check.movement.physics.simulator.BoatSimulator.Status;
 import de.jpx3.intave.check.movement.physics.simulator.Simulation;
 import de.jpx3.intave.check.movement.physics.simulator.Simulator;
 import de.jpx3.intave.check.movement.physics.update.TickAmbiguousUpdate;
@@ -92,6 +93,11 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
   private boolean eyesInWater;
   private boolean inVehicleOverridden, inVehicle;
   private boolean enforceBoatStepOverridden, enforceBoatStep;
+  private boolean boatStatusOverridden, previousBoatStatusOverridden;
+  private Status boatStatus, previousBoatStatus;
+  private boolean boatGlideOverridden, boatWaterLevelOverridden;
+  private float boatGlide;
+  private double boatWaterLevel;
   private boolean physicsPacketRelinkFlyVLOverridden;
   private int physicsPacketRelinkFlyVL;
   private WorldBorder worldBorder;
@@ -858,6 +864,54 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
     enforceBoatStepOverridden = true;
     this.enforceBoatStep = enforceBoatStep;
     deferredMutations.add(environment -> environment.setEnforceBoatStep(enforceBoatStep));
+  }
+
+  @Override
+  public Status boatStatus() {
+    return boatStatusOverridden ? boatStatus : delegate.boatStatus();
+  }
+
+  @Override
+  public void setBoatStatus(Status boatStatus) {
+    boatStatusOverridden = true;
+    this.boatStatus = boatStatus;
+    deferredMutations.add(environment -> environment.setBoatStatus(boatStatus));
+  }
+
+  @Override
+  public Status previousBoatStatus() {
+    return previousBoatStatusOverridden ? previousBoatStatus : delegate.previousBoatStatus();
+  }
+
+  @Override
+  public void setPreviousBoatStatus(Status previousBoatStatus) {
+    previousBoatStatusOverridden = true;
+    this.previousBoatStatus = previousBoatStatus;
+    deferredMutations.add(environment -> environment.setPreviousBoatStatus(previousBoatStatus));
+  }
+
+  @Override
+  public float boatGlide() {
+    return boatGlideOverridden ? boatGlide : delegate.boatGlide();
+  }
+
+  @Override
+  public void setBoatGlide(float boatGlide) {
+    boatGlideOverridden = true;
+    this.boatGlide = boatGlide;
+    deferredMutations.add(environment -> environment.setBoatGlide(boatGlide));
+  }
+
+  @Override
+  public double boatWaterLevel() {
+    return boatWaterLevelOverridden ? boatWaterLevel : delegate.boatWaterLevel();
+  }
+
+  @Override
+  public void setBoatWaterLevel(double boatWaterLevel) {
+    boatWaterLevelOverridden = true;
+    this.boatWaterLevel = boatWaterLevel;
+    deferredMutations.add(environment -> environment.setBoatWaterLevel(boatWaterLevel));
   }
 
   @Override

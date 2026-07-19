@@ -11,7 +11,40 @@
 
 package de.jpx3.intave.check.movement.physics.config;
 
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
+import de.jpx3.intave.codec.StreamCodec;
+
+import static de.jpx3.intave.codec.JsonStreamCodecs.*;
+
 public interface MovementConfiguration {
+	StreamCodec<JsonReader, JsonWriter, MovementConfiguration> JSON_CODEC = object(
+		integerField("forward", MovementConfiguration::forward),
+		integerField("strafe", MovementConfiguration::strafe),
+		booleanField("handActive", MovementConfiguration::isHandActive),
+		booleanField("jumping", MovementConfiguration::isJumping),
+		integerField("reduceTicks", MovementConfiguration::reduceTicks),
+		booleanField("sprinting", MovementConfiguration::isSprinting),
+		booleanField("reduceBefore", MovementConfiguration::reduceBefore),
+		booleanField(
+			"overrideEndMotionToActualMotion",
+			MovementConfiguration::overrideEndMotionToActualMotion,
+			true
+		),
+		(forward, strafe, handActive, jumping, reduceTicks, sprinting, reduceBefore, overrideEndMotion) -> {
+			MovementConfiguration configuration = MovementConfiguration.blank()
+				.withKeypress(forward, strafe)
+				.withHandActive(handActive)
+				.withJumped(jumping)
+				.withReduceTicks(reduceTicks)
+				.withSprintingSetTo(sprinting)
+				.withReduceBefore(reduceBefore);
+			return overrideEndMotion
+				? configuration.allowOverrideToActualMotion()
+				: configuration.denyOverrideToActualMotion();
+		}
+	);
+
 	int forward();
 
 	boolean isHandActive();

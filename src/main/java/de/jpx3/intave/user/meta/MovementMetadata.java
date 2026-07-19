@@ -159,7 +159,7 @@ public final class MovementMetadata implements SimulationEnvironment {
   // Entity collision
   public boolean enforceBoatStep;
   public volatile Location nearestBoatLocation = null;
-  public float boatGlide, momentum;
+  public float boatGlide;
   public double waterLevel;
   public BoatSimulator.Status boatStatus = BoatSimulator.Status.ON_LAND,
     previousBoatStatus = BoatSimulator.Status.ON_LAND;
@@ -726,7 +726,7 @@ public final class MovementMetadata implements SimulationEnvironment {
   }
 
   public float eyeHeight(Pose pose) {
-    float output = 0;
+    float output;
     switch (pose) {
       case SWIMMING:
       case FALL_FLYING:
@@ -740,13 +740,19 @@ public final class MovementMetadata implements SimulationEnvironment {
         break;
       default:
         output = 1.62f;
+        if (user.meta().movement().isInRidingVehicle()) {
+          Entity vehicle = user.meta().movement().vehicle;
+          if (vehicle.hasTypeData() && vehicle.typeData().isBoat()) {
+	          output = (float) (output - (vehicle.typeData().mountedYOffset() + 0.35));
+          }
+        }
         break;
     }
     double scale = user.meta().abilities().scale();
     if (Double.isNaN(scale)) {
       scale = 1.0;
     }
-    output *= scale;
+	  output = (float) (output * scale);
     return output;
   }
 
@@ -1389,6 +1395,46 @@ public final class MovementMetadata implements SimulationEnvironment {
   @Override
   public void setEnforceBoatStep(boolean enforceBoatStep) {
     this.enforceBoatStep = enforceBoatStep;
+  }
+
+  @Override
+  public BoatSimulator.Status boatStatus() {
+    return boatStatus;
+  }
+
+  @Override
+  public void setBoatStatus(BoatSimulator.Status boatStatus) {
+    this.boatStatus = boatStatus;
+  }
+
+  @Override
+  public BoatSimulator.Status previousBoatStatus() {
+    return previousBoatStatus;
+  }
+
+  @Override
+  public void setPreviousBoatStatus(BoatSimulator.Status previousBoatStatus) {
+    this.previousBoatStatus = previousBoatStatus;
+  }
+
+  @Override
+  public float boatGlide() {
+    return boatGlide;
+  }
+
+  @Override
+  public void setBoatGlide(float boatGlide) {
+    this.boatGlide = boatGlide;
+  }
+
+  @Override
+  public double boatWaterLevel() {
+    return waterLevel;
+  }
+
+  @Override
+  public void setBoatWaterLevel(double boatWaterLevel) {
+    this.waterLevel = boatWaterLevel;
   }
 
   @Override

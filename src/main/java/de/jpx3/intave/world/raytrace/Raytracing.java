@@ -15,16 +15,23 @@ import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.diagnostic.timings.Timings;
 import de.jpx3.intave.math.SinusCache;
 import de.jpx3.intave.module.tracker.entity.Entity;
+import de.jpx3.intave.player.ActionBar;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.MovingObjectPosition;
+import de.jpx3.intave.share.Position;
 import de.jpx3.intave.share.RawVector3d;
+import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.MetadataBundle;
+import de.jpx3.intave.world.Particles;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static de.jpx3.intave.check.movement.physics.MoveMetric.SNEAKING;
 
@@ -228,34 +235,6 @@ public final class Raytracing {
     return new RawVector3d(prevPosX, prevPosY + resolvePlayerEyeHeight(player, pose), prevPosZ);
   }
 
-  public static MovingObjectPosition blockShrinkRayTrace(Player player, Location playerLocation, double shrik) {
-    double blockReachDistance = resolveBlockReachDistance(player.getGameMode());
-    double eyeHeight = resolvePlayerEyeHeight(player);
-    return blockRayTrace(player, playerLocation, playerLocation, blockReachDistance, eyeHeight, 1.0f);
-  }
-
-  public static MovingObjectPosition blockShrinkRayTrace(Player player, Location location, Location prevLocation, double blockReachDistance, double eyeHeight, float partialTicks) {
-    RawVector3d eyeVector = resolvePositionEyes(location, prevLocation, eyeHeight, partialTicks);
-    RawVector3d lookVector = resolveLookVector(location, prevLocation, partialTicks);
-    RawVector3d targetVector = eyeVector.addVector(lookVector.x() * blockReachDistance, lookVector.y() * blockReachDistance, lookVector.z() * blockReachDistance);
-    return blockShrinkRayTrace(location.getWorld(), player, eyeVector, targetVector);
-  }
-
-  public static MovingObjectPosition blockShrinkRayTrace(World world, Player player, RawVector3d eyeVector, RawVector3d targetVector) {
-    try {
-      Timings.SERVICE_RAYTRACER_BLOCK.start();
-      return RAYTRACER.raytrace(world, player, eyeVector, targetVector);
-    } finally {
-      Timings.SERVICE_RAYTRACER_BLOCK.stop();
-    }
-  }
-
-  public static MovingObjectPosition blockRayTrace(Player player, Location playerLocation) {
-    double blockReachDistance = resolveBlockReachDistance(player.getGameMode());
-    double eyeHeight = resolvePlayerEyeHeight(player);
-    return blockRayTrace(player, playerLocation, playerLocation, blockReachDistance, eyeHeight, 1.0f);
-  }
-
   public static MovingObjectPosition blockRayTrace(Player player, Location playerLocation, Pose pose) {
     double blockReachDistance = resolveBlockReachDistance(player.getGameMode());
     double eyeHeight = resolvePlayerEyeHeight(player, pose);
@@ -266,6 +245,26 @@ public final class Raytracing {
     RawVector3d eyeVector = resolvePositionEyes(location, prevLocation, eyeHeight, partialTicks);
     RawVector3d vec4 = resolveLookVector(location, prevLocation, partialTicks);
     RawVector3d targetVector = eyeVector.addVector(vec4.x() * blockReachDistance, vec4.y() * blockReachDistance, vec4.z() * blockReachDistance);
+    User user = UserRepository.userOf(player);
+    if (user.receives(MessageChannel.DEBUG_HITRAY)) {
+      List<Position> positions = new ArrayList<>();
+      for (int i = 0; i < 10; i++) {
+        double t = i / 10.0;
+        Position position = new Position(
+          eyeVector.x() + (targetVector.x() - eyeVector.x()) * t,
+          eyeVector.y() + (targetVector.y() - eyeVector.y()) * t,
+          eyeVector.z() + (targetVector.z() - eyeVector.z()) * t
+        );
+        positions.add(position);
+      }
+      for (Position position : positions) {
+        Particles.spawnVillagerHappyParticleAt(user, position);
+      }
+      ActionBar.sendActionBar(
+        player,
+	      eyeVector + " " + location.getY() + " " + user.meta().movement().rotationPitch
+      );
+    }
     return blockRayTrace(location.getWorld(), player, eyeVector, targetVector);
   }
 
@@ -349,8 +348,7 @@ public final class Raytracing {
 
   public static double resolvePlayerEyeHeight(Player player) {
     User user = UserRepository.userOf(player);
-    float eyeHeight = user.meta().movement().eyeHeight();
-    return eyeHeight;
+	  return user.meta().movement().eyeHeight();
   }
 
   public static double resolvePlayerEyeHeight(Player player, Pose pose) {

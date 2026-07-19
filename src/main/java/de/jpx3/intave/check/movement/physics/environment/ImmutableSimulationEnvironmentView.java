@@ -15,6 +15,7 @@ import de.jpx3.intave.block.fluid.Fluid;
 import de.jpx3.intave.check.movement.physics.MoveMetric;
 import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
+import de.jpx3.intave.check.movement.physics.simulator.BoatSimulator.Status;
 import de.jpx3.intave.check.movement.physics.simulator.Simulation;
 import de.jpx3.intave.check.movement.physics.simulator.Simulator;
 import de.jpx3.intave.check.movement.physics.update.TickAmbiguousUpdate;
@@ -710,6 +711,46 @@ public final class ImmutableSimulationEnvironmentView implements SimulationEnvir
 
 	@Override
 	public void setEnforceBoatStep(boolean enforceBoatStep) {
+		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
+	}
+
+	@Override
+	public Status boatStatus() {
+		return delegate.boatStatus();
+	}
+
+	@Override
+	public void setBoatStatus(Status boatStatus) {
+		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
+	}
+
+	@Override
+	public Status previousBoatStatus() {
+		return delegate.previousBoatStatus();
+	}
+
+	@Override
+	public void setPreviousBoatStatus(Status previousBoatStatus) {
+		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
+	}
+
+	@Override
+	public float boatGlide() {
+		return delegate.boatGlide();
+	}
+
+	@Override
+	public void setBoatGlide(float boatGlide) {
+		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
+	}
+
+	@Override
+	public double boatWaterLevel() {
+		return delegate.boatWaterLevel();
+	}
+
+	@Override
+	public void setBoatWaterLevel(double boatWaterLevel) {
 		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
 	}
 

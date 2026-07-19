@@ -11,6 +11,7 @@
 
 package de.jpx3.intave.check.movement.physics.environment;
 
+import de.jpx3.intave.check.movement.physics.simulator.BoatSimulator.Status;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Position;
 import org.junit.jupiter.api.Test;
@@ -18,6 +19,29 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 final class MutableSimulationEnvironmentViewTest {
+  @Test
+  void boatStateIsIsolatedAndCommitted() {
+    MockSimulationEnvironment delegate = new MockSimulationEnvironment();
+    SimulationEnvironment view = delegate.mutableView();
+
+    view.setPreviousBoatStatus(Status.IN_AIR);
+    view.setBoatStatus(Status.IN_WATER);
+    view.setBoatGlide(0.6F);
+    view.setBoatWaterLevel(12.5);
+
+    assertEquals(Status.ON_LAND, delegate.boatStatus());
+    assertEquals(Status.IN_WATER, view.boatStatus());
+    assertEquals(0.6F, view.boatGlide(), 0.0F);
+    assertEquals(12.5, view.boatWaterLevel(), 0.0);
+
+    view.commitTo(delegate);
+
+    assertEquals(Status.IN_AIR, delegate.previousBoatStatus());
+    assertEquals(Status.IN_WATER, delegate.boatStatus());
+    assertEquals(0.6F, delegate.boatGlide(), 0.0F);
+    assertEquals(12.5, delegate.boatWaterLevel(), 0.0);
+  }
+
   @Test
   void readThroughFollowsDelegateUntilValueIsOverridden() {
     MockSimulationEnvironment delegate = new MockSimulationEnvironment();

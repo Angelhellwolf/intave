@@ -15,6 +15,7 @@ import de.jpx3.intave.block.fluid.Fluid;
 import de.jpx3.intave.check.movement.physics.MoveMetric;
 import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
+import de.jpx3.intave.check.movement.physics.simulator.BoatSimulator.Status;
 import de.jpx3.intave.check.movement.physics.simulator.Simulation;
 import de.jpx3.intave.check.movement.physics.simulator.Simulator;
 import de.jpx3.intave.check.movement.physics.simulator.Simulators;
@@ -57,6 +58,10 @@ public final class MockSimulationEnvironment implements SimulationEnvironment {
   private boolean collidedHorizontally, collidedVertically;
   private boolean motionXReset, motionZReset;
   private boolean enforceBoatStep;
+  private Status boatStatus = Status.ON_LAND;
+  private Status previousBoatStatus = Status.ON_LAND;
+  private float boatGlide;
+  private double boatWaterLevel;
   private int physicsPacketRelinkFlyVL;
 	private final float frictionPosSubtraction = 1;
   private double fallDistance;
@@ -778,6 +783,46 @@ public final class MockSimulationEnvironment implements SimulationEnvironment {
   @Override
   public void setEnforceBoatStep(boolean enforceBoatStep) {
     this.enforceBoatStep = enforceBoatStep;
+  }
+
+  @Override
+  public Status boatStatus() {
+    return boatStatus;
+  }
+
+  @Override
+  public void setBoatStatus(Status boatStatus) {
+    this.boatStatus = boatStatus;
+  }
+
+  @Override
+  public Status previousBoatStatus() {
+    return previousBoatStatus;
+  }
+
+  @Override
+  public void setPreviousBoatStatus(Status previousBoatStatus) {
+    this.previousBoatStatus = previousBoatStatus;
+  }
+
+  @Override
+  public float boatGlide() {
+    return boatGlide;
+  }
+
+  @Override
+  public void setBoatGlide(float boatGlide) {
+    this.boatGlide = boatGlide;
+  }
+
+  @Override
+  public double boatWaterLevel() {
+    return boatWaterLevel;
+  }
+
+  @Override
+  public void setBoatWaterLevel(double boatWaterLevel) {
+    this.boatWaterLevel = boatWaterLevel;
   }
 
   @Override

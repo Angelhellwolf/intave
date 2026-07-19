@@ -11,21 +11,39 @@
 
 package de.jpx3.intave.share;
 
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.shape.BlockShapes;
+import de.jpx3.intave.block.variant.BlockVariant;
+import de.jpx3.intave.block.variant.BlockVariantRegister;
+import de.jpx3.intave.codec.JsonStreamCodecs;
+import de.jpx3.intave.codec.StreamCodec;
 import org.bukkit.Material;
 
-import java.util.Objects;
+import java.util.*;
 
+import static de.jpx3.intave.codec.JsonStreamCodecs.*;
 
 public final class BlockState {
 	private static final BlockState EMPTY = new BlockState(BlockShapes.emptyShape(), BlockShapes.emptyShape(), Material.AIR, 0);
 	private static final BlockState STONE = new BlockState(BlockShapes.originCube(), BlockShapes.originCube(), Material.STONE, 0);
+	public static final StreamCodec<JsonReader, JsonWriter, BlockState> JSON_CODEC = object(
+		field("outlineShape", BlockShape.JSON_CODEC, BlockState::outlineShape, BlockShapes.emptyShape()),
+		field("collisionShape", BlockShape.JSON_CODEC, BlockState::collisionShape, BlockShapes.emptyShape()),
+		field("type", JsonStreamCodecs.MATERIAL, BlockState::type, Material.AIR),
+		field("variantIndex", JsonStreamCodecs.INTEGER, BlockState::variantIndex, 0),
+		BlockState::new
+	).encodeOnly(
+		field("properties", stringMapCodec(JSON_PRIMITIVE), BlockState::properties, Collections.emptyMap())
+	);
+
 	private final BlockShape outlineShape;
 	private final BlockShape collisionShape;
 	private final Material type;
 	private final int variantIndex;
+	private volatile Map<String, Comparable<?>> properties;
 	private final long creation = System.currentTimeMillis();
 	private int hashCode = 0;
 
@@ -70,6 +88,32 @@ public final class BlockState {
 	 */
 	public int variantIndex() {
 		return variantIndex;
+	}
+
+	/**
+	 * Returns the named block-state properties represented by {@link #variantIndex()}.
+	 * Property names are sorted to keep diagnostic output deterministic.
+	 */
+	public Map<String, Comparable<?>> properties() {
+		Map<String, Comparable<?>> resolved = properties;
+		if (resolved != null) {
+			return resolved;
+		}
+		if (type == Material.AIR || !BlockVariantRegister.isIndexed(type)) {
+			return Collections.emptyMap();
+		}
+
+		BlockVariant variant = BlockVariantRegister.variantOf(type, variantIndex);
+		SortedMap<String, Comparable<?>> sorted = new TreeMap<>();
+		for (String name : variant.propertyNames()) {
+			Comparable<?> value = variant.propertyOf(name);
+			if (value != null) {
+				sorted.put(name, value);
+			}
+		}
+		resolved = Collections.unmodifiableSortedMap(sorted);
+		properties = resolved;
+		return resolved;
 	}
 
 	/**

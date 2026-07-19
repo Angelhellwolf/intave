@@ -232,7 +232,7 @@ public final class MovementDispatcher extends Module {
     movementData.lastRotationYaw = movementData.rotationYaw;
     movementData.lastRotationPitch = movementData.rotationPitch;
     movementData.rotationYaw = location.getYaw();
-    movementData.rotationPitch = location.getPitch();
+//    movementData.rotationPitch = location.getPitch();
   }
 
   @PacketSubscription(
@@ -333,11 +333,18 @@ public final class MovementDispatcher extends Module {
     boolean hasRotation = reader.hasRotation();
 
     if (movement.isInVehicle() && !vehicleMove && hasRotation && !hasMovement) {
-      movement.rotationYaw = reader.yaw();
-      movement.rotationPitch = reader.pitch();
+      movement.setRotation(reader.yaw(), reader.pitch());
       logging.logSystemMessage(user, () -> "MOVEMENT IGNORED: Vehicle rotation only");
       reader.release();
       return;
+    }
+
+    /**
+     * The vehicle move only contains the boat rotation, which is incorrect.
+     * We do receive a simple player look packet before the vehicle move, so we simply rely on that.
+     */
+    if (vehicleMove) {
+      hasRotation = false;
     }
 
     boolean clientVehicleMovement = MinecraftVersions.VER1_9_0.atOrAbove() && protocol.combatUpdate();

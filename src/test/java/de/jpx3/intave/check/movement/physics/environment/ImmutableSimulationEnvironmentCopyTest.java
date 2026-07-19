@@ -12,6 +12,7 @@
 package de.jpx3.intave.check.movement.physics.environment;
 
 import de.jpx3.intave.check.movement.physics.MoveMetric;
+import de.jpx3.intave.check.movement.physics.simulator.BoatSimulator.Status;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Position;
 import org.bukkit.util.Vector;
@@ -20,6 +21,33 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 final class ImmutableSimulationEnvironmentCopyTest {
+  @Test
+  void boatStateIsFrozenAndCopiedToTarget() {
+    MockSimulationEnvironment source = new MockSimulationEnvironment();
+    source.setPreviousBoatStatus(Status.IN_AIR);
+    source.setBoatStatus(Status.IN_WATER);
+    source.setBoatGlide(0.6F);
+    source.setBoatWaterLevel(12.5);
+
+    SimulationEnvironment copy = source.immutableCopy();
+    source.setBoatStatus(Status.ON_LAND);
+    source.setBoatGlide(0.0F);
+
+    assertEquals(Status.IN_AIR, copy.previousBoatStatus());
+    assertEquals(Status.IN_WATER, copy.boatStatus());
+    assertEquals(0.6F, copy.boatGlide(), 0.0F);
+    assertEquals(12.5, copy.boatWaterLevel(), 0.0);
+    assertThrows(UnsupportedOperationException.class, () -> copy.setBoatStatus(Status.IN_AIR));
+
+    MockSimulationEnvironment target = new MockSimulationEnvironment();
+    copy.commitTo(target);
+
+    assertEquals(Status.IN_AIR, target.previousBoatStatus());
+    assertEquals(Status.IN_WATER, target.boatStatus());
+    assertEquals(0.6F, target.boatGlide(), 0.0F);
+    assertEquals(12.5, target.boatWaterLevel(), 0.0);
+  }
+
   @Test
   void copyDoesNotFollowSourceChanges() {
     MockSimulationEnvironment source = new MockSimulationEnvironment();

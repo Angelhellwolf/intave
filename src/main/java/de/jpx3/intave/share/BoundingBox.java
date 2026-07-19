@@ -11,6 +11,8 @@
 
 package de.jpx3.intave.share;
 
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
 import de.jpx3.intave.block.shape.BlockRaytrace;
 import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
@@ -29,6 +31,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static de.jpx3.intave.codec.JsonStreamCodecs.*;
 import static de.jpx3.intave.share.ClientMath.floor;
 import static de.jpx3.intave.share.Direction.Axis.*;
 
@@ -64,6 +67,17 @@ public final class BoundingBox extends MemoryTraced implements BlockShape {
     }
   );
 
+  public static final StreamCodec<JsonReader, JsonWriter, BoundingBox> JSON_CODEC = object(
+    doubleField("minX", box -> box.minX),
+    doubleField("minY", box -> box.minY),
+    doubleField("minZ", box -> box.minZ),
+    doubleField("maxX", box -> box.maxX),
+    doubleField("maxY", box -> box.maxY),
+    doubleField("maxZ", box -> box.maxZ),
+    booleanField("originBox", box -> box.originBox),
+	  BoundingBox::new
+  );
+
   public static final StreamCodec<ByteBuf, ByteBuf, List<BoundingBox>> LIST_STREAM_CODEC = ByteBufStreamCodecs.listCodecOf(STREAM_CODEC);
 
   public BoundingBox(
@@ -76,6 +90,17 @@ public final class BoundingBox extends MemoryTraced implements BlockShape {
     this.maxX = Math.max(x1, x2);
     this.maxY = Math.max(y1, y2);
     this.maxZ = Math.max(z1, z2);
+  }
+
+  public BoundingBox(
+    double x1, double y1, double z1,
+    double x2, double y2, double z2,
+    boolean originBox
+  ) {
+    this(x1, y1, z1, x2, y2, z2);
+    if (originBox) {
+      makeOriginBox();
+    }
   }
 
   public static BoundingBox fromBounds(

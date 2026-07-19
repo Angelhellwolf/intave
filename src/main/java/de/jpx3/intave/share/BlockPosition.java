@@ -11,11 +11,16 @@
 
 package de.jpx3.intave.share;
 
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import io.netty.buffer.ByteBuf;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
+
+import static de.jpx3.intave.codec.JsonStreamCodecs.integerField;
+import static de.jpx3.intave.codec.JsonStreamCodecs.object;
 
 public final class BlockPosition extends RawVector3d {
   public static final BlockPosition ORIGIN = new BlockPosition(0, 0, 0);
@@ -30,6 +35,12 @@ public final class BlockPosition extends RawVector3d {
 
   public static final StreamCodec<ByteBuf, ByteBuf, BlockPosition> STREAM_CODEC = ByteBufStreamCodecs.LONG.beforeAndAfter(
     BlockPosition::fromLong, BlockPosition::toLong
+  );
+  public static final StreamCodec<JsonReader, JsonWriter, BlockPosition> JSON_CODEC = object(
+    integerField("x", BlockPosition::getX),
+    integerField("y", BlockPosition::getY),
+    integerField("z", BlockPosition::getZ),
+    BlockPosition::new
   );
 
   public BlockPosition(int x, int y, int z) {

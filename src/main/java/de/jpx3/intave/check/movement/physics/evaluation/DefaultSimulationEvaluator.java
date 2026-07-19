@@ -191,7 +191,7 @@ public final class DefaultSimulationEvaluator implements SimulationEvaluator {
             tags.add(EvaluationTag.BOAT);
           }
           movement.setEnforceBoatStep(false);
-        } else if (movement.baseMotionY() < 0) {
+        } else if (movement.baseMotionY() <= 0) {
           motionYTolerance = Math.max(motionYTolerance, 1);
           if (motionY > movement.jumpMotion()) {
             movement.setEnforceBoatStep(true);

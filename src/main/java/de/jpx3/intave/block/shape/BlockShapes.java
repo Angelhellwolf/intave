@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.block.shape;
 
 import de.jpx3.intave.share.BoundingBox;
@@ -60,6 +71,21 @@ public final class BlockShapes {
         return boxes.get(0);
       default:
         return new ArrayBlockShape(VoxelShape.fromBoxes(boxes).elementaryBoxes());
+    }
+  }
+
+  /**
+   * Reconstructs a shape from its elementary boxes without assuming that every box uses the same
+   * coordinate context. This is the canonical inverse of {@link BlockShape#elementaryBoxes()}.
+   */
+  public static BlockShape fromElementaryBoxes(@NotNull List<? extends BoundingBox> boxes) {
+    switch (boxes.size()) {
+      case 0:
+        return emptyShape();
+      case 1:
+        return boxes.get(0);
+      default:
+        return new ArrayBlockShape(boxes);
     }
   }
 

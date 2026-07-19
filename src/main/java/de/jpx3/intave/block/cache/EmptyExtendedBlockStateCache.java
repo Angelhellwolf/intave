@@ -18,6 +18,11 @@ import org.jetbrains.annotations.NotNull;
 
 final class EmptyExtendedBlockStateCache implements BlockCache {
   @Override
+  public BlockState peekStateAt(int posX, int posY, int posZ) {
+    return BlockState.empty();
+  }
+
+  @Override
   public @NotNull BlockState stateAt(int posX, int posY, int posZ) {
     return BlockState.empty();
   }
