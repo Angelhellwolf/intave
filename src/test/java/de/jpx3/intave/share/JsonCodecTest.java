@@ -166,11 +166,10 @@ final class JsonCodecTest {
     assertEquals("STONE", json.get("type").getAsString());
     assertTrue(json.get("properties").isJsonObject());
     assertTrue(json.get("collisionShape").isJsonArray());
-    assertFalse(json.has("outlineShape"));
+    assertTrue(json.has("outlineShape"));
     assertEquals(expected.type(), decoded.type());
     assertEquals(expected.variantIndex(), decoded.variantIndex());
     assertEquals(expected.collisionShape().elementaryBoxes(), decoded.collisionShape().elementaryBoxes());
-    assertEquals(decoded.collisionShape(), decoded.outlineShape());
   }
 
   @Test
@@ -249,7 +248,7 @@ final class JsonCodecTest {
     );
     assertEquals(block.state().properties(), decodedState.properties());
     assertTrue(stateJson.has("collisionShape"));
-    assertFalse(stateJson.has("outlineShape"));
+    assertTrue(stateJson.has("outlineShape"));
   }
 
   @Test

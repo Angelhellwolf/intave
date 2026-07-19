@@ -61,8 +61,7 @@ public final class JsonStreamCodecs {
     JsonStreamCodecs::readPrimitive
   );
   public static final StreamCodec<JsonReader, JsonWriter, Material> MATERIAL = STRING.beforeAndAfter(
-    s -> Material.getMaterial(s.toUpperCase()),
-    material -> material.name().toLowerCase()
+	  Material::getMaterial, Enum::name
   );
 
   private JsonStreamCodecs() {
