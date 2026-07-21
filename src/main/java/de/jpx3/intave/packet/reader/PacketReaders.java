@@ -21,16 +21,14 @@ import java.util.function.Supplier;
 
 import static de.jpx3.intave.module.linker.packet.PacketId.Client;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.CLOSE_WINDOW;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.VEHICLE_MOVE;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.*;
-import static de.jpx3.intave.module.linker.packet.PacketId.Server.POSITION;
 
 public final class PacketReaders {
   private static final Map<PacketType, ThreadLocal<? extends PacketReader>> readerLocals = new HashMap<>();
 
   public static void setup() {
+    // Server packets
     setup(ABILITIES_OUT, AbilityOutReader::new);
     setup(ANIMATION, AnimationReader::new);
     setup(ATTACH_ENTITY, AttachEntityReader::new);
@@ -49,7 +47,7 @@ public final class PacketReaders {
     setup(ENTITY_LOOK, EntityReader::new);
     setup(ENTITY_METADATA, EntityMetadataReader::new);
     setup(ENTITY_MOVE_LOOK, EntityReader::new);
-    setup(ENTITY_STATUS, EntityReader::new);
+    setup(ENTITY_STATUS, EntityStatusReader::new);
     setup(ENTITY_SOUND, EntityReader::new);
     setup(ENTITY_TELEPORT, EntityReader::new);
     setup(ENTITY_VELOCITY, EntityVelocityReader::new);
@@ -64,8 +62,8 @@ public final class PacketReaders {
     setup(NAMED_ENTITY_SPAWN, EntityReader::new);
     setup(OPEN_WINDOW, WindowOpenReader::new);
     setup(OPEN_WINDOW_HORSE, WindowOpenReader::new);
-    setup(POSITION, PlayerTeleportReader::new);
-    setup(CLOSE_WINDOW, WindowCloseReader::new);
+    setup(OPEN_SIGN_EDITOR, BlockPositionReader::new);
+    setup(Server.POSITION, PlayerTeleportReader::new);
     setup(PLAYER_INFO, PlayerInfoReader::new);
     setup(PLAYER_INFO_REMOVE, PlayerInfoRemoveReader::new);
     setup(REMOVE_ENTITY_EFFECT, EntityReader::new);
@@ -79,6 +77,8 @@ public final class PacketReaders {
     setup(UPDATE_ATTRIBUTES, EntityReader::new);
     setup(UPDATE_ENTITY_NBT, EntityReader::new);
     setup(USE_BED, BedUseReader::new);
+    setup(WINDOW_ITEMS, WindowBulkItemReader::new);
+    setup(SET_SLOT, WindowSingleItemReader::new);
     setup(WORLD_BORDER, WorldBorderReader::new);
     setup(SET_BORDER_CENTER, WorldBorderReader::new);
     setup(SET_BORDER_SIZE, WorldBorderReader::new);
@@ -86,26 +86,29 @@ public final class PacketReaders {
     setup(SET_BORDER_WARNING_DELAY, WorldBorderReader::new);
     setup(SET_BORDER_WARNING_DISTANCE, WorldBorderReader::new);
     setup(INITIALIZE_BORDER, WorldBorderReader::new);
+    setup(Server.TRANSACTION, TransactionReader::new);
 
-    setup(ATTACK_ENTITY, EntityUseReader::new);
+    // Client packets
     setup(ABILITIES_IN, AbilityInReader::new);
-    setup(BLOCK_DIG, BlockPositionReader::new);
+    setup(ATTACK_ENTITY, EntityUseReader::new);
+    setup(BLOCK_DIG, BlockDigReader::new);
     setup(BLOCK_PLACE, BlockInteractionReader::new);
+    setup(Client.CLOSE_WINDOW, WindowIdReader::new);
     setup(CUSTOM_PAYLOAD_IN, PayloadInReader::new);
+    setup(ENCHANT_ITEM, WindowIdReader::new);
     setup(ENTITY_ACTION_IN, PlayerActionReader::new);
-    setup(USE_ITEM, BlockInteractionReader::new);
-    setup(USE_ITEM_ON, BlockInteractionReader::new);
-    setup(USE_ENTITY, EntityUseReader::new);
     setup(FLYING, PlayerMoveReader::new);
+    setup(LOOK, PlayerMoveReader::new);
     setup(Client.POSITION, PlayerMoveReader::new);
     setup(POSITION_LOOK, PlayerMoveReader::new);
-    setup(LOOK, PlayerMoveReader::new);
-    setup(VEHICLE_MOVE, PlayerMoveReader::new);
-    setup(WINDOW_ITEMS, WindowBulkItemReader::new);
+    setup(STEER_VEHICLE, SteerVehicleReader::new);
+    setup(Client.TRANSACTION, TransactionReader::new);
+    setup(Client.UPDATE_SIGN, BlockPositionReader::new);
+    setup(USE_ENTITY, EntityUseReader::new);
+    setup(USE_ITEM, BlockInteractionReader::new);
+    setup(USE_ITEM_ON, BlockInteractionReader::new);
+    setup(Client.VEHICLE_MOVE, PlayerMoveReader::new);
     setup(WINDOW_CLICK, WindowClickReader::new);
-    setup(SET_SLOT, WindowSingleItemReader::new);
-
-    // for some
   }
 
   private static void setup(Server serverPacket, Supplier<? extends PacketReader> supplier) {

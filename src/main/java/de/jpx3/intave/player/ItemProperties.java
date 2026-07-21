@@ -125,7 +125,7 @@ public final class ItemProperties {
     }
     boolean useItem = materialUseItems.contains(type);
     boolean potion = materialPotionItems.contains(type);
-    boolean sword = materialSwordItems.contains(type) && swordBlockable(player, type);
+    boolean sword = materialSwordItems.contains(type) && swordBlockable(player);
     return sword || useItem || potion || foodConsumable(player, type);
   }
 
@@ -153,10 +153,10 @@ public final class ItemProperties {
     return materialPotionItems.contains(type);
   }
 
-  public static boolean swordBlockable(Player player, Material material) {
+  public static boolean swordBlockable(Player player) {
     User user = UserRepository.userOf(player);
     ProtocolMetadata protocol = user.meta().protocol();
-    return !protocol.combatUpdate() || protocol.viaVersionShieldBlockReplacement();
+    return protocol.swordBlockingPossible() || protocol.viaVersionShieldBlockReplacement();
   }
 
   public static boolean foodConsumable(Player player, Material type) {

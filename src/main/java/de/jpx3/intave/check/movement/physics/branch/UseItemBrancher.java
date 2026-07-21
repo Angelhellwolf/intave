@@ -11,14 +11,14 @@
 
 package de.jpx3.intave.check.movement.physics.branch;
 
+import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.user.meta.InventoryMetadata;
-import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
 import org.bukkit.Material;
 
 import java.util.List;
 
-import static de.jpx3.intave.check.movement.physics.MoveMetric.ENTITY_USE;
+import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.ENTITY_USE;
 
 final class UseItemBrancher extends MovementSearchBrancher {
   private static final boolean[] OPTIMISTIC = new boolean[]{true, false};
@@ -28,27 +28,32 @@ final class UseItemBrancher extends MovementSearchBrancher {
   public void branch(MovementSearchInput input, MovementSearchBranch inputBranch, List<MovementSearchBranch> outputBranches) {
     InventoryMetadata inventoryData = input.user().meta().inventory();
     ProtocolMetadata protocol = input.user().meta().protocol();
-    UseItemRequirement requirement = useItemRequirement(input);
+    UseItemRequirement requirement = useItemRequirement(input, inputBranch);
+    int numOutputBranches = 0;
     for (boolean useItemState : inventoryData.handActive() ? OPTIMISTIC : PESSIMISTIC) {
       if (!requirement.allows(useItemState)) {
         continue;
       }
-      if (inputBranch.moveConfig().isSprinting() && useItemState && !protocol.combatUpdate()) {
+      if (inputBranch.moveConfig().isSprinting() && useItemState && !protocol.viaVersionShieldBlockReplacement()) {
         continue;
       }
       outputBranches.add(inputBranch.withHandActive(useItemState));
+      numOutputBranches++;
+    }
+    if (numOutputBranches == 0) {
+      outputBranches.add(inputBranch.withHandActive(false));
     }
   }
 
-  private UseItemRequirement useItemRequirement(MovementSearchInput input) {
+  private UseItemRequirement useItemRequirement(MovementSearchInput input, MovementSearchBranch inputBranch) {
     InventoryMetadata inventoryData = input.user().meta().inventory();
-    MovementMetadata movementData = input.user().meta().movement();
+    SimulationEnvironment movementData = input.environment();
     ProtocolMetadata protocol = input.user().meta().protocol();
     boolean hasUsableItem = inventoryData.usableItemInEitherHandOrHotbar();
     if (!hasUsableItem) {
       return UseItemRequirement.SKIP;
     }
-    boolean skipUseItem = !protocol.sprintWhenHandActive() && movementData.sprinting && !protocol.viaVersionShieldBlockReplacement();
+    boolean skipUseItem = !protocol.sprintWhenHandActive() && inputBranch.isSprinting() && !protocol.viaVersionShieldBlockReplacement();
     boolean requireUseItem = !protocol.combatUpdate()
       && inventoryData.handActive()
       && inventoryData.pastHotBarSlotChange > 20

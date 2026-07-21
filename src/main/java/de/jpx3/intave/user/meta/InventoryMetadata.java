@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static de.jpx3.intave.check.movement.physics.MoveMetric.RIPTIDE_SPIN;
+import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.RIPTIDE_SPIN;
 
 public final class InventoryMetadata {
   private final Player player;

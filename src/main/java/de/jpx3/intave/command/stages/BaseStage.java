@@ -212,6 +212,7 @@ public final class BaseStage extends CommandStage {
     POSITION(MessageChannel.DEBUG_POSITION),
     PACKET_HOLD(MessageChannel.DEBUG_PACKET_HOLD),
     COLLISIONS(MessageChannel.DEBUG_COLLISIONS),
+    NERFS(MessageChannel.DEBUG_NERFS),
     HITBOXES(MessageChannel.DEBUG_HITBOXES),
     HITRAY(MessageChannel.DEBUG_HITRAY),
     MOVEMENT(MessageChannel.DEBUG_MOVEMENT),

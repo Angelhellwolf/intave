@@ -34,9 +34,9 @@ import de.jpx3.intave.check.Check;
 import de.jpx3.intave.check.CheckConfiguration.CheckSettings;
 import de.jpx3.intave.check.CheckStatistics;
 import de.jpx3.intave.check.CheckViolationLevelDecrementer;
-import de.jpx3.intave.check.movement.physics.MovementCharacteristics;
-import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
+import de.jpx3.intave.check.movement.physics.environment.MovementCharacteristics;
+import de.jpx3.intave.check.movement.physics.environment.Pose;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.check.movement.physics.evaluation.DefaultSimulationEvaluator;
 import de.jpx3.intave.check.movement.physics.evaluation.EvaluationTag;
@@ -85,7 +85,7 @@ import org.bukkit.event.player.PlayerTeleportEvent;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static de.jpx3.intave.check.movement.physics.MoveMetric.*;
+import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.*;
 import static de.jpx3.intave.check.movement.physics.search.PostTickMotionType.SENT_OFFSET_MOTION;
 import static de.jpx3.intave.diagnostic.message.MessageCategory.SIMFLT;
 import static de.jpx3.intave.diagnostic.message.MessageCategory.SIMFUL;
@@ -204,6 +204,11 @@ public final class Physics extends Check {
     } catch (IllegalStateException exception) {
       user.kick("Exception while simulating movement");
       exception.printStackTrace();
+      return;
+    }
+
+    if (simulation == Simulation.invalid()) {
+      user.kick("Invalid simulation result");
       return;
     }
 

@@ -16,7 +16,7 @@ import de.jpx3.intave.user.meta.ProtocolMetadata;
 
 import java.util.List;
 
-import static de.jpx3.intave.check.movement.physics.MoveMetric.SPRINT_CHANGE;
+import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.SPRINT_CHANGE;
 
 final class SprintingBrancher extends MovementSearchBrancher {
   private static final boolean[] ALWAYS = new boolean[]{true};

@@ -50,7 +50,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collector;
 
 import static de.jpx3.intave.IntaveControl.FIRST_TICK_MUST_BE_FULLY_SIMULATED;
-import static de.jpx3.intave.check.movement.physics.MoveMetric.TELEPORT;
+import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.TELEPORT;
 import static de.jpx3.intave.math.MathHelper.formatDouble;
 
 public final class ThreeTickSimulationSearch implements SimulationSearch {

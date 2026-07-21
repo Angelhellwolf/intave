@@ -12,8 +12,8 @@
 package de.jpx3.intave.check.movement.physics.evaluation;
 
 import de.jpx3.intave.block.collision.Collision;
-import de.jpx3.intave.check.movement.physics.MovementCharacteristics;
-import de.jpx3.intave.check.movement.physics.Pose;
+import de.jpx3.intave.check.movement.physics.environment.MovementCharacteristics;
+import de.jpx3.intave.check.movement.physics.environment.Pose;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.check.movement.physics.simulator.Simulators;
 import de.jpx3.intave.diagnostic.timings.Timings;
@@ -28,7 +28,7 @@ import de.jpx3.intave.user.meta.ViolationMetadata;
 
 import java.util.Set;
 
-import static de.jpx3.intave.check.movement.physics.MoveMetric.*;
+import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.*;
 import static java.lang.Math.abs;
 
 public final class DefaultSimulationEvaluator implements SimulationEvaluator {

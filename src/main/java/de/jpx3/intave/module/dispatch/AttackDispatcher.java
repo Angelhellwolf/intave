@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.module.dispatch;
 
 import com.comphenix.protocol.PacketType;
@@ -39,8 +50,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
-import static de.jpx3.intave.check.movement.physics.MoveMetric.ATTACK_REDUCE;
-import static de.jpx3.intave.check.movement.physics.MoveMetric.ENTITY_USE;
+import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.ATTACK_REDUCE;
+import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.ENTITY_USE;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.ATTACK_ENTITY;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.USE_ENTITY;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.RESPAWN;

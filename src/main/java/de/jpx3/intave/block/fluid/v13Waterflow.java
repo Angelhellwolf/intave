@@ -22,7 +22,7 @@ import de.jpx3.intave.user.User;
 import org.bukkit.Material;
 import org.bukkit.World;
 
-import static de.jpx3.intave.check.movement.physics.MoveMetric.WATERFLOW_PUSH;
+import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.WATERFLOW_PUSH;
 import static de.jpx3.intave.share.ClientMath.ceil;
 import static de.jpx3.intave.share.ClientMath.floor;
 

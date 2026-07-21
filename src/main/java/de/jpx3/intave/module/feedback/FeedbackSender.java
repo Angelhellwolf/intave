@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.module.feedback;
 
 import com.comphenix.protocol.ProtocolLibrary;
@@ -217,11 +228,11 @@ public final class FeedbackSender extends Module {
 //        Thread.dumpStack();
 //        callback.success(player, target);
 //        return;
-        if (WARNINGS_LEFT-- > 0) {
-          IntaveLogger.logger().info("Async packet sent from "+Caller.pluginInfo(true)+" on thread " + Thread.currentThread().getName());
-          IntaveLogger.logger().info("It is highly recommended to only send packets on the main thread.");
-          Thread.dumpStack();
-        }
+//        if (WARNINGS_LEFT-- > 0) {
+//          IntaveLogger.logger().info("Async packet sent from "+Caller.pluginInfo(true)+" on thread " + Thread.currentThread().getName());
+//          IntaveLogger.logger().info("It is highly recommended to only send packets on the main thread.");
+//          Thread.dumpStack();
+//        }
       }
     }
     ReentrantLock lock = userLock(userOf(player));

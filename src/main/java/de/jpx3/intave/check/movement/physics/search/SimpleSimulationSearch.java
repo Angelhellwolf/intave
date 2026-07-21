@@ -41,7 +41,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
-import static de.jpx3.intave.check.movement.physics.MoveMetric.TELEPORT;
+import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.TELEPORT;
 
 public final class SimpleSimulationSearch implements SimulationSearch {
   private final static Searcher<MovementSearchInput, MovementSearchBranch> TICK_SEARCHER = new Searcher<>(

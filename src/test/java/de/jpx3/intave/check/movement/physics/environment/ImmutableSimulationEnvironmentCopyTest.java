@@ -11,7 +11,6 @@
 
 package de.jpx3.intave.check.movement.physics.environment;
 
-import de.jpx3.intave.check.movement.physics.MoveMetric;
 import de.jpx3.intave.check.movement.physics.simulator.BoatSimulator.Status;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Position;

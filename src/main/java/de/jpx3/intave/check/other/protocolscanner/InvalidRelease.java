@@ -22,6 +22,8 @@ import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.user.User;
 import org.bukkit.entity.Player;
 
+import java.util.Locale;
+
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.BLOCK_DIG;
 
 public final class InvalidRelease extends CheckPart<ProtocolScanner> {
@@ -44,7 +46,7 @@ public final class InvalidRelease extends CheckPart<ProtocolScanner> {
 			// Fix https://github.com/Raven-APlus/RavenAPlus/blob/master/src/main/java/keystrokesmod/module/impl/movement/noslow/IntaveNoSlow.java
 			if (face != EnumWrappers.Direction.DOWN) {
 				Violation violation = Violation.builderFor(ProtocolScanner.class)
-					.forPlayer(player).withMessage("sent invalid release").withDetails("face " + face)
+					.forPlayer(player).withMessage("sent invalid release").withDetails("face " + face.name().toLowerCase(Locale.ROOT))
 					.withVL(3)
 					.build();
 				Modules.violationProcessor().processViolation(violation);

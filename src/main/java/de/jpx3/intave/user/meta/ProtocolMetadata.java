@@ -307,7 +307,13 @@ public final class ProtocolMetadata {
     return minecraftVersion;
   }
 
+  public boolean swordBlockingPossible() {
+    return protocolVersion < VER_1_9 || (
+      protocolVersion >= VER_1_21_5 && !MinecraftVersions.VER1_9_0.atOrAbove()
+    );
+  }
+
   public boolean viaVersionShieldBlockReplacement() {
-    return protocolVersion >= VER_1_9 && !MinecraftVersions.VER1_9_0.atOrAbove();
+    return protocolVersion >= VER_1_9 && protocolVersion < VER_1_21_5 && !MinecraftVersions.VER1_9_0.atOrAbove();
   }
 }

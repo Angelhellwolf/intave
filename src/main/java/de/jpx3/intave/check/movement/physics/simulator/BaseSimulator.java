@@ -17,9 +17,9 @@ import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.fluid.Fluids;
 import de.jpx3.intave.block.physics.BlockPhysics;
 import de.jpx3.intave.block.physics.BlockProperties;
-import de.jpx3.intave.check.movement.physics.MovementCharacteristics;
-import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
+import de.jpx3.intave.check.movement.physics.environment.MovementCharacteristics;
+import de.jpx3.intave.check.movement.physics.environment.Pose;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.diagnostic.timings.Timings;
 import de.jpx3.intave.executor.Synchronizer;
@@ -43,8 +43,8 @@ import org.bukkit.entity.Player;
 
 import java.util.Collection;
 
-import static de.jpx3.intave.check.movement.physics.MoveMetric.EXTERNAL_VELOCITY;
-import static de.jpx3.intave.check.movement.physics.MoveMetric.IN_LAVA;
+import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.EXTERNAL_VELOCITY;
+import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.IN_LAVA;
 import static de.jpx3.intave.share.ClientMath.clamp_double;
 import static de.jpx3.intave.share.ClientMath.floor;
 import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_14;

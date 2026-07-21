@@ -37,6 +37,7 @@ final class JumpBrancher extends MovementSearchBrancher {
     ProtocolMetadata protocol = input.user().meta().protocol();
     boolean estimatedJump = Math.abs(environment.offsetMotionY() - environment.jumpMotion()) < 0.0001;
 
+    int writtenOutputBranches = 0;
     for (boolean jumped : estimatedJump ? OPTIMISTIC : PESSIMISTIC) {
       if (jumped && restricted && !environment.lastOnGround() && !environment.inLava() && !environment.inWater()) {
         continue;
@@ -47,7 +48,11 @@ final class JumpBrancher extends MovementSearchBrancher {
       if (!jumped && restricted && inputBranch.moveConfig().isSprinting() && environment.isSneaking() && !protocol.combatUpdate()) {
         continue;
       }
+      writtenOutputBranches++;
       outputBranches.add(inputBranch.withJumped(jumped));
+    }
+    if (writtenOutputBranches == 0) {
+      outputBranches.add(inputBranch.withJumped(false));
     }
   }
 

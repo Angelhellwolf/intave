@@ -20,7 +20,7 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 
-import static de.jpx3.intave.check.movement.physics.MoveMetric.WATERFLOW_PUSH;
+import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.WATERFLOW_PUSH;
 
 final class v8Waterflow implements FluidFlow {
   @Override

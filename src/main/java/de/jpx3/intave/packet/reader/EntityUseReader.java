@@ -1,8 +1,19 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.packet.reader;
 
-import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.adapter.MinecraftVersions;
+import de.jpx3.intave.module.linker.packet.PacketId;
 
 public final class EntityUseReader extends EntityReader {
 
@@ -16,8 +27,9 @@ public final class EntityUseReader extends EntityReader {
 
   public EnumWrappers.EntityUseAction useAction() {
     if (MinecraftVersions.VER26_1_1.atOrAbove()) {
-      PacketType type = packet().getType();
-      if (type == PacketType.Play.Client.ATTACK) {
+      if (PacketId.Client.ATTACK_ENTITY.lookupName().equalsIgnoreCase(
+        packet().getType().name()
+      )) {
         return EnumWrappers.EntityUseAction.ATTACK;
       }
       boolean isSecondary = packet().getBooleans().read(0);

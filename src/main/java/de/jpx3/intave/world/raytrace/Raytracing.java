@@ -11,7 +11,7 @@
 
 package de.jpx3.intave.world.raytrace;
 
-import de.jpx3.intave.check.movement.physics.Pose;
+import de.jpx3.intave.check.movement.physics.environment.Pose;
 import de.jpx3.intave.diagnostic.timings.Timings;
 import de.jpx3.intave.math.SinusCache;
 import de.jpx3.intave.module.tracker.entity.Entity;
@@ -33,7 +33,7 @@ import org.bukkit.entity.Player;
 import java.util.ArrayList;
 import java.util.List;
 
-import static de.jpx3.intave.check.movement.physics.MoveMetric.SNEAKING;
+import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.SNEAKING;
 
 public final class Raytracing {
 	private static final Raytracer RAYTRACER = new UniversalRaytracer();

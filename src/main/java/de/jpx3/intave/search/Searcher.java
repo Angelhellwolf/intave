@@ -11,6 +11,8 @@
 
 package de.jpx3.intave.search;
 
+import de.jpx3.intave.IntaveLogger;
+
 import java.util.*;
 import java.util.function.Function;
 
@@ -38,6 +40,9 @@ public final class Searcher<I, T> {
 			newResult.clear();
 			for (T t : result) {
 				brancher.branch(input, t, newResult);
+			}
+			if (newResult.isEmpty()) {
+				IntaveLogger.logger().warn("Brancher " + brancher + " produced no results for input " + input + " and result " + result);
 			}
 			deduplicated.clear();
 			deduplicated.addAll(newResult);

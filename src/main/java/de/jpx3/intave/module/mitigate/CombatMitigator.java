@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.module.mitigate;
 
 import com.comphenix.protocol.events.PacketEvent;
@@ -316,10 +327,9 @@ public final class CombatMitigator extends Module {
       return;
     }
 
-    // nope
-//    if (attackNerfer.strategy() == HT_SPOOF) {
-//      return;
-//    }
+    if (user.receives(MessageChannel.DEBUG_NERFS)) {
+      user.player().sendMessage(ChatColor.RED + "[Intave] " + ChatColor.GRAY + "Applied " + attackNerfer.name() + " combat nerfer " + (attackNerfer.expiry() == Long.MAX_VALUE ? "permanently" : "for " + MathHelper.formatDouble((attackNerfer.expiry() - System.currentTimeMillis()) / 1000d, 2) + "s"));
+    }
 
     Player player = user.player();
     long expiry = attackNerfer.expiry();

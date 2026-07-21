@@ -25,7 +25,7 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-import static de.jpx3.intave.check.movement.physics.MoveMetric.ATTACK_REDUCE;
+import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.ATTACK_REDUCE;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.POSITION;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.POSITION_LOOK;
 import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_9;

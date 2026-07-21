@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check.world.interaction;
 
 import com.comphenix.protocol.wrappers.BlockPosition;
@@ -51,8 +62,8 @@ import java.util.stream.Collectors;
 
 import static de.jpx3.intave.IntaveControl.DUMP_BLOCK_HITBOX_ON_RIGHT_CLICK;
 import static de.jpx3.intave.IntaveControl.REMOVE_PLACED_BLOCKS_WITH_DELAY;
-import static de.jpx3.intave.check.movement.physics.MoveMetric.BLOCK_PLACEMENT;
-import static de.jpx3.intave.check.movement.physics.MoveMetric.NEARBY_COLLISION_INACCURACY;
+import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.BLOCK_PLACEMENT;
+import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.NEARBY_COLLISION_INACCURACY;
 
 public final class InteractionEmulator implements EventProcessor {
   private final IntavePlugin plugin;

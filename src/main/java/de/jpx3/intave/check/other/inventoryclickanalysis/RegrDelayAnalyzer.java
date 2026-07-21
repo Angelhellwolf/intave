@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check.other.inventoryclickanalysis;
 
 import com.comphenix.protocol.events.PacketContainer;
@@ -14,7 +25,6 @@ import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.module.violation.ViolationContext;
 import de.jpx3.intave.module.violation.ViolationProcessor;
 import de.jpx3.intave.packet.reader.WindowClickReader;
-import de.jpx3.intave.packet.reader.WindowCloseReader;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import org.bukkit.GameMode;
@@ -93,7 +103,7 @@ public class RegrDelayAnalyzer extends MetaCheckPart<InventoryClickAnalysis, Reg
       CLOSE_WINDOW
     }
   )
-  public void closeWindowPacket(Player player, WindowCloseReader closeReader) throws Exception {
+  public void closeWindowPacket(Player player) {
     User user = userOf(player);
     ClickDelayMeta meta = metaOf(user);
 

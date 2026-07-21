@@ -11,8 +11,8 @@
 
 package de.jpx3.intave.benchmark;
 
-import de.jpx3.intave.check.movement.physics.MoveMetric;
 import de.jpx3.intave.check.movement.physics.environment.MockSimulationEnvironment;
+import de.jpx3.intave.check.movement.physics.environment.MoveMetric;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.player.collider.complex.SimulationResult;
 import de.jpx3.intave.share.BoundingBox;

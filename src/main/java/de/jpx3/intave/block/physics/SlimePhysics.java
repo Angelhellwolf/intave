@@ -21,7 +21,7 @@ import org.bukkit.Material;
 import java.util.Collections;
 import java.util.List;
 
-import static de.jpx3.intave.check.movement.physics.MoveMetric.SLIME_BLOCK;
+import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.SLIME_BLOCK;
 
 final class SlimePhysics implements BlockPhysic {
   private List<Material> material;

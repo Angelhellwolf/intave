@@ -9,13 +9,12 @@
  *   https://polyformproject.org/licenses/perimeter/1.0.0/
  */
 
-package de.jpx3.intave.check.movement.physics;
+package de.jpx3.intave.check.movement.physics.environment;
 
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.collision.Collision;
 import de.jpx3.intave.block.physics.BlockProperties;
 import de.jpx3.intave.block.variant.BlockVariant;
-import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.player.ItemProperties;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Direction;

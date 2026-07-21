@@ -31,7 +31,7 @@ import org.bukkit.inventory.ItemStack;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import static de.jpx3.intave.check.movement.physics.MoveMetric.TELEPORT;
+import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.TELEPORT;
 import static de.jpx3.intave.module.linker.packet.ListenerPriority.LOWEST;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.POSITION;
@@ -177,7 +177,7 @@ public final class PacketEventDispatch implements PacketEventSubscriber {
       reverseSink.accept(user, openEvent::accept);
     }
     WindowClickEvent clickEvent = WindowClickEvent.create(
-      reader.container(), reader.slot(), reader.clickType().ordinal(), reader.button(), reader.actionNumber()
+      reader.containerId(), reader.slot(), reader.clickType().ordinal(), reader.button(), reader.actionNumber()
     );
     reverseSink.accept(user, clickEvent::accept);
   }

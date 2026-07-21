@@ -171,6 +171,7 @@ check:
     enabled: true
     invokant: false
     check_sent_slot_twice_vl: 100
+    packet-order-vl: 5
     thresholds:
       50: "intave internals sendnotify &c{player}&7/{trust-color}&7 is sending invalid packets"
       100:

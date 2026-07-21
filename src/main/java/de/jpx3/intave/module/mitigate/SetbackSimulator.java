@@ -21,7 +21,7 @@ import de.jpx3.intave.block.collision.Collision;
 import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.check.movement.Physics;
-import de.jpx3.intave.check.movement.physics.Pose;
+import de.jpx3.intave.check.movement.physics.environment.Pose;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.klass.Lookup;
@@ -52,7 +52,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import static de.jpx3.intave.check.movement.physics.MoveMetric.RECEIVED_VELOCITY_PACKET;
+import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.RECEIVED_VELOCITY_PACKET;
 import static de.jpx3.intave.math.MathHelper.minmax;
 import static de.jpx3.intave.share.ClientMath.floor;
 import static de.jpx3.intave.share.Direction.Axis.*;

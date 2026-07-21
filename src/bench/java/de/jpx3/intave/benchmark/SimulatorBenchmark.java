@@ -39,7 +39,7 @@ import java.util.Locale;
 import java.util.UUID;
 
 public final class SimulatorBenchmark {
-	private static final int DEFAULT_TICKS = 1_000_000;
+	private static final int DEFAULT_TICKS = 4_000_000;
 	private static final int DEFAULT_WARMUP_TICKS = 10_000;
 	private static volatile double sink;
 

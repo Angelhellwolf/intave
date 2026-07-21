@@ -35,7 +35,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import static de.jpx3.intave.check.movement.physics.MoveMetric.TELEPORT;
+import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.TELEPORT;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 
 public final class RotationSnapHeuristic extends ClassicHeuristic<RotationSnapHeuristic.RotationSnapHeuristicMeta> {
