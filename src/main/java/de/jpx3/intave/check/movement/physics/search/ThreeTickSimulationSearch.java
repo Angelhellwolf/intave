@@ -392,7 +392,9 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 			boolean releaseHandConditions = Hypot.fast(movementData.offsetMotionX(), movementData.offsetMotionZ()) > 0.3 || movementData.ticksPast(TELEPORT) >= 2;
 			boolean itemIsBow = ItemProperties.isBow(meta.inventory().activeItemType()) || ItemProperties.isBow(meta.inventory().offhandItemType());
 			boolean viaVersionBlockReplacement = meta.protocol().viaVersionShieldBlockReplacement();
-			if (releaseHandConditions && (!itemIsBow || (inventoryData.handActiveTicks > 3 && !viaVersionBlockReplacement)) && itemUsageReset) {
+			boolean ignoredSlowdown = releaseHandConditions && (!itemIsBow || (inventoryData.handActiveTicks > 3 && !viaVersionBlockReplacement)) && itemUsageReset;
+
+			if (ignoredSlowdown && movementData.handItemSimulationFails++ > 1) {
 				meta.inventory().releaseItemNextTick();
 
 				if (user.receives(MessageChannel.DEBUG_ITEM_RESETS)) {

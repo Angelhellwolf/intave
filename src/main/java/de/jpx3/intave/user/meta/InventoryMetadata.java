@@ -147,6 +147,9 @@ public final class InventoryMetadata {
       }
       this.handActive = true;
 
+      User user = UserRepository.userOf(player);
+      user.meta().movement().handItemSimulationFails = 0;
+
       if (offhandItemPrimary()) {
         this.foodItem = ItemProperties.foodConsumable(player, offhandItemType());
         this.activeItemType = offhandItemType();

@@ -187,8 +187,8 @@ public final class MovementMetadata implements SimulationEnvironment {
   public int legacyVehicleStrafeKey = 0;
   public boolean clientPressedJump = false;
   public boolean forceCorrectReduce = false;
-  public double lastRespawnX, lastRespawnY, lastRespawnZ;
-  public boolean allowRespawnLeniency = false;
+  // Count resets on start item-usage and increases if the simulation suspects the player ignored item-usage slowdown
+  public int handItemSimulationFails = 0;
   private boolean hasJumpFactor;
   private double resetMotion, frictionPosSubtraction;
   private double motionX, motionY, motionZ;
