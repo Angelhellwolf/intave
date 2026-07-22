@@ -34,7 +34,8 @@ final class UseItemBrancher extends MovementSearchBrancher {
       if (!requirement.allows(useItemState)) {
         continue;
       }
-      if (inputBranch.moveConfig().isSprinting() && useItemState && !protocol.viaVersionShieldBlockReplacement()) {
+      // players on 1.8.X cannot sprint while using an item
+      if (inputBranch.moveConfig().isSprinting() && useItemState && !protocol.combatUpdate()) {
         continue;
       }
       outputBranches.add(inputBranch.withHandActive(useItemState));
