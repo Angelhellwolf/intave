@@ -13,7 +13,10 @@ package de.jpx3.intave.check.other;
 
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.check.Check;
-import de.jpx3.intave.check.other.protocolscanner.*;
+import de.jpx3.intave.check.other.protocolscanner.InvalidPitch;
+import de.jpx3.intave.check.other.protocolscanner.InvalidRelease;
+import de.jpx3.intave.check.other.protocolscanner.SentSlotTwice;
+import de.jpx3.intave.check.other.protocolscanner.SkinBlinker;
 
 public final class ProtocolScanner extends Check {
   private final IntavePlugin plugin;
@@ -26,8 +29,9 @@ public final class ProtocolScanner extends Check {
       new SentSlotTwice(this),
       new InvalidPitch(this),
       new SkinBlinker(this),
-      new InvalidRelease(this),
-      new PacketConstraint(this)
+      new InvalidRelease(this)
+//      ,
+//      new PacketConstraint(this)
     );
   }
 }
