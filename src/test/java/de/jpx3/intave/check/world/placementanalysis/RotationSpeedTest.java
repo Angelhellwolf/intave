@@ -7,6 +7,8 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+// Regression coverage for the semantic five-second activity window and the
+// independent defensive 100-sample memory bound.
 class RotationSpeedTest {
   @Test
   void ignoresSamplesOutsideTheRotationWindow() {
@@ -23,6 +25,7 @@ class RotationSpeedTest {
     List<RotationSpeed.RotationSample> history = new ArrayList<>();
     RotationSpeed.recordRotation(history, 100.0F, 0);
 
+    // Samples exactly on the cutoff remain part of the active window.
     assertEquals(100.0, RotationSpeed.rotationSum(history, 5000));
     assertEquals(1, history.size());
   }

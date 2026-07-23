@@ -41,8 +41,12 @@ import static de.jpx3.intave.module.violation.Violation.ViolationFlags.DISPLAY_I
 public final class RotationSpeed extends PlayerCheckPart<PlacementAnalysis> {
 	private static final int QUEUE_SIZE = 12;
 	private static final int MIN_ACTIVATION_DATA = 4;
+	// Rotation activity represents one recent bridging sequence. Bounding it by
+	// both time and count prevents old sequences from contaminating a new one.
 	private static final int MAX_ROTATION_SAMPLES = 5 * 20;
 	private static final long ROTATION_WINDOW_MS = 5000;
+	// Report suspicious activity first; only deny placements after the shared
+	// violation processor confirms that the player crossed a sustained threshold.
 	private static final double PREVENTION_VL = 20;
 	private final int rotationLimit;
 	private final List<RotationSample> rotationHistory = new CopyOnWriteArrayList<>();
@@ -68,6 +72,8 @@ public final class RotationSpeed extends PlayerCheckPart<PlacementAnalysis> {
 		float rotationMovement = Math.min(MathHelper.distanceInDegrees(movementData.rotationYaw, movementData.lastRotationYaw), 360);
 		long now = System.currentTimeMillis();
 		if (now - lastBlockPlacement > 1000 || movementData.ticksPast(TELEPORT) <= 5) {
+			// Expire samples while collection is inactive so the next bridge cannot
+			// inherit rotation activity from an older sequence.
 			discardExpiredRotations(rotationHistory, now);
 			return;
 		}
@@ -95,6 +101,8 @@ public final class RotationSpeed extends PlayerCheckPart<PlacementAnalysis> {
 		boolean enoughBlockSamples = placementHistory.size() >= MIN_ACTIVATION_DATA;
 
 		if (placedBelow && enoughBlockSamples && isBridgeCreation(placementHistory)) {
+			// Sum only the current window. A count-only history could combine
+			// multiple legitimate bridging sequences into one violation.
 			double rotationSum = rotationSum(rotationHistory, now);
 
 			float limit = rotationLimit;
@@ -112,7 +120,11 @@ public final class RotationSpeed extends PlayerCheckPart<PlacementAnalysis> {
 					.withCustomThreshold(PlacementAnalysis.legacyConfigurationLayout() ? "thresholds" : "cloud-thresholds.on-premise")
 					.withVL(10).build();
 				ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);
+				// Consume this evidence after reporting it. Reusing the same rotation
+				// burst on following placements would repeatedly add violation level.
 				rotationHistory.clear();
+				// One unusual sequence may alert, but cannot immediately cancel building.
+				// Prevention starts only after the shared VL has accumulated.
 				if (violationContext.violationLevelAfter() > PREVENTION_VL) {
 					denyPlacementRequest = now;
 					user.meta().violationLevel().lastBlockPlaceDenyRequest = now;
@@ -132,6 +144,8 @@ public final class RotationSpeed extends PlayerCheckPart<PlacementAnalysis> {
 	}
 
 	static void recordRotation(List<RotationSample> history, float movement, long now) {
+		// Time expiry defines the activity window; the count cap is a defensive
+		// memory bound for clients sending unusually many look packets.
 		discardExpiredRotations(history, now);
 		if (history.size() >= MAX_ROTATION_SAMPLES) {
 			history.remove(0);
@@ -140,6 +154,8 @@ public final class RotationSpeed extends PlayerCheckPart<PlacementAnalysis> {
 	}
 
 	static double rotationSum(List<RotationSample> history, long now) {
+		// Prune at read time because a placement may occur without another look
+		// packet that would otherwise trigger recordRotation().
 		discardExpiredRotations(history, now);
 		double sum = 0.0;
 		for (RotationSample sample : history) {
