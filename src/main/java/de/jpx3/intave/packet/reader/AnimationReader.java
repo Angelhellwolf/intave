@@ -20,6 +20,7 @@ public final class AnimationReader extends EntityReader {
 		SWING,
 		HURT,
 		WAKEUP,
+		SWING_OFFHAND,
 		CRIT,
 		CRIT_MAGIC
 	};
