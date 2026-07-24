@@ -530,6 +530,7 @@ public interface SimulationEnvironment {
     return isSleeping();
   }
 
+  // isSwimming()
   default boolean shouldHaveSwimmingPose() {
     ProtocolMetadata protocol = user().meta().protocol();
     if (!protocol.swimmingMechanics()) {

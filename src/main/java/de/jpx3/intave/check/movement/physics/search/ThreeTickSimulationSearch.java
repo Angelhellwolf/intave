@@ -149,7 +149,7 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 		Position receivedPosition = movementData.position();
 		Position lastPositionB4Flying = movementData.lastPosition();
 
-		boolean likelyInaccurate = likelyInaccurate(movementData);
+		boolean likelyInaccurate = likelyInaccurate(user, movementData);
 		boolean allowFuzziness = options.allowFuzziness();
 		double requiredAccuracyFirstTick = STRICT_ACCURACY;
 		double requiredAccuracySecondTick = likelyInaccurate && allowFuzziness ? 0.03 : STRICT_ACCURACY;
@@ -404,7 +404,10 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 		}
 	}
 
-	private boolean likelyInaccurate(SimulationEnvironment movementData) {
+	private boolean likelyInaccurate(User user, SimulationEnvironment movementData) {
+		if (user.meta().protocol().flyingPacketUncertaintyRadius() < 0.00001) {
+			return false;
+		}
 		if (Math.abs(movementData.offsetMotionY()) < 0.05
 			&& Math.abs(movementData.offsetMotionX()) < 0.05 && Math.abs(movementData.offsetMotionZ()) < 0.05) {
 			return true;

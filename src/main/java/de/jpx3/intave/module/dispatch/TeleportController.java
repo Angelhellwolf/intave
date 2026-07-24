@@ -11,8 +11,12 @@
 
 package de.jpx3.intave.module.dispatch;
 
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.wrappers.BukkitConverters;
+import com.comphenix.protocol.wrappers.WrappedParticle;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.IntavePlugin;
@@ -37,16 +41,17 @@ import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.user.meta.ViolationMetadata;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 import static com.comphenix.protocol.wrappers.EnumWrappers.PlayerDigType.DROP_ITEM;
@@ -260,8 +265,86 @@ public final class TeleportController implements PacketEventSubscriber {
           if (user.receives(MessageChannel.DEBUG_TELEPORT)) {
             player.sendMessage(IntavePlugin.prefix() + "Set random velocity " + randomVelocity.getX() + " " + randomVelocity.getY() + " " + randomVelocity.getZ() + " as " + ChatColor.RED + " it was command-requested");
           }
+
+          Synchronizer.synchronizeDelayed(() -> {
+            // send explosion packet
+            sendExplosion(player, player.getLocation(), 4.0f, new Vector(0, -1, 0));
+          }, 2);
         });
       }
+    }
+  }
+
+
+  public static void sendExplosion(
+    Player player,
+    Location location,
+    float radius,
+    Vector knockback
+  ) {
+    if (!MinecraftVersions.VER1_21_4.atOrAbove()) {
+      return;
+    }
+
+    PacketContainer packet = ProtocolLibrary.getProtocolManager()
+      .createPacket(PacketType.Play.Server.EXPLOSION);
+
+    // Explosion center (Vec3)
+    packet.getVectors().write(0, location.toVector());
+
+    // Radius
+    packet.getFloat().write(0, radius);
+
+    // Number of block debris particles
+    packet.getIntegers().write(0, 0);
+
+    // Optional player knockback
+    packet.getOptionals(BukkitConverters.getVectorConverter())
+      .write(0, Optional.ofNullable(knockback));
+
+    // Main explosion particle
+    packet.getNewParticles().write(
+      0,
+      WrappedParticle.create(Particle.CLOUD, null)
+    );
+
+    // Explosion sound
+    packet.getSoundEffects().write(
+      0,
+      Sound.ENTITY_GENERIC_EXPLODE
+    );
+
+    // 1.21.11: block particle WeightedList
+    packet.getModifier().write(6, createEmptyWeightedList(packet));
+
+    ProtocolLibrary.getProtocolManager().sendServerPacket(player, packet);
+  }
+
+
+  private static Object createEmptyWeightedList(PacketContainer packet) {
+    try {
+      // Field 6 is the WeightedList of block explosion particles
+      Class<?> type = packet.getModifier().getField(6).getType();
+
+      Method emptyFactory = Arrays.stream(type.getDeclaredMethods())
+        .filter(method -> Modifier.isStatic(method.getModifiers()))
+        .filter(method -> method.getParameterCount() == 0)
+        .filter(method -> method.getReturnType() == type)
+        .findFirst()
+        .orElseThrow(() ->
+          new IllegalStateException(
+            "Cannot find empty WeightedList factory"
+          )
+        );
+
+      emptyFactory.setAccessible(true);
+      return emptyFactory.invoke(null);
+
+    } catch (ReflectiveOperationException exception) {
+      throw new RuntimeException(
+        "Could not create explosion block particle list",
+        exception
+      );
     }
   }
 

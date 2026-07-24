@@ -26,6 +26,10 @@ public final class MutableBlockPosition {
 		this.z = z;
 	}
 
+	public MutableBlockPosition(BlockPosition position) {
+		this(position.getX(), position.getY(), position.getZ());
+	}
+
 	public int x() {
 		return this.x;
 	}

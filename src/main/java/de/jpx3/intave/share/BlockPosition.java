@@ -263,6 +263,10 @@ public final class BlockPosition extends RawVector3d {
     return (int) z;
   }
 
+  public MutableBlockPosition mutable() {
+    return new MutableBlockPosition(this);
+  }
+
   @Override
   public int hashCode() {
     long i = (long) (this.x * 3129871) ^ (long) this.z * 116129781L ^ (long) this.y;

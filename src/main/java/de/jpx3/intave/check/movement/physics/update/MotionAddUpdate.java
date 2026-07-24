@@ -15,18 +15,20 @@ import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.user.meta.MovementMetadata;
 
-public final class VelocityUpdate extends TickAmbiguousUpdate {
+public final class MotionAddUpdate extends TickAmbiguousUpdate {
 	private final Motion motion;
 	private CausalConstraint causalConstraint;
 
-	private VelocityUpdate(Motion motion, CausalConstraint causalConstraint) {
+	private MotionAddUpdate(Motion motion, CausalConstraint causalConstraint) {
 		this.motion = motion;
 		this.causalConstraint = causalConstraint;
 	}
 
 	@Override
 	public void applyTo(SimulationEnvironment environment) {
-		environment.setBaseMotion(motion);
+		environment.setBaseMotion(
+			environment.mutableBaseMotionCopy().add(motion)
+		);
 	}
 
 	@Override
@@ -49,8 +51,8 @@ public final class VelocityUpdate extends TickAmbiguousUpdate {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (obj instanceof VelocityUpdate) {
-			VelocityUpdate other = (VelocityUpdate) obj;
+		if (obj instanceof MotionAddUpdate) {
+			MotionAddUpdate other = (MotionAddUpdate) obj;
 			return motion.equals(other.motion) && causalConstraint.equals(other.causalConstraint);
 		}
 		return false;
@@ -63,14 +65,14 @@ public final class VelocityUpdate extends TickAmbiguousUpdate {
 
 	@Override
 	public String toString() {
-		return "VelocityUpdate{motion=" + motion + ", at="+causalConstraint+"}";
+		return "MotionAddUpdate{motion=" + motion + ", at="+causalConstraint+"}";
 	}
 
-	public static VelocityUpdate openEnded(
+	public static MotionAddUpdate openEnded(
 		Motion motion, MovementMetadata metadata
 	) {
 		long sequenceNumber = metadata.newSequenceNumber();
-		return new VelocityUpdate(
+		return new MotionAddUpdate(
 			motion.copy(),
 			CausalConstraint.openEnded(
 				metadata.currentTick(),

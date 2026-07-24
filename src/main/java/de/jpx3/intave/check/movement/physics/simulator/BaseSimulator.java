@@ -17,6 +17,7 @@ import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.fluid.Fluids;
 import de.jpx3.intave.block.physics.BlockPhysics;
 import de.jpx3.intave.block.physics.BlockProperties;
+import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
 import de.jpx3.intave.check.movement.physics.environment.MovementCharacteristics;
 import de.jpx3.intave.check.movement.physics.environment.Pose;
@@ -56,10 +57,82 @@ class BaseSimulator extends Simulator {
     SimulationEnvironment environment
   ) {
     baseMotion = baseMotion.copy();
+    moveOutOfBlocks(user, baseMotion, environment);
     handleSneakInWater(user, baseMotion, environment);
     updateAquatics(user, baseMotion, environment);
     simulateMotionClamp(user, baseMotion, environment);
     return baseMotion;
+  }
+
+  private void moveOutOfBlocks(User user, Motion motion, SimulationEnvironment environment) {
+    BoundingBox boundingBox = environment.boundingBox();
+    Position position = environment.lastPosition();
+    double scaledWidth = boundingBox.width() * 0.35d;
+    double positionY = boundingBox.minY + 0.5;
+    Position positionA = Position.of(position.getX() - scaledWidth, positionY, position.getZ() + scaledWidth);
+    Position positionB = Position.of(position.getX() - scaledWidth, positionY, position.getZ() - scaledWidth);
+    Position positionC = Position.of(position.getX() + scaledWidth, positionY, position.getZ() - scaledWidth);
+    Position positionD = Position.of(position.getX() + scaledWidth, positionY, position.getZ() + scaledWidth);
+    pushOutOfBlocks(user, motion, environment, positionA);
+    pushOutOfBlocks(user, motion, environment, positionB);
+    pushOutOfBlocks(user, motion, environment, positionC);
+    pushOutOfBlocks(user, motion, environment, positionD);
+  }
+
+  private void pushOutOfBlocks(User user, Motion motion, SimulationEnvironment environment, Position position) {
+    BlockPosition blockPosition = position.toBlockPosition();
+    if (suffocates(user, environment, blockPosition)) {
+      double d0 = position.getX() - blockPosition.getX();
+      double d1 = position.getZ() - blockPosition.getZ();
+      Direction direction = null;
+      double minPush = 9999.0;
+      if (!suffocates(user, environment, blockPosition.west()) && d0 < minPush) {
+        minPush = d0;
+        direction = Direction.WEST;
+      }
+      if (!suffocates(user, environment, blockPosition.east()) && 1.0 - d0 < minPush) {
+        minPush = 1.0 - d0;
+        direction = Direction.EAST;
+      }
+      if (!suffocates(user, environment, blockPosition.north()) && d1 < minPush) {
+        minPush = d1;
+        direction = Direction.NORTH;
+      }
+      if (!suffocates(user, environment, blockPosition.south()) && 1.0 - d1 < minPush) {
+	      minPush = 1.0 - d1;
+	      direction = Direction.SOUTH;
+      }
+      if (direction != null) {
+        switch (direction) {
+          case WEST:
+            motion.motionX = -0.1;
+            break;
+          case EAST:
+            motion.motionX = 0.1;
+            break;
+          case NORTH:
+            motion.motionZ = -0.1;
+            break;
+          case SOUTH:
+            motion.motionZ = 0.1;
+            break;
+        }
+      }
+    }
+  }
+
+  private boolean suffocates(User user, SimulationEnvironment environment, BlockPosition position) {
+    BoundingBox boundingBox = environment.boundingBox();
+    MutableBlockPosition mutable = position.mutable();
+    for (int y = (int) Math.floor(boundingBox.minY); y < Math.ceil(boundingBox.maxY); y++) {
+      mutable.setY(y);
+      Material type = VolatileBlockAccess.typeAccess(user, mutable);
+      BlockShape collisionShape = VolatileBlockAccess.collisionShapeAccess(user, mutable);
+      if (BlockProperties.of(type).suffocates() && collisionShape.isCubic()) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private void handleSneakInWater(User user, Motion motion, SimulationEnvironment environment) {
@@ -148,7 +221,7 @@ class BaseSimulator extends Simulator {
     double positionZ = environment.verifiedLastPositionZ();
     boolean inWater = environment.inWater();
     boolean inLava = environment.inLava();
-	  boolean swimming = pose == Pose.SWIMMING;
+	  boolean swimming = environment.shouldHaveSwimmingPose();
     boolean crouching = pose == Pose.CROUCHING;
     boolean waterUpdate = protocol.aquaticUpdate();
 
@@ -219,6 +292,7 @@ class BaseSimulator extends Simulator {
     if (waterUpdate && swimming) {
       double d3 = environment.lookVector().getY();
       double d4 = d3 < -0.2D ? 0.085D : 0.06D;
+      // please verify if this is not actually the last position
       boolean liquidPresent = Fluids.fluidPresentAt(user, positionX, positionY + 1.0 - 0.1, positionZ);
       if (d3 <= 0.0D || jumped || liquidPresent) {
         motion.motionY += (d3 - motion.motionY) * d4;

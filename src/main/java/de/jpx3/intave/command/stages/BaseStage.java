@@ -214,6 +214,7 @@ public final class BaseStage extends CommandStage {
     COLLISIONS(MessageChannel.DEBUG_COLLISIONS),
     NERFS(MessageChannel.DEBUG_NERFS),
     HITBOXES(MessageChannel.DEBUG_HITBOXES),
+    HITBOX(MessageChannel.DEBUG_HITBOX),
     HITRAY(MessageChannel.DEBUG_HITRAY),
     MOVEMENT(MessageChannel.DEBUG_MOVEMENT),
     MOTION(MessageChannel.DEBUG_MOTION),

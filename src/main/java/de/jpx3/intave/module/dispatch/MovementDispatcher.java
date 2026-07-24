@@ -35,7 +35,8 @@ import de.jpx3.intave.check.CheckService;
 import de.jpx3.intave.check.movement.Physics;
 import de.jpx3.intave.check.movement.Timer;
 import de.jpx3.intave.check.movement.physics.environment.Pose;
-import de.jpx3.intave.check.movement.physics.update.VelocityUpdate;
+import de.jpx3.intave.check.movement.physics.update.MotionAddUpdate;
+import de.jpx3.intave.check.movement.physics.update.MotionSetUpdate;
 import de.jpx3.intave.check.world.InteractionRaytrace;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.math.Hypot;
@@ -275,32 +276,6 @@ public final class MovementDispatcher extends Module {
   }
 
   @PacketSubscription(
-    priority = ListenerPriority.HIGH,
-    packetsOut = {
-      EXPLOSION
-    }
-  )
-  public void sentExplosion(
-    User user, ExplosionReader reader,
-    PacketEvent event
-  ) {
-    Motion knockback = reader.motion();
-    if (knockback != null) {
-      user.packetTickFeedback(event, () -> {
-        if (IntaveControl.DEBUG_VELOCITY_RECEIVE) {
-          user.sendMessage("§a" + MathHelper.formatMotion(knockback));
-        }
-        MovementMetadata movement = user.meta().movement();
-        movement.baseMotionX += knockback.motionX;
-        movement.baseMotionY += knockback.motionY;
-        movement.baseMotionZ += knockback.motionZ;
-
-        movement.clearPostTickMotionCandidates();
-      });
-    }
-  }
-
-  @PacketSubscription(
     priority = ListenerPriority.LOW,
     packetsIn = {
       FLYING, LOOK, POSITION, POSITION_LOOK, VEHICLE_MOVE
@@ -438,6 +413,12 @@ public final class MovementDispatcher extends Module {
       BoundingBox box = movement.boundingBox().grow(0.1);
       BlockShape shape = Collision.shape(user, movement, box);
       drawDebugBoxes(user, BlockShapes.optimize(shape).elementaryBoxes());
+    }
+
+    if (user.receives(MessageChannel.DEBUG_HITBOX)) {
+      for (Position vertex : movement.boundingBox().vertices()) {
+        Particles.spawnVillagerHappyParticleAt(user, vertex);
+      }
     }
 
     if (movement.awaitTeleport || movement.awaitOutgoingTeleport) {
@@ -930,19 +911,19 @@ public final class MovementDispatcher extends Module {
 
       Motion finalVelocity = motion.copy();
 
-      AtomicReference<VelocityUpdate> velocity = new AtomicReference<>(null);
+      AtomicReference<MotionSetUpdate> velocity = new AtomicReference<>(null);
       user.doubleTickFeedback(event,
         () -> {
-	        velocity.set(VelocityUpdate.openEnded(
+	        velocity.set(MotionSetUpdate.openEnded(
 		        finalVelocity,
 		        movementData
 	        ));
           movementData.queueTickAmbiguousUpdate(velocity.get());
         },
         () -> {
-          VelocityUpdate myVelocityUpdate = velocity.get();
-          if (myVelocityUpdate != null) {
-            myVelocityUpdate.canNotRunAfterThisTick(movementData);
+          MotionSetUpdate myMotionSetUpdate = velocity.get();
+          if (myMotionSetUpdate != null) {
+            myMotionSetUpdate.canNotRunAfterThisTick(movementData);
           }
           // legacy behavior
           receiveVelocity(player, finalVelocity);
@@ -951,6 +932,39 @@ public final class MovementDispatcher extends Module {
       );
 
       movementData.activeTick(RECEIVED_VELOCITY_PACKET);
+    }
+  }
+
+  @PacketSubscription(
+    priority = ListenerPriority.HIGH,
+    packetsOut = {
+      EXPLOSION
+    }
+  )
+  public void sentExplosion(
+    User user, ExplosionReader reader,
+    PacketEvent event
+  ) {
+    MovementMetadata movement = user.meta().movement();
+    Motion knockback = reader.motion();
+    if (knockback != null) {
+      AtomicReference<MotionAddUpdate> update = new AtomicReference<>(null);
+      user.doubleTickFeedback(event,
+        () -> {
+          update.set(MotionAddUpdate.openEnded(
+            knockback,
+            movement
+          ));
+          movement.queueTickAmbiguousUpdate(update.get());
+        },
+        () -> {
+          MotionAddUpdate myMotionAddUpdate = update.get();
+          if (myMotionAddUpdate != null) {
+            myMotionAddUpdate.canNotRunAfterThisTick(movement);
+          }
+          movement.pendingVelocityPackets.decrementAndGet();
+        }
+      );
     }
   }
 
