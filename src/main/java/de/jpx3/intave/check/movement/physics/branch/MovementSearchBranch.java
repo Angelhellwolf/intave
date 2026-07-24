@@ -19,15 +19,17 @@ import java.util.Objects;
 import java.util.function.UnaryOperator;
 
 public final class MovementSearchBranch {
-	private final static MovementSearchBranch BLANK = new MovementSearchBranch(MovementConfiguration.blank(), env -> env, true);
+	private final static MovementSearchBranch BLANK = new MovementSearchBranch(MovementConfiguration.blank(), env -> env, true, "");
 	private final MovementConfiguration configuration;
 	private final UnaryOperator<SimulationEnvironment> environmentModifier;
 	private final boolean canFinishExplicitTick;
+	private final String branchIdentifier;
 
-	private MovementSearchBranch(MovementConfiguration configuration, UnaryOperator<SimulationEnvironment> environmentModifier, boolean canFinishExplicitTick) {
+	private MovementSearchBranch(MovementConfiguration configuration, UnaryOperator<SimulationEnvironment> environmentModifier, boolean canFinishExplicitTick, String branchIdentifier) {
 		this.configuration = configuration;
 		this.environmentModifier = environmentModifier;
 		this.canFinishExplicitTick = canFinishExplicitTick;
+		this.branchIdentifier = branchIdentifier;
 	}
 
 	public static MovementSearchBranch blank(MovementSearchInput input) {
@@ -38,24 +40,30 @@ public final class MovementSearchBranch {
 		return configuration;
 	}
 
-	MovementSearchBranch withMoveConfig(MovementConfiguration configuration) {
-		return new MovementSearchBranch(configuration, environmentModifier, canFinishExplicitTick);
+	MovementSearchBranch withMoveConfig(MovementConfiguration configuration, String branchAddition) {
+		return new MovementSearchBranch(configuration, environmentModifier, canFinishExplicitTick, branchIdentifier + branchAddition);
 	}
 
 	public MovementSearchBranch modifyBefore(UnaryOperator<SimulationEnvironment> modifier) {
 		return new MovementSearchBranch(
 			configuration,
 			andThen(modifier, environmentModifier),
-			canFinishExplicitTick
+			canFinishExplicitTick,
+			branchIdentifier + "_beforeModifier"
 		);
 	}
 
-	public MovementSearchBranch modifyAfter(UnaryOperator<SimulationEnvironment> modifier) {
+	public MovementSearchBranch modifyAfter(UnaryOperator<SimulationEnvironment> modifier, String branchAddition) {
 		return new MovementSearchBranch(
 			configuration,
 			andThen(environmentModifier, modifier),
-			canFinishExplicitTick
+			canFinishExplicitTick,
+			branchIdentifier + branchAddition
 		);
+	}
+
+	public String branchIdentifier() {
+		return branchIdentifier;
 	}
 
 	private static <T> UnaryOperator<T> andThen(UnaryOperator<T> first, UnaryOperator<T> second) {
@@ -65,7 +73,7 @@ public final class MovementSearchBranch {
 	public MovementSearchBranch withExplicitTickFinishAllow(boolean canFinishUserTick) {
 		boolean newFinishTick = canFinishUserTick && canFinishExplicitTick;
 		return new MovementSearchBranch(
-			configuration, environmentModifier, newFinishTick
+			configuration, environmentModifier, newFinishTick, branchIdentifier + "_explicitTickFinishAllow=" + newFinishTick
 		);
 	}
 
@@ -78,7 +86,7 @@ public final class MovementSearchBranch {
 			env = env.mutableView();
 			env.setRotation(rotation);
 			return env;
-		});
+		}, "_rotation");
 	}
 
 	public SimulationEnvironment modifiedMutableView(SimulationEnvironment env) {
@@ -86,25 +94,37 @@ public final class MovementSearchBranch {
 	}
 
 	public MovementSearchBranch withHandActive(boolean handActive) {
-		return withMoveConfig(configuration.withHandActive(handActive));
+		return withMoveConfig(configuration.withHandActive(handActive), "_handActive=" + handActive);
 	}
 
 	public MovementSearchBranch withKeypress(int forward, int strafe) {
 		return withMoveConfig(
-			configuration.withKeypress(forward, strafe)
+			configuration.withKeypress(forward, strafe),
+			"_keypress=" + forward + "," + strafe
+		);
+	}
+
+	public MovementSearchBranch withPredictedKeypress(int forward, int strafe) {
+		return withMoveConfig(
+			configuration.withKeypress(forward, strafe),
+			"_predictedKeypress=" + forward + "," + strafe
 		);
 	}
 
 	public MovementSearchBranch withReduceTicks(int ticks) {
-		return withMoveConfig(configuration.withReduceTicks(ticks));
+		return withMoveConfig(configuration.withReduceTicks(ticks), "_reduceTicks=" + ticks);
 	}
 
 	public MovementSearchBranch withReduceBefore(boolean reduceBefore) {
-		return withMoveConfig(configuration.withReduceBefore(reduceBefore));
+		return withMoveConfig(configuration.withReduceBefore(reduceBefore), "_reduceBefore=" + reduceBefore);
 	}
 
 	public MovementSearchBranch withJumped(boolean jumped) {
-		return withMoveConfig(configuration.withJumped(jumped));
+		return withMoveConfig(configuration.withJumped(jumped), "_jumped=" + jumped);
+	}
+
+	public MovementSearchBranch withPredictedJumped(boolean jumped) {
+		return withMoveConfig(configuration.withJumped(jumped), "_predictedJump=" + jumped);
 	}
 
 	public boolean canFinishExplicitTick() {
@@ -116,7 +136,11 @@ public final class MovementSearchBranch {
 	}
 
 	public MovementSearchBranch withSprintingSetTo(boolean sprinting) {
-		return withMoveConfig(configuration.withSprintingSetTo(sprinting));
+		return withMoveConfig(configuration.withSprintingSetTo(sprinting), "_sprinting=" + sprinting);
+	}
+
+	public MovementSearchBranch withPredictedSprintingSetTo(boolean sprinting) {
+		return withMoveConfig(configuration.withSprintingSetTo(sprinting), "_predictedSprinting=" + sprinting);
 	}
 
 	public boolean isSprinting() {

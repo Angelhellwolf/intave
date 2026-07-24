@@ -115,6 +115,22 @@ public final class DiagnosticsStage extends CommandStage {
     return singletonInstance;
   }
 
+  @SubCommand(selectors = "branchfreq", usage = "", description = "Output branch frequency data", permission = "intave.command.diagnostics.performance")
+  public void branchfreq(User user) {
+    Map<String, Long> branchFrequency = user.meta().movement().branchFrequency;
+//    sort
+    List<Map.Entry<String, Long>> sortedEntries = new ArrayList<>(branchFrequency.entrySet());
+    sortedEntries.sort((a, b) -> Long.compare(b.getValue(), a.getValue()));
+
+    Player player = user.player();
+    player.sendMessage(ChatColor.GRAY + "Branch frequency distribution:");
+    for (Map.Entry<String, Long> entry : sortedEntries) {
+      String branchIdentifier = entry.getKey();
+      long count = entry.getValue();
+      player.sendMessage((count > 0 ? ChatColor.RED + "" + count : ChatColor.GRAY + "0") + ChatColor.GRAY + "x " + ChatColor.WHITE + branchIdentifier);
+    }
+  }
+
   @SubCommand(selectors = "environment", usage = "", description = "Dumps environment infos to a players chat", permission = "intave.command.diagnostics.performance")
   public void environment(CommandSender sender) {
     Player player = null;

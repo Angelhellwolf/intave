@@ -23,6 +23,6 @@ public final class UseLastMovementConfigBrancher extends MovementSearchBrancher 
 		List<MovementSearchBranch> outputBranches
 	) {
 		MovementConfiguration previous = input.environment().lastMovementConfiguration();
-		outputBranches.add(inputBranch.withMoveConfig(previous));
+		outputBranches.add(inputBranch.withMoveConfig(previous, "_useLastMovementConfig"));
 	}
 }

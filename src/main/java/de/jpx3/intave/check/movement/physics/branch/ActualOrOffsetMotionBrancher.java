@@ -24,7 +24,7 @@ public final class ActualOrOffsetMotionBrancher extends MovementSearchBrancher {
 		}
 
 		MovementConfiguration config = inputBranch.moveConfig();
-		outputBranches.add(inputBranch.withMoveConfig(config.allowOverrideToActualMotion()));
-		outputBranches.add(inputBranch.withMoveConfig(config.denyOverrideToActualMotion()));
+		outputBranches.add(inputBranch.withMoveConfig(config.allowOverrideToActualMotion(), "_allowOverrideToActualMotion"));
+		outputBranches.add(inputBranch.withMoveConfig(config.denyOverrideToActualMotion(), "_denyOverrideToActualMotion"));
 	}
 }

@@ -46,7 +46,12 @@ final class SprintingBrancher extends MovementSearchBrancher {
       if (sprinting && input.user().meta().abilities().foodLevel < 6) {
         continue;
       }
-      outputBranches.add(inputBranch.withSprintingSetTo(sprinting));
+      boolean certain = environment.ticksPast(SPRINT_CHANGE) > 1;
+      if (certain) {
+        outputBranches.add(inputBranch.withPredictedSprintingSetTo(sprinting));
+      } else {
+        outputBranches.add(inputBranch.withSprintingSetTo(sprinting));
+      }
     }
   }
 

@@ -34,6 +34,7 @@ public class Particles {
 				return; // Skip spawning the particle if it was spawned less than 1 second ago
 			}
 		}
+		lastParticleSpawnMap.entrySet().removeIf(entry -> currentTime - entry.getValue() > 3000); // Clean up old entries
 		lastParticleSpawnMap.put(position, currentTime);
 		Player player = user.player();
 		World world = player.getWorld();

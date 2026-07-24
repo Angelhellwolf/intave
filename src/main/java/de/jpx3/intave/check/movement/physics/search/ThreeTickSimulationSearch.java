@@ -40,10 +40,7 @@ import de.jpx3.intave.user.meta.MetadataBundle;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import org.bukkit.ChatColor;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -426,13 +423,14 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 		Set<MovementSearchBranch> possibleConfigs = TICK_SEARCHER.searchConfigurationsFor(
 			MovementSearchInput.forTick(user, simulator, environment.immutableView(), detectNoSlowdown)
 		);
+		List<MovementSearchBranch> sortedConfigs = sortByFrequency(user, possibleConfigs);
 		Timings.CHECK_PHYSICS_PROC_ITR_BUILD_CONFIGS.stop();
 
 		C container = collector.supplier().get();
 		Function<C, R> finisher = collector.finisher();
 		BiConsumer<C, Simulation> accumulator = collector.accumulator();
 
-		for (MovementSearchBranch config : possibleConfigs) {
+		for (MovementSearchBranch config : sortedConfigs) {
 			boolean canFinishExplicitTick = config.canFinishExplicitTick();
 			SimulationEnvironment localEnvironment = config.modifiedMutableView(environment);
 			Simulation simulation = simulator.simulateTick(
@@ -441,6 +439,7 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 			);
 			simulation.setEnvironment(localEnvironment);
 			simulation.setCanFinishExplicitTick(canFinishExplicitTick);
+			simulation.setBranchIdentifier(config.branchIdentifier());
 			accumulator.accept(container, simulation);
 			if (canFinishExplicitTick && earlyStop.test(simulation)) {
 				break;
@@ -449,5 +448,17 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 		}
 		Timings.CHECK_PHYSICS_PROC_ITR.stop();
 		return finisher.apply(container);
+	}
+
+	private static List<MovementSearchBranch> sortByFrequency(User user, Set<MovementSearchBranch> branches) {
+		MovementMetadata movement = user.meta().movement();
+		Map<String, Long> branchFrequency = movement.branchFrequency;
+		List<MovementSearchBranch> list = new ArrayList<>(branches);
+		if (movement.branchFrequencyTrimCounter > 256) {
+			list.sort((a, b) ->
+				Long.compare(branchFrequency.getOrDefault(b.branchIdentifier(), 0L),
+					branchFrequency.getOrDefault(a.branchIdentifier(), 0L)));
+		}
+		return list;
 	}
 }

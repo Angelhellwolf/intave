@@ -60,7 +60,7 @@ final class KeypressBrancher extends MovementSearchBrancher {
       int predictedForward = forwardKeyFrom(predictedDirection);
       int predictedStrafe = strafeKeyFrom(predictedDirection);
       if (isValidPress(input, inputBranch, predictedForward, predictedStrafe)) {
-        outputBranches.add(inputBranch.withKeypress(predictedForward, predictedStrafe));
+        outputBranches.add(inputBranch.withPredictedKeypress(predictedForward, predictedStrafe));
       }
     }
 
@@ -68,7 +68,7 @@ final class KeypressBrancher extends MovementSearchBrancher {
     int lastKeyForward = movement.lastKeyForward;
     int lastKeyStrafe = movement.lastKeyStrafe;
     if (isValidPress(input, inputBranch, lastKeyForward, lastKeyStrafe)) {
-      outputBranches.add(inputBranch.withKeypress(lastKeyForward, lastKeyStrafe));
+      outputBranches.add(inputBranch.withPredictedKeypress(lastKeyForward, lastKeyStrafe));
     }
 
     // brute force keys

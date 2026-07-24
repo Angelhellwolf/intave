@@ -238,6 +238,9 @@ public final class MovementMetadata implements SimulationEnvironment {
   private final Map<MoveMetric, Integer> activeTracker = new EnumMap<>(MoveMetric.class);
   private final Map<MoveMetric, Integer> pastTracker = new EnumMap<>(MoveMetric.class);
 
+  public final Map<String, Long> branchFrequency = new HashMap<>();
+  public long branchFrequencyTrimCounter = 0;
+
   {
     for (MoveMetric value : MoveMetric.values()) {
       activeTracker.put(value, value.activeDefault());
@@ -1036,6 +1039,17 @@ public final class MovementMetadata implements SimulationEnvironment {
       );
     }
     // </tolerances>
+    // <performance>
+    branchFrequency.merge(simulation.branchIdentifier(), 1L, Long::sum);
+    if (branchFrequencyTrimCounter++ % 10000 == 0) {
+      branchFrequency.replaceAll((s, aLong) -> {
+        aLong = aLong / 3;
+        return aLong <= 0 ? 1L : aLong;
+      });
+      branchFrequency.entrySet().removeIf(entry -> entry.getValue() <= 10);
+    }
+
+    // </performance>
     setLastMovementConfiguration(configuration);
     setSimulationResult(collider);
   }

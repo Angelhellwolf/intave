@@ -49,7 +49,11 @@ final class JumpBrancher extends MovementSearchBrancher {
         continue;
       }
       writtenOutputBranches++;
-      outputBranches.add(inputBranch.withJumped(jumped));
+      if (estimatedJump) {
+        outputBranches.add(inputBranch.withPredictedJumped(jumped));
+      } else {
+        outputBranches.add(inputBranch.withJumped(jumped));
+      }
     }
     if (writtenOutputBranches == 0) {
       outputBranches.add(inputBranch.withJumped(false));
