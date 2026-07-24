@@ -30,7 +30,7 @@ public class Particles {
 		long currentTime = System.currentTimeMillis();
 		if (lastParticleSpawnMap.containsKey(position)) {
 			long lastSpawnTime = lastParticleSpawnMap.get(position);
-			if (currentTime - lastSpawnTime < 300) {
+			if (currentTime - lastSpawnTime < 200) {
 				return; // Skip spawning the particle if it was spawned less than 1 second ago
 			}
 		}
