@@ -21,6 +21,7 @@ import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
+import de.jpx3.intave.module.violation.ViolationContext;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import org.bukkit.block.Block;
@@ -40,8 +41,15 @@ import static de.jpx3.intave.module.violation.Violation.ViolationFlags.DISPLAY_I
 public final class RotationSpeed extends PlayerCheckPart<PlacementAnalysis> {
 	private static final int QUEUE_SIZE = 12;
 	private static final int MIN_ACTIVATION_DATA = 4;
+	// Rotation activity represents one recent bridging sequence. Bounding it by
+	// both time and count prevents old sequences from contaminating a new one.
+	private static final int MAX_ROTATION_SAMPLES = 5 * 20;
+	private static final long ROTATION_WINDOW_MS = 5000;
+	// Report suspicious activity first; only deny placements after the shared
+	// violation processor confirms that the player crossed a sustained threshold.
+	private static final double PREVENTION_VL = 20;
 	private final int rotationLimit;
-	private final List<Float> rotationHistory = new CopyOnWriteArrayList<>();
+	private final List<RotationSample> rotationHistory = new CopyOnWriteArrayList<>();
 	private final List<PlacedBlock> placementHistory = new CopyOnWriteArrayList<>();
 	private long lastBlockPlacement;
 	private long denyPlacementRequest;
@@ -62,28 +70,29 @@ public final class RotationSpeed extends PlayerCheckPart<PlacementAnalysis> {
 		User user = userOf(player);
 		MovementMetadata movementData = user.meta().movement();
 		float rotationMovement = Math.min(MathHelper.distanceInDegrees(movementData.rotationYaw, movementData.lastRotationYaw), 360);
-		if (System.currentTimeMillis() - lastBlockPlacement > 1000 || movementData.ticksPast(TELEPORT) <= 5) {
+		long now = System.currentTimeMillis();
+		if (now - lastBlockPlacement > 1000 || movementData.ticksPast(TELEPORT) <= 5) {
+			// Expire samples while collection is inactive so the next bridge cannot
+			// inherit rotation activity from an older sequence.
+			discardExpiredRotations(rotationHistory, now);
 			return;
 		}
-		List<Float> rotationHistory = this.rotationHistory;
-		if (rotationHistory.size() > 5 * 20) {
-			rotationHistory.remove(0);
-		}
-		rotationHistory.add(rotationMovement);
+		recordRotation(rotationHistory, rotationMovement, now);
 	}
 
 	@BukkitEventSubscription
 	public void on(BlockPlaceEvent place) {
 		Player player = place.getPlayer();
 		User user = userOf(player);
-		lastBlockPlacement = System.currentTimeMillis();
+		long now = System.currentTimeMillis();
+		lastBlockPlacement = now;
 
 		Block blockAgainst = place.getBlockAgainst();
 		if (blockAgainst == null) {
 			return;
 		}
 
-		if (System.currentTimeMillis() - denyPlacementRequest < 3000) {
+		if (now - denyPlacementRequest < 3000) {
 			place.setCancelled(true);
 			return;
 		}
@@ -92,11 +101,9 @@ public final class RotationSpeed extends PlayerCheckPart<PlacementAnalysis> {
 		boolean enoughBlockSamples = placementHistory.size() >= MIN_ACTIVATION_DATA;
 
 		if (placedBelow && enoughBlockSamples && isBridgeCreation(placementHistory)) {
-			List<Float> rotationHistory = this.rotationHistory;
-			double rotationSum = 0.0;
-			for (Float value : rotationHistory) {
-				rotationSum += value;
-			}
+			// Sum only the current window. A count-only history could combine
+			// multiple legitimate bridging sequences into one violation.
+			double rotationSum = rotationSum(rotationHistory, now);
 
 			float limit = rotationLimit;
 			if (!user.trustFactor().atLeast(TrustFactor.ORANGE)) {
@@ -112,10 +119,17 @@ public final class RotationSpeed extends PlayerCheckPart<PlacementAnalysis> {
 					.appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
 					.withCustomThreshold(PlacementAnalysis.legacyConfigurationLayout() ? "thresholds" : "cloud-thresholds.on-premise")
 					.withVL(10).build();
-				Modules.violationProcessor().processViolation(violation);
-				denyPlacementRequest = System.currentTimeMillis();
-				user.meta().violationLevel().lastBlockPlaceDenyRequest = System.currentTimeMillis();
-				place.setCancelled(true);
+				ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);
+				// Consume this evidence after reporting it. Reusing the same rotation
+				// burst on following placements would repeatedly add violation level.
+				rotationHistory.clear();
+				// One unusual sequence may alert, but cannot immediately cancel building.
+				// Prevention starts only after the shared VL has accumulated.
+				if (violationContext.violationLevelAfter() > PREVENTION_VL) {
+					denyPlacementRequest = now;
+					user.meta().violationLevel().lastBlockPlaceDenyRequest = now;
+					place.setCancelled(true);
+				}
 			}
 		}
 		if (place.isCancelled()) {
@@ -127,6 +141,32 @@ public final class RotationSpeed extends PlayerCheckPart<PlacementAnalysis> {
 		Vector blockPosition = place.getBlock().getLocation().toVector();
 		Vector blockAgainstPosition = blockAgainst.getLocation().toVector();
 		placementHistory.add(new PlacedBlock(blockPosition, blockAgainstPosition));
+	}
+
+	static void recordRotation(List<RotationSample> history, float movement, long now) {
+		// Time expiry defines the activity window; the count cap is a defensive
+		// memory bound for clients sending unusually many look packets.
+		discardExpiredRotations(history, now);
+		if (history.size() >= MAX_ROTATION_SAMPLES) {
+			history.remove(0);
+		}
+		history.add(new RotationSample(movement, now));
+	}
+
+	static double rotationSum(List<RotationSample> history, long now) {
+		// Prune at read time because a placement may occur without another look
+		// packet that would otherwise trigger recordRotation().
+		discardExpiredRotations(history, now);
+		double sum = 0.0;
+		for (RotationSample sample : history) {
+			sum += sample.movement;
+		}
+		return sum;
+	}
+
+	private static void discardExpiredRotations(List<RotationSample> history, long now) {
+		long cutoff = now - ROTATION_WINDOW_MS;
+		history.removeIf(sample -> sample.timestamp < cutoff);
 	}
 
 	private boolean isBridgeCreation(List<PlacedBlock> blocks) {
@@ -159,6 +199,16 @@ public final class RotationSpeed extends PlayerCheckPart<PlacementAnalysis> {
 		public PlacedBlock(Vector position, Vector placedAgainstPosition) {
 			this.placedAgainstPosition = placedAgainstPosition;
 			this.position = position;
+		}
+	}
+
+	static final class RotationSample {
+		private final float movement;
+		private final long timestamp;
+
+		RotationSample(float movement, long timestamp) {
+			this.movement = movement;
+			this.timestamp = timestamp;
 		}
 	}
 
