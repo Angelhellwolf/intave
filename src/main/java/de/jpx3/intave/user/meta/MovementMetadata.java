@@ -198,6 +198,7 @@ public final class MovementMetadata implements SimulationEnvironment {
   private Simulator simulator = Simulators.PLAYER;
   @Nullable
   public Position mainSupportingBlockPos = null;
+  public boolean onGroundNoBlocks = false;
 	private Material frictionMaterial = Material.AIR, previousFrictionMaterial = Material.AIR;
   private Material collideMaterial = Material.AIR, previousCollideMaterial = Material.AIR;
 
@@ -272,7 +273,7 @@ public final class MovementMetadata implements SimulationEnvironment {
     int version = clientData.protocolVersion();
     this.resetMotion = version <= VER_1_8 ? 0.005 : 0.003;
     this.frictionMultiplier = version <= VER_1_15 ? 0.16277136f : 0.16277137F;
-    this.frictionPosSubtraction = version <= VER_1_15 ? 1.0 : 0.5000001;
+    this.frictionPosSubtraction = version <= VER_1_15 ? 1.0 : 0.500001;
     this.hasJumpFactor = version >= VER_1_15;
     if (!boundingBoxSetup) {
       Location location = player == null ? new Location(null, verifiedLastPositionX, verifiedLastPositionY, verifiedLastPositionZ) : player.getLocation();
@@ -396,18 +397,24 @@ public final class MovementMetadata implements SimulationEnvironment {
     MetadataBundle meta = user.meta();
     ProtocolMetadata clientData = meta.protocol();
     if (clientData.trailsAndTailsUpdate()) {
-      Position block;
-      BoundingBox boundingBox = BoundingBox.fromPosition(user, this, positionX, positionY, positionZ);
-      BoundingBox secondBoundingBox = new BoundingBox(
-        boundingBox.minX, boundingBox.minY - 0.000001, boundingBox.minZ,
-        boundingBox.maxX, boundingBox.minY, boundingBox.maxZ
-      );
-      block = findSupportingBlock(user, secondBoundingBox);
-      if (block == null) {
-        BoundingBox thirdBoundingBox = secondBoundingBox.move(-motion.motionX, 0.0, -motion.motionZ);
-        block = findSupportingBlock(user, thirdBoundingBox);
+      if (onGround) {
+        Position supportingBlock;
+        BoundingBox boundingBox = BoundingBox.fromPosition(user, this, positionX, positionY, positionZ);
+        BoundingBox testArea = new BoundingBox(
+          boundingBox.minX, boundingBox.minY - 0.000001, boundingBox.minZ,
+          boundingBox.maxX, boundingBox.minY, boundingBox.maxZ
+        );
+        supportingBlock = findSupportingBlock(user, testArea);
+        if (supportingBlock == null && !onGroundNoBlocks) {
+          BoundingBox thirdBoundingBox = testArea.move(-motion.motionX, 0.0, -motion.motionZ);
+          supportingBlock = findSupportingBlock(user, thirdBoundingBox);
+        }
+        mainSupportingBlockPos = supportingBlock;
+        onGroundNoBlocks = supportingBlock == null;
+      } else {
+        onGroundNoBlocks = false;
+        clearSupportingBlock();
       }
-      mainSupportingBlockPos = block;
     }
   }
 

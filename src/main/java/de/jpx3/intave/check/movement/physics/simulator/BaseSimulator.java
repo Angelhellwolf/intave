@@ -469,11 +469,7 @@ class BaseSimulator extends Simulator {
 
     // Update supporting block if on-ground
     if (user.meta().protocol().trailsAndTailsUpdate()) {
-      if (environment.onGround()) {
-        environment.checkSupportingBlock(motion);
-      } else {
-        environment.clearSupportingBlock();
-      }
+      environment.checkSupportingBlock(motion);
       environment.compileSpecialBlocks();
     }
 
