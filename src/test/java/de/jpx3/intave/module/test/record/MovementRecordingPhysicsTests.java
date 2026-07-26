@@ -19,7 +19,6 @@ import de.jpx3.intave.block.fluid.Fluids;
 import de.jpx3.intave.block.physics.BlockPhysics;
 import de.jpx3.intave.block.shape.resolve.DenyShapeResolverPipeline;
 import de.jpx3.intave.block.shape.resolve.DrillResolver;
-import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.check.movement.physics.search.SimulationSearch;
 import de.jpx3.intave.check.movement.physics.search.ThreeTickSimulationSearch;
@@ -28,6 +27,7 @@ import de.jpx3.intave.check.movement.physics.simulator.Simulator;
 import de.jpx3.intave.check.movement.physics.simulator.Simulators;
 import de.jpx3.intave.module.test.record.action.Action;
 import de.jpx3.intave.module.test.record.action.ReceiveVelocity;
+import de.jpx3.intave.player.attribute.Attribute;
 import de.jpx3.intave.player.collider.Colliders;
 import de.jpx3.intave.resource.Resources;
 import de.jpx3.intave.share.*;
@@ -49,15 +49,13 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.*;
+import static de.jpx3.intave.check.movement.physics.search.PostTickMotionType.SENT_OFFSET_MOTION;
 import static de.jpx3.intave.math.MathHelper.formatDouble;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -165,6 +163,7 @@ final class MovementRecordingPhysicsTests {
 			Motion previousBaseMotion = metadata.mutableBaseMotionCopy();
 			Motion preTickMotion = simulator.simulatePreTick(user, previousBaseMotion.copy(), metadata);
 			metadata.setBaseMotion(preTickMotion);
+			preparePostTickMotionCandidatesForSearch(user, metadata, simulator, previousBaseMotion, preTickMotion);
 
 			Simulation simulation = processor.greedyFullTickSearch(user, metadata.mutableView(), simulator);
 //			Simulation simulation = processor.simulate(user, simulator, hasMovement || hasRotation);
@@ -178,49 +177,19 @@ final class MovementRecordingPhysicsTests {
 			double loss = simulation.positionDifference(metadata.position());
 			double allowedLoss = DIVERGED_MOTION_DISTANCE;
 			String output = formatDouble(loss, 4) + " " + simulation.offsetMotion() + " [actual: " + metadata.sentOffsetMotion() + "] " + simulation.configuration() + (!simulation.blueDetails().isEmpty() ? " [" + simulation.blueDetails() + "]" : "");
-			lastMessages.add(output);
+			lastMessages.add(formatSearchHistoryRow(tick, loss, simulation, metadata.sentOffsetMotion()));
 
 //			System.out.println(loss);
 
 			if (loss > allowedLoss && tick > 16) {
 				System.out.println("\r" + "[FAILED] " + resourcePath + " (tick " + tick + ")");
-				System.err.println("==== <HEAD> ====");
-				System.err.println("Physics test " + resourcePath + " has failed");
-				System.err.println("Tick " + tick + " is incorrect");
-				System.err.println("Loss: " + loss);
-				System.err.println("Allowed loss: " + allowedLoss);
-				System.err.println("==== </HEAD> ====");
-
-				System.err.println("==== <HISTORY> ====");
-				for (String lastMessage : lastMessages) {
-					System.err.println(lastMessage);
-				}
-				System.err.println("==== </HISTORY> ====");
-
-				System.err.println("==== <USERDATA> ====");
-				System.err.println("Input: " + metadata.input);
-				System.err.println("Position");
-				System.err.println("  Sim   " + metadata.lastPosition().mutable().add(simulation.offsetMotion()));
-				System.err.println("  Sent  " + metadata.position());
-				System.err.println("  Last  " + metadata.lastPosition());
-				System.err.println("  LastV " + metadata.verifiedLastPosition());
-				Position nextPosition;
-				if (frames.size() > tick + 1 && (nextPosition = frames.get(tick + 1).moveTo()) != null) {
-					System.err.println("  Next " + nextPosition + " (dy to sent: " + (nextPosition.getY() - metadata.position().getY()) + ")");
-				}
-				System.err.println("Motion");
-				System.err.println("  Sim   " + simulation.offsetMotion());
-				System.err.println("  Sent  " + metadata.sentOffsetMotion());
-				System.err.println("  Base  " + metadata.mutableBaseMotionCopy());
-				System.err.println("Rotation: " + metadata.rotation());
-				System.err.println("Motion: " + metadata.sentOffsetMotion());
-				System.err.println("Ground");
-				System.err.println("  Current " + metadata.onGround());
-				System.err.println("  Last " + metadata.lastOnGround());
-				System.err.println("Sneaking " + metadata.isSneaking());
-				System.err.println("==== </USERDATA> ====");
-				System.err.println("Movement diverged at tick " + tick + " with a distance of " + loss);
-				fail();
+				printFailureReport(
+					resourcePath, recording, frames, tick, loss, allowedLoss,
+					lastMessages, blockCache, user, metadata, simulation, processor, simulator
+				);
+				fail("Movement diverged at tick " + tick + ": loss "
+					+ formatDiagnosticDouble(loss) + " exceeds "
+					+ formatDiagnosticDouble(allowedLoss));
 			}
 
 			System.out.print("\r" + output);
@@ -230,7 +199,7 @@ final class MovementRecordingPhysicsTests {
 //			}
 			simulation.environment().commitTo(metadata);
 			metadata.assumeOccurred(simulation);
-			finishTick(user, simulator, metadata, hasMovement, hasRotation);
+			finishTick(user, processor, simulator, metadata, hasMovement, hasRotation);
 
 			if (lastMessages.size() > 16) {
 				lastMessages.removeFirst();
@@ -238,6 +207,195 @@ final class MovementRecordingPhysicsTests {
 		}
 
 		System.out.println("\r[SUCCESS] " + resourcePath + "...");
+	}
+
+	private static void printFailureReport(
+		String resourcePath,
+		MovementRecording recording,
+		List<MoveFrame> frames,
+		int tick,
+		double loss,
+		double allowedLoss,
+		List<String> recentSearchHistory,
+		PlaybackBlockCacheView blockCache,
+		User user,
+		MovementMetadata metadata,
+		Simulation simulation,
+		SimulationSearch processor,
+		Simulator simulator
+	) {
+		System.err.println();
+		System.err.println("================================================================================");
+		System.err.println("MOVEMENT PHYSICS FAILURE");
+		diagnosticLine("Recording", resourcePath);
+		diagnosticLine("Tick", tick + " / " + (frames.size() - 1));
+		diagnosticLine("Versions", "client protocol " + recording.clientProtocolVersion()
+			+ ", server " + recording.serverVersion());
+		diagnosticLine("Position loss", formatDiagnosticDouble(loss));
+		diagnosticLine("Allowed loss", formatDiagnosticDouble(allowedLoss));
+		diagnosticLine("Excess", formatDiagnosticDouble(loss - allowedLoss));
+		System.err.println("================================================================================");
+
+		Position predictedPosition = simulation.predictedPosition();
+		Position recordedPosition = metadata.position();
+		Motion predictedMotion = simulation.offsetMotion();
+		Motion recordedMotion = metadata.sentOffsetMotion();
+
+		printSection("Mismatch summary");
+		diagnosticLine("Predicted position", formatPosition(predictedPosition));
+		diagnosticLine("Recorded position", formatPosition(recordedPosition));
+		diagnosticLine("Position delta", formatMotion(predictedPosition.motionTo(recordedPosition))
+			+ "  (recorded - predicted)");
+		diagnosticLine("Predicted motion", formatMotion(predictedMotion));
+		diagnosticLine("Recorded motion", formatMotion(recordedMotion));
+		diagnosticLine("Motion delta", formatMotion(motionDifference(recordedMotion, predictedMotion))
+			+ "  (recorded - predicted)");
+
+		printSection("Tick state");
+		diagnosticLine("Pressed inputs", formatInput(metadata.input));
+		diagnosticLine("Rotation", formatRotation(metadata.rotation()));
+		diagnosticLine("Previous position", formatPosition(metadata.lastPosition()));
+		diagnosticLine("Verified position", formatPosition(metadata.verifiedLastPosition()));
+		Position nextPosition = nextRecordedPosition(frames, tick);
+		if (nextPosition != null) {
+			diagnosticLine("Next position", formatPosition(nextPosition));
+			diagnosticLine("Next Y delta", formatDiagnosticDouble(
+				nextPosition.getY() - recordedPosition.getY()
+			));
+		}
+		diagnosticLine("Base motion", formatMotion(metadata.mutableBaseMotionCopy()));
+		diagnosticLine("Ground state", "current=" + metadata.onGround()
+			+ ", previous=" + metadata.lastOnGround());
+		diagnosticLine("Sneaking", metadata.isSneaking());
+		diagnosticLine("Ability scale", formatDiagnosticDouble(user.meta().abilities().scale()));
+		diagnosticLine("Player bounds", formatBoundingBox(metadata.boundingBox()));
+
+		printSection("Selected simulation");
+		printSimulationDetails(simulation, recordedPosition);
+		printMotionCandidates(metadata.postTickMotionCandidates());
+
+		printAttributes(recording.attributesForFrame(tick));
+		printSearchHistory(recentSearchHistory);
+		printFrameTimeline(frames, tick);
+		printClosestSimulations(processor, user, metadata, simulator);
+
+		if (metadata.input.jumpKey()) {
+			Simulation forcedJump = simulator.simulateTick(
+				user,
+				metadata.mutableBaseMotionCopy(),
+				metadata.mutableView(),
+				simulation.configuration().withJump()
+			);
+			printSection("Forced-jump comparison");
+			printSimulationDetails(forcedJump, recordedPosition);
+		}
+
+		printCollisionSweep(blockCache, metadata, simulation);
+		System.err.println();
+		System.err.println("================================================================================");
+		System.err.println("END MOVEMENT PHYSICS FAILURE");
+		System.err.println("================================================================================");
+	}
+
+	private static String formatSearchHistoryRow(
+		int tick,
+		double loss,
+		Simulation simulation,
+		Motion recordedMotion
+	) {
+		return String.format(
+			Locale.ROOT,
+			"  tick %d  loss=%s  config=%s%s%n"
+				+ "    predicted=%s%n"
+				+ "    recorded =%s",
+			tick,
+			formatDiagnosticDouble(loss),
+			simulation.configuration(),
+			simulation.blueDetails().isEmpty() ? "" : "  details=" + simulation.blueDetails(),
+			formatMotion(simulation.offsetMotion()),
+			formatMotion(recordedMotion)
+		);
+	}
+
+	private static void printSearchHistory(List<String> recentSearchHistory) {
+		printSection("Recent search history (oldest to newest)");
+		for (String row : recentSearchHistory) {
+			System.err.println(row);
+		}
+	}
+
+	private static Position nextRecordedPosition(List<MoveFrame> frames, int tick) {
+		if (tick + 1 >= frames.size()) {
+			return null;
+		}
+		return frames.get(tick + 1).moveTo();
+	}
+
+	private static void printSimulationDetails(Simulation simulation, Position recordedPosition) {
+		var result = simulation.result();
+		diagnosticLine("Loss", formatDiagnosticDouble(simulation.positionDifference(recordedPosition)));
+		diagnosticLine("Configuration", simulation.configuration());
+		diagnosticLine("Resolved motion", formatMotion(result.offsetMotion()));
+		diagnosticLine("Attempted motion", formatNullableMotion(result.actualMotion()));
+		diagnosticLine("Intermediate motion", formatNullableMotion(result.intermittentResult()));
+		diagnosticLine("Collision", "horizontal=" + result.collidedHorizontally()
+			+ ", vertical=" + result.collidedVertically()
+			+ ", onGround=" + result.onGround());
+		diagnosticLine("Motion reset", "x=" + result.resetMotionX() + ", z=" + result.resetMotionZ());
+		diagnosticLine("Special handling", "step=" + result.step()
+			+ ", edgeSneak=" + result.edgeSneak()
+			+ ", stepHeight=" + formatDiagnosticDouble(result.stepHeightThisMove()));
+		if (!simulation.blueDetails().isEmpty()) {
+			diagnosticLine("Search details", simulation.blueDetails());
+		}
+	}
+
+	private static void printMotionCandidates(List<Motion> candidates) {
+		diagnosticLine("Base candidates", candidates.size());
+		for (int index = 0; index < candidates.size(); index++) {
+			diagnosticLine("  candidate " + (index + 1), formatMotion(candidates.get(index)));
+		}
+	}
+
+	private static void printAttributes(Map<String, Attribute> attributes) {
+		printSection("Attributes");
+		if (attributes.isEmpty()) {
+			System.err.println("  <none recorded>");
+			return;
+		}
+		attributes.entrySet().stream()
+			.sorted(Map.Entry.comparingByKey())
+			.forEach(entry -> diagnosticLine(
+				entry.getKey(),
+				formatDiagnosticDouble(entry.getValue().baseValue())
+					+ (entry.getValue().modifiers().isEmpty()
+					? ""
+					: "  modifiers=" + entry.getValue().modifiers().size())
+			));
+	}
+
+	private static void preparePostTickMotionCandidatesForSearch(
+		User user,
+		MovementMetadata metadata,
+		Simulator simulator,
+		Motion previousBaseMotion,
+		Motion preTickMotion
+	) {
+		List<Motion> candidates = metadata.postTickMotionCandidates();
+		if (candidates.isEmpty()) {
+			return;
+		}
+		if (candidates.size() == 1 && candidates.get(0).equals(previousBaseMotion)) {
+			metadata.setPostTickMotionCandidates(List.of(preTickMotion));
+			return;
+		}
+		List<Motion> preTickCandidates = new LinkedList<>();
+		for (Motion candidate : candidates) {
+			preTickCandidates.add(
+				simulator.simulatePreTick(user, candidate.copy(), metadata.mutableView())
+			);
+		}
+		metadata.setPostTickMotionCandidates(preTickCandidates);
 	}
 
 	private static boolean subversiveFlyingMovement(
@@ -322,18 +480,20 @@ final class MovementRecordingPhysicsTests {
 
 	private static void finishTick(
 		User user,
+		SimulationSearch processor,
 		Simulator simulator,
 		MovementMetadata metadata,
 		boolean hasMovement,
 		boolean hasRotation
 	) {
 		if (hasMovement) {
-			Motion afterTickMotion = simulator.simulateAfterTick(
-				user, metadata, MovementConfiguration.blank(),
-				metadata.position(),
-				metadata.sentOffsetMotion()
+			metadata.setPostTickMotionCandidates(
+				processor.afterTickMotionCandidates(
+					user, metadata, simulator,
+					metadata.position(),
+					SENT_OFFSET_MOTION
+				)
 			);
-			metadata.setBaseMotion(afterTickMotion);
 			metadata.inactiveTick(
 				FLYING_PACKET_ACCURATE,
 				FLYING_PACKET_CLIENT,
@@ -341,14 +501,13 @@ final class MovementRecordingPhysicsTests {
 				ENTITY_USE
 			);
 		} else if (hasRotation || metadata.treatThisFlyPacketAsMovePacket) {
-			Motion afterTickMotion = simulator.simulateAfterTick(
-				user,
-				metadata,
-				MovementConfiguration.blank(),
-				metadata.lastPosition().mutable().add(metadata.sentOffsetMotion()),
-				metadata.sentOffsetMotion()
+			metadata.setPostTickMotionCandidates(
+				processor.afterTickMotionCandidates(
+					user, metadata, simulator,
+					metadata.lastPosition().mutable().add(metadata.sentOffsetMotion()),
+					SENT_OFFSET_MOTION
+				)
 			);
-			metadata.setBaseMotion(afterTickMotion);
 		}
 
 		metadata.tickComplete(hasMovement, hasRotation, true);
@@ -357,6 +516,205 @@ final class MovementRecordingPhysicsTests {
 		metadata.lastKeyForward = metadata.keyForward;
 		metadata.lastOnGround = metadata.onGround;
 		metadata.setVerifiedLastPosition(metadata.position(), "recording replay");
+	}
+
+	private static void printCollisionSweep(
+		PlaybackBlockCacheView blockCache,
+		MovementMetadata metadata,
+		Simulation simulation
+	) {
+		Motion attemptedMotion = simulation.result().actualMotion();
+		if (attemptedMotion == null) {
+			attemptedMotion = simulation.offsetMotion();
+		}
+		Motion diagnosticMotion = attemptedMotion.copy();
+		diagnosticMotion.motionY = Math.max(diagnosticMotion.motionY, metadata.jumpMotion());
+		BoundingBox sweep = metadata.boundingBox().expand(diagnosticMotion);
+		printSection("Collision sweep");
+		diagnosticLine("Swept bounds", formatBoundingBox(sweep));
+		int minX = (int) Math.floor(sweep.minX);
+		int maxX = (int) Math.floor(sweep.maxX);
+		int minY = (int) Math.floor(sweep.minY) - 1;
+		int maxY = (int) Math.floor(sweep.maxY);
+		int minZ = (int) Math.floor(sweep.minZ);
+		int maxZ = (int) Math.floor(sweep.maxZ);
+		int printLimit = 128;
+		List<String> blocks = new ArrayList<>();
+		boolean truncated = false;
+		scan:
+		for (int x = minX; x <= maxX; x++) {
+			for (int z = minZ; z <= maxZ; z++) {
+				for (int y = minY; y <= maxY; y++) {
+					BlockState state = blockCache.stateAt(x, y, z);
+					if (state.type() == org.bukkit.Material.AIR) {
+						continue;
+					}
+					if (blocks.size() >= printLimit) {
+						truncated = true;
+						break scan;
+					}
+					blocks.add("  (" + x + ", " + y + ", " + z + ") "
+						+ state.type() + "#" + state.variantIndex()
+						+ " properties=" + state.properties()
+						+ System.lineSeparator()
+						+ "      shape=" + formatBoundingBoxes(state.collisionShape().elementaryBoxes()));
+				}
+			}
+		}
+		diagnosticLine("Non-air blocks", blocks.size() + (truncated ? "+" : ""));
+		for (String block : blocks) {
+			System.err.println(block);
+		}
+		if (blocks.isEmpty()) {
+			System.err.println("  <no non-air blocks>");
+		} else if (truncated) {
+			System.err.println("  ... output truncated after " + printLimit + " blocks");
+		}
+	}
+
+	private static void printFrameTimeline(List<MoveFrame> frames, int failingTick) {
+		printSection("Recorded frame timeline");
+		System.err.println("  \"-\" means the packet did not contain that field");
+		int from = Math.max(0, failingTick - 5);
+		int to = Math.min(frames.size() - 1, failingTick + 2);
+		for (int tick = from; tick <= to; tick++) {
+			MoveFrame frame = frames.get(tick);
+			System.err.println(String.format(
+				Locale.ROOT,
+				"  %s tick %d  position=%s  input=%s%n"
+					+ "      rotation=%s  blockChanges=%d",
+				tick == failingTick ? ">" : " ",
+				tick,
+				frame.moveTo() == null ? "-" : formatPosition(frame.moveTo()),
+				formatInput(frame.input()),
+				frame.rotateTo() == null ? "-" : formatRotation(frame.rotateTo()),
+				frame.blocks().size()
+			));
+		}
+	}
+
+	private static void printClosestSimulations(
+		SimulationSearch processor,
+		User user,
+		MovementMetadata metadata,
+		Simulator simulator
+	) {
+		printSection("Closest exhaustive simulations");
+		List<Simulation> candidates = processor.exhaustiveTickSearch(
+				user, metadata.mutableView(), simulator
+			).stream()
+			.sorted(Comparator.comparingDouble(simulation -> simulation.positionDifference(metadata.position())))
+			.limit(10)
+			.collect(Collectors.toList());
+		if (candidates.isEmpty()) {
+			System.err.println("  <no simulations>");
+			return;
+		}
+		for (int index = 0; index < candidates.size(); index++) {
+			Simulation candidate = candidates.get(index);
+			System.err.println(String.format(
+				Locale.ROOT,
+				"  #%02d  loss=%s  config=%s%n"
+					+ "       motion=%s  flags=%s",
+				index + 1,
+				formatDiagnosticDouble(candidate.positionDifference(metadata.position())),
+				candidate.configuration(),
+				formatMotion(candidate.offsetMotion()),
+				formatResultFlags(candidate)
+			));
+		}
+	}
+
+	private static String formatResultFlags(Simulation simulation) {
+		var result = simulation.result();
+		List<String> flags = new ArrayList<>();
+		if (result.onGround()) flags.add("ground");
+		if (result.collidedHorizontally()) flags.add("collision-horizontal");
+		if (result.collidedVertically()) flags.add("collision-vertical");
+		if (result.resetMotionX()) flags.add("reset-x");
+		if (result.resetMotionZ()) flags.add("reset-z");
+		if (result.step()) flags.add("step");
+		if (result.edgeSneak()) flags.add("edge-sneak");
+		return flags.isEmpty() ? "none" : String.join(",", flags);
+	}
+
+	private static String formatInput(Input input) {
+		List<String> keys = new ArrayList<>();
+		if (input.forwardKey()) keys.add("forward");
+		if (input.backwardKey()) keys.add("backward");
+		if (input.leftKey()) keys.add("left");
+		if (input.rightKey()) keys.add("right");
+		if (input.jumpKey()) keys.add("jump");
+		if (input.sneakKey()) keys.add("sneak");
+		if (input.sprintKey()) keys.add("sprint");
+		return keys.isEmpty() ? "<none>" : String.join("+", keys);
+	}
+
+	private static String formatPosition(Position position) {
+		return String.format(
+			Locale.ROOT,
+			"(%.6f, %.6f, %.6f)",
+			position.getX(), position.getY(), position.getZ()
+		);
+	}
+
+	private static String formatMotion(Motion motion) {
+		return String.format(
+			Locale.ROOT,
+			"(%.6f, %.6f, %.6f)",
+			motion.motionX(), motion.motionY(), motion.motionZ()
+		);
+	}
+
+	private static String formatNullableMotion(Motion motion) {
+		return motion == null ? "<not recorded>" : formatMotion(motion);
+	}
+
+	private static String formatRotation(Rotation rotation) {
+		return String.format(
+			Locale.ROOT,
+			"yaw=%.6f, pitch=%.6f",
+			rotation.yaw(), rotation.pitch()
+		);
+	}
+
+	private static String formatBoundingBox(BoundingBox box) {
+		return String.format(
+			Locale.ROOT,
+			"min=(%.6f, %.6f, %.6f), max=(%.6f, %.6f, %.6f)",
+			box.minX, box.minY, box.minZ,
+			box.maxX, box.maxY, box.maxZ
+		);
+	}
+
+	private static String formatBoundingBoxes(List<BoundingBox> boxes) {
+		if (boxes.isEmpty()) {
+			return "<empty>";
+		}
+		return boxes.stream()
+			.map(MovementRecordingPhysicsTests::formatBoundingBox)
+			.collect(Collectors.joining("; "));
+	}
+
+	private static Motion motionDifference(Motion first, Motion second) {
+		return new Motion(
+			first.motionX() - second.motionX(),
+			first.motionY() - second.motionY(),
+			first.motionZ() - second.motionZ()
+		);
+	}
+
+	private static String formatDiagnosticDouble(double value) {
+		return String.format(Locale.ROOT, "%.9f", value);
+	}
+
+	private static void printSection(String title) {
+		System.err.println();
+		System.err.println("[ " + title.toUpperCase(Locale.ROOT) + " ]");
+	}
+
+	private static void diagnosticLine(String label, Object value) {
+		System.err.println(String.format(Locale.ROOT, "  %-22s %s", label + ":", value));
 	}
 
 	private static void applyActionsForTick(
@@ -386,6 +744,7 @@ final class MovementRecordingPhysicsTests {
 	) {
 		MovementMetadata movement = user.meta().movement();
 		if (user.meta().protocol().sendsInputs() && MinecraftVersions.VER1_21_3.atOrAbove()) {
+			movement.lastInput = movement.input;
 			movement.input = input;
 		}
 		boolean sprinting = user.meta().protocol().sendsInputs()

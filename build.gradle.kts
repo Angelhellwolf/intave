@@ -65,7 +65,7 @@ dependencies {
   )
 
   testRuntimeOnly("it.unimi.dsi:fastutil:8.5.12")
-  testImplementation("org.spigotmc:spigot-api:1.21.4-R0.1-SNAPSHOT")
+  testImplementation("org.spigotmc:spigot-api:26.1.2-R0.1-SNAPSHOT")
   testImplementation("net.dmulloy2:ProtocolLib:5.4.0")
   testImplementation("io.netty:netty-all:4.2.15.Final")
 
