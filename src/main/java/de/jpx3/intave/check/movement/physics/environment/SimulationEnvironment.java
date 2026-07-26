@@ -15,6 +15,10 @@ import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.collision.Collision;
 import de.jpx3.intave.block.fluid.Fluid;
+import de.jpx3.intave.block.physics.BlockProperties;
+import de.jpx3.intave.block.physics.MaterialMagic;
+import de.jpx3.intave.block.shape.BlockShape;
+import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
 import de.jpx3.intave.check.movement.physics.simulator.BoatSimulator.Status;
 import de.jpx3.intave.check.movement.physics.simulator.Simulation;
@@ -22,10 +26,7 @@ import de.jpx3.intave.check.movement.physics.simulator.Simulator;
 import de.jpx3.intave.check.movement.physics.update.TickAmbiguousUpdate;
 import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.player.collider.complex.SimulationResult;
-import de.jpx3.intave.share.BoundingBox;
-import de.jpx3.intave.share.Motion;
-import de.jpx3.intave.share.Position;
-import de.jpx3.intave.share.Rotation;
+import de.jpx3.intave.share.*;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.InventoryMetadata;
 import de.jpx3.intave.user.meta.MetadataBundle;
@@ -51,6 +52,10 @@ public interface SimulationEnvironment {
   double positionX();
   double positionY();
   double positionZ();
+
+  default BlockPosition blockPosition() {
+    return new BlockPosition(floor(positionX()), floor(positionY()), floor(positionZ()));
+  }
 
   Vector lookVector();
 
@@ -207,6 +212,7 @@ public interface SimulationEnvironment {
   boolean motionZReset();
 
   Vector motionMultiplier();
+  void setMotionMultiplier(Vector motionMultiplier);
   void resetMotionMultiplier();
 
   WorldBorder border();
@@ -237,7 +243,24 @@ public interface SimulationEnvironment {
 
   double gravity();
 
-  float blockSpeedFactor();
+  // Entity.getBlockSpeedFactor @ 1.19
+  default float blockSpeedFactor() {
+    User user = user();
+    ProtocolMetadata protocol = user.meta().protocol();
+    if (protocol.trailsAndTailsUpdate()) {
+      Material material = VolatileBlockAccess.typeAccess(user, blockPosition());
+      float f = BlockProperties.speedFactorOf(material);
+
+      if (!MaterialMagic.isWater(material) && material != BlockTypeAccess.BUBBLE_COLUMN) {
+        return f == 1.0 ? BlockProperties.speedFactorOf(frictionMaterial()) : f;
+      } else {
+        return f;
+      }
+    } else {
+      return BlockProperties.speedFactorOf(frictionMaterial());
+    }
+  }
+
   float jumpMovementFactor();
 
   boolean isSprinting();
@@ -263,9 +286,103 @@ public interface SimulationEnvironment {
   boolean collidedHorizontally();
   boolean collidedVertically();
 
-  void checkSupportingBlock(Motion motion);
-  void clearSupportingBlock();
-  void compileSpecialBlocks();
+  // don't override
+  default void checkSupportingBlock(boolean onGround, Motion motion) {
+    User user = user();
+    ProtocolMetadata protocol = user.meta().protocol();
+    if (protocol.trailsAndTailsUpdate()) {
+      if (onGround) {
+        BoundingBox boundingBox = BoundingBox.fromPosition(user, this, positionX(), positionY(), positionZ());
+        BoundingBox testArea = new BoundingBox(
+          boundingBox.minX, boundingBox.minY - 0.000001, boundingBox.minZ,
+          boundingBox.maxX, boundingBox.minY, boundingBox.maxZ
+        );
+        BlockPosition supportingBlock = findSupportingBlock(user, testArea);
+        BlockPosition result;
+        if (supportingBlock != null || onGroundNoBlocks()) {
+          result = supportingBlock;
+	      } else {
+	        BoundingBox thirdBoundingBox = testArea.move(-motion.motionX, 0.0, -motion.motionZ);
+          supportingBlock = findSupportingBlock(user, thirdBoundingBox);
+          result = supportingBlock;
+	      }
+	      setMainSupportingBlockPos(result);
+        setOnGroundNoBlocks(supportingBlock == null);
+      } else {
+        setMainSupportingBlockPos(null);
+        setOnGroundNoBlocks(false);
+      }
+    }
+  }
+
+  BlockPosition mainSupportingBlockPos();
+  void setMainSupportingBlockPos(BlockPosition mainSupportingBlockPos);
+  boolean onGroundNoBlocks();
+  void setOnGroundNoBlocks(boolean onGroundNoBlocks);
+
+  // do not override
+  default void compileSpecialBlocks() {
+    setPreviousCollideMaterial(collideMaterial());
+    setPreviousFrictionMaterial(frictionMaterial());
+    setCollideMaterial(compileCollideBlock());
+    setFrictionMaterial(compileFrictionBlock());
+  }
+
+  // do not override
+  default Material compileCollideBlock() {
+    return compileBlockBelow(0.2f);
+  }
+
+  // do not override
+  default Material compileFrictionBlock() {
+    return compileBlockBelow(frictionPosSubtraction());
+  }
+
+  // formally Entity#getOnPos
+  // do not override
+  default Material compileBlockBelow(double reduction) {
+    User user = user();
+    int blockCollisionPosX = floor(positionX());
+    int blockCollisionPosY = floor(positionY() - reduction);
+    int blockCollisionPosZ = floor(positionZ());
+    BlockPosition mainSupportingBlockPos = mainSupportingBlockPos();
+    if (mainSupportingBlockPos != null) {
+      // 1.20
+      Material blockType = VolatileBlockAccess.typeAccess(
+        user, mainSupportingBlockPos
+      );
+      if (reduction > 0.00001f) {
+        String typeName = blockType.name();
+        if (reduction <= 0.5D && typeName.contains("FENCE")) {
+          return blockType;
+        }
+        if (typeName.contains("FENCE") || typeName.contains("WALL")) {
+          return blockType;
+        }
+        return VolatileBlockAccess.typeAccess(
+          user,
+          mainSupportingBlockPos.getBlockX(),
+          blockCollisionPosY,
+          mainSupportingBlockPos.getBlockZ()
+        );
+      } else {
+        return blockType;
+      }
+    } else {
+      // 1.8 - 1.19
+      Material blockType = VolatileBlockAccess.typeAccess(
+        user, positionX(), positionY() - reduction, positionZ()
+      );
+      ProtocolMetadata clientData = user.meta().protocol();
+      if (blockType == Material.AIR && !clientData.trailsAndTailsUpdate()) {
+        Material blockBelow = VolatileBlockAccess.typeAccess(user, blockCollisionPosX, blockCollisionPosY, blockCollisionPosZ);
+        if (blockBelow.name().contains("FENCE") || blockBelow.name().contains("WALL")) {
+          blockType = blockBelow;
+        }
+      }
+      return blockType;
+    }
+  }
 
   boolean collidedWithBoat();
   double frictionPosSubtraction();
@@ -277,6 +394,12 @@ public interface SimulationEnvironment {
   Material frictionMaterial();
   Material previousCollideMaterial();
   Material previousFrictionMaterial();
+
+  void setCollideMaterial(Material collideMaterial);
+  void setFrictionMaterial(Material frictionMaterial);
+  void setPreviousCollideMaterial(Material previousCollideMaterial);
+  void setPreviousFrictionMaterial(Material previousFrictionMaterial);
+
   boolean blockOnPositionSoulSpeedAffected();
 
   double fallDistance();
@@ -559,6 +682,76 @@ public interface SimulationEnvironment {
       actualSneaking = sneakingAllowed;
     }
     return actualSneaking;
+  }
+
+  @Nullable
+  default BlockPosition findSupportingBlock(
+    User user, BoundingBox box
+  ) {
+    BlockPosition block = null;
+    int blockX = 0, blockY = 0, blockZ = 0;
+    double distance = Double.MAX_VALUE;
+
+    int startX = ClientMath.floor(box.minX - 0.0000001) - 1;
+    int endX = ClientMath.floor(box.maxX + 0.0000001) + 1;
+    int startY = ClientMath.floor(box.minY - 0.0000001) - 1;
+    int endY = ClientMath.floor(box.maxY + 0.0000001) + 1;
+    int startZ = ClientMath.floor(box.minZ - 0.0000001) - 1;
+    int endZ = ClientMath.floor(box.maxZ + 0.0000001) + 1;
+
+    double positionX = positionX();
+    double positionY = positionY();
+    double positionZ = positionZ();
+
+    CubeIterator iterator = new CubeIterator(startX, startY, startZ, endX, endY, endZ);
+    while (iterator.advance()) {
+      int x = iterator.nextX();
+      int y = iterator.nextY();
+      int z = iterator.nextZ();
+      int type = iterator.nextType();
+      if (type == CubeIterator.TYPE_CORNER) {
+        continue;
+      }
+      BlockShape shape = user.blockCache().collisionShapeAt(x, y, z);
+      if (shape.isEmpty()) {
+        continue;
+      } else if (shape.isCubic() && !box.intersectsWith(BoundingBox.fromBounds(x, y, z, x + 1, y + 1, z + 1))) {
+        continue;
+      } else if (!shape.isCubic() && !shape.intersectsWith(box)) {
+        continue;
+      }
+      double distanceToCenter = distanceToCenter(x, y, z, positionX, positionY, positionZ);
+      int comparison = compare(x, y, z, blockX, blockY, blockZ);
+      if (distanceToCenter < distance || (distanceToCenter == distance && comparison < 0)) {
+        blockX = x;
+        blockY = y;
+        blockZ = z;
+        block = BlockPosition.of(blockX, blockY, blockZ);
+        distance = distanceToCenter;
+      }
+    }
+    return block;
+  }
+
+  static int compare(
+    int alphaX, int alphaY, int alphaZ,
+    int betaX, int betaY, int betaZ
+  ) {
+    if (alphaY == betaY) {
+      return alphaZ == betaZ ? alphaX - betaX : alphaZ - betaZ;
+    } else {
+      return alphaY - betaY;
+    }
+  }
+
+  static double distanceToCenter(
+    int blockX, int blockY, int blockZ,
+    double entityX, double entityY, double entityZ
+  ) {
+    double d0 = blockX + 0.5 - entityX;
+    double d1 = blockY + 0.5 - entityY;
+    double d2 = blockZ + 0.5 - entityZ;
+    return d0 * d0 + d1 * d1 + d2 * d2;
   }
 
   default SimulationEnvironment immutableView() {

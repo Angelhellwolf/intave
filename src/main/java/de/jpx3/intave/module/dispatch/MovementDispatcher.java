@@ -17,7 +17,6 @@ import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.reflect.StructureModifier;
-import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
@@ -622,7 +621,7 @@ public final class MovementDispatcher extends Module {
     }
     inventory.lastFoodConsumptionBlockRequest = System.currentTimeMillis();
     PacketContainer packet = protocolManager.createPacket(PacketType.Play.Client.BLOCK_DIG);
-    packet.getBlockPositionModifier().write(0, new BlockPosition(0, 0, 0));
+    packet.getBlockPositionModifier().write(0, new com.comphenix.protocol.wrappers.BlockPosition(0, 0, 0));
     packet.getDirections().write(0, EnumWrappers.Direction.DOWN);
     packet.getPlayerDigTypes().write(0, EnumWrappers.PlayerDigType.RELEASE_USE_ITEM);
     user.ignoreNextInboundPacket();
@@ -743,7 +742,7 @@ public final class MovementDispatcher extends Module {
     User user = UserRepository.userOf(player);
     MovementMetadata movementData = user.meta().movement();
     PacketContainer packet = event.getPacket();
-    if (MinecraftVersions.VER1_21_3.atOrAbove()) {
+    if (MinecraftVersions.VER1_21_3.atOrAbove() && user.meta().protocol().sendsInputs()) {
       StructureModifier<Boolean> inputBooleans = packet.getStructures().read(0).getBooleans();
       movementData.lastInput = movementData.input;
       movementData.input = new Input(
@@ -755,6 +754,9 @@ public final class MovementDispatcher extends Module {
         inputBooleans.read(5),
         inputBooleans.read(6)
       );
+      if (user.receives(MessageChannel.DEBUG_SENT_INPUT)) {
+        ActionBar.sendActionBar(player, String.valueOf(movementData.input));
+      }
     } else {
       int strafeKey = (int) (packet.getFloat().read(0) / 0.98f);
       int forwardKey = (int) (packet.getFloat().read(1) / 0.98f);
@@ -839,7 +841,7 @@ public final class MovementDispatcher extends Module {
     }
     if (reader.animation() == AnimationReader.Animation.WAKEUP) {
       MovementMetadata movement = user.meta().movement();
-      de.jpx3.intave.share.BlockPosition sleepingBedPosition = movement.sleepingBedPosition;
+      BlockPosition sleepingBedPosition = movement.sleepingBedPosition;
       if (sleepingBedPosition != null) {
         Optional<Position> wakeupPosition = BedWakeupPositionSearch.findStandUpPosition(user, sleepingBedPosition, 0);
         user.packetTickFeedback(event, () -> {
@@ -1196,7 +1198,7 @@ public final class MovementDispatcher extends Module {
       InputConverter.inputClass, InputConverter.INSTANCE
     );
     Input input = inputs.read(0);
-    boolean sneaking = input.sneaking();
+    boolean sneaking = input.sneakKey();
     if (sneaking && !movement.sneaking) {
       startSneak(user, event);
     } else if (!sneaking && movement.sneaking) {
