@@ -11,6 +11,7 @@
 
 package de.jpx3.intave.command.stages;
 
+import com.comphenix.protocol.ProtocolLibrary;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.command.CommandStage;
@@ -26,6 +27,7 @@ import de.jpx3.intave.player.ProfileLookup;
 import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
+import de.jpx3.intave.user.meta.ProtocolMetadata;
 import de.jpx3.intave.user.permission.BukkitPermissionCheck;
 import de.jpx3.intave.user.storage.LongTermViolationStorage;
 import de.jpx3.intave.user.storage.PlaytimeStorage;
@@ -33,6 +35,7 @@ import de.jpx3.intave.user.storage.StorageViolationEvent;
 import de.jpx3.intave.user.storage.StorageViolationEvents;
 import de.jpx3.intave.version.DurationTranslator;
 import de.jpx3.intave.version.IntaveVersion;
+import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.chat.ComponentSerializer;
@@ -307,6 +310,36 @@ public final class BaseStage extends CommandStage {
         String names = ChatColor.RED + describePlayerList(Arrays.stream(selectedPlayers).map(Entity::getName).map(s -> ChatColor.RED + s).collect(Collectors.toList()));
         player.sendMessage(IntavePlugin.prefix() + "You are " + ChatColor.GREEN + "now" + IntavePlugin.defaultColor() + " receiving notifications for " + names);
       }
+    }
+  }
+
+  @SubCommand(selectors = "dump")
+  public void dump(CommandSender sender) {
+    Player player = null;
+    String playerVersion = "";
+    if (sender instanceof Player) {
+      player = ((Player) sender);
+      User user = UserRepository.userOf(player);
+      ProtocolMetadata protocol = user.meta().protocol();
+      playerVersion = protocol.versionString() + "@" + protocol.protocolVersion();
+      sender.sendMessage(ChatColor.GRAY + "Player is " + ChatColor.WHITE + playerVersion);
+    } else {
+      sender.sendMessage(ChatColor.GRAY + "Run this command in-game to display client version");
+    }
+    String intaveVersion = IntavePlugin.fullVersion();
+    String serverVersion = Bukkit.getName() + "@" + Bukkit.getVersion();
+    String protocolLibVersion = ProtocolLibrary.getPlugin().getDescription().getVersion();
+    sender.sendMessage(ChatColor.GRAY + "Spigot is " + ChatColor.WHITE + serverVersion);
+    sender.sendMessage(ChatColor.GRAY + "ProtocolLib is " + ChatColor.WHITE + protocolLibVersion);
+    sender.sendMessage(ChatColor.GRAY + "Intave is " + ChatColor.WHITE + intaveVersion);
+
+    TextComponent message = new TextComponent("[Copy report message to chat]");
+    message.setColor(net.md_5.bungee.api.ChatColor.GRAY);
+    message.setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "Environment: `" + playerVersion + "`,`" + serverVersion + "`,`" + protocolLibVersion + "`,`" + intaveVersion + "`"));
+
+    if (player != null) {
+      // Send the message to the player
+      player.spigot().sendMessage(message);
     }
   }
 
