@@ -1,5 +1,5 @@
 ---
-name: Console error report
+name: Console errors
 about: Report an error that occurred in the console
 title: '[Error] '
 labels: bug
