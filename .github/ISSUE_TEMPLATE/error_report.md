@@ -1,6 +1,6 @@
 ---
 name: Console error report
-about: Report an exception or server error produced by Intave
+about: Report an error that occurred in the console
 title: '[Error] '
 labels: bug
 assignees: Jpx3

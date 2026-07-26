@@ -1,6 +1,6 @@
 ---
-name: Physics bug
-about: Report incorrect movement detections
+name: Movement bugs
+about: Report movement-related bugs or false positives
 title: '[Physics] '
 labels: bug
 assignees: Jpx3
