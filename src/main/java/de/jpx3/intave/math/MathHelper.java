@@ -42,7 +42,7 @@ public final class MathHelper {
     if (Double.isInfinite(value)) {
       return "Infinite";
     }
-    if(digits > 10 || value > 1000000.0) {
+    if(digits > 10 || Math.abs(value) > 1000000.0) {
       return BigDecimal.valueOf(value).setScale(digits, RoundingMode.HALF_UP).toPlainString(); // BigDecimal.valueOf is slightly faster than new BigDecimal(value)
     }
     double scaledValue = value * POWERS_OF_TEN[digits] + ((value < 0.0) ? -0.5 : 0.5); // -0.5, +0.5 for rounding
