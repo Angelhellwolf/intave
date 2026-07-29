@@ -20,6 +20,7 @@ import de.jpx3.intave.block.collision.Collision;
 import de.jpx3.intave.block.fluid.Fluid;
 import de.jpx3.intave.block.fluid.Fluids;
 import de.jpx3.intave.block.shape.BlockShape;
+import de.jpx3.intave.check.movement.physics.environment.Pose;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.module.test.record.action.Action;
@@ -112,9 +113,13 @@ public final class MovementRecording {
 		Input input,
 		@Nullable Position position,
 		@Nullable Rotation rotation,
-		BlockCache blockCache
+		BlockCache blockCache,
+		boolean gliding
 	) {
-		insertFrame(boundingBox, input, position, rotation, blockCache, Collections.emptyMap());
+		insertFrame(
+			boundingBox, input, position, rotation,
+			blockCache, Collections.emptyMap(), gliding, null
+		);
 	}
 
 	public void insertFrame(
@@ -123,12 +128,44 @@ public final class MovementRecording {
 		@Nullable Position position,
 		@Nullable Rotation rotation,
 		BlockCache blockCache,
-		Map<String, Attribute> attributes
+		boolean gliding,
+		@Nullable Pose physicalPose
+	) {
+		insertFrame(
+			boundingBox, input, position, rotation,
+			blockCache, Collections.emptyMap(), gliding, physicalPose
+		);
+	}
+
+	public void insertFrame(
+		BoundingBox boundingBox,
+		Input input,
+		@Nullable Position position,
+		@Nullable Rotation rotation,
+		BlockCache blockCache,
+		Map<String, Attribute> attributes,
+		boolean gliding
+	) {
+		insertFrame(
+			boundingBox, input, position, rotation,
+			blockCache, attributes, gliding, null
+		);
+	}
+
+	public void insertFrame(
+		BoundingBox boundingBox,
+		Input input,
+		@Nullable Position position,
+		@Nullable Rotation rotation,
+		BlockCache blockCache,
+		Map<String, Attribute> attributes,
+		boolean gliding,
+		@Nullable Pose physicalPose
 	) {
 		Map<BlockPosition, MaterialVariantStore> dirtyBlocks = insertAndDelta(
 			nearbyBlocks(blockCache, boundingBox, position)
 		);
-		appendFrame(new MoveFrame(position, rotation, dirtyBlocks, input));
+		appendFrame(new MoveFrame(position, rotation, dirtyBlocks, input, gliding, physicalPose));
 		frameAttributes.add(new HashMap<>(attributes));
 	}
 
@@ -369,7 +406,8 @@ public final class MovementRecording {
 				Input.random(),
 				ThreadLocalRandom.current().nextBoolean() ? Position.immutableRandom() : null,
 				ThreadLocalRandom.current().nextBoolean() ? Rotation.zero() : null,
-				blockCache
+				blockCache,
+				ThreadLocalRandom.current().nextBoolean()
 			);
 		}
 		return movementRecording;

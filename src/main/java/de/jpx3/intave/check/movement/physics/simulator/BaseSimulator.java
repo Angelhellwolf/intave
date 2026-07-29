@@ -192,6 +192,46 @@ class BaseSimulator extends Simulator {
     }
   }
 
+  protected final void simulateJump(
+    User user,
+    Motion motion,
+    SimulationEnvironment environment,
+    MovementConfiguration configuration
+  ) {
+    if (!configuration.isJumping()) {
+      return;
+    }
+
+    ProtocolMetadata protocol = user.meta().protocol();
+    boolean inWater = environment.inWater();
+    boolean allowJumpInLiquid = false;
+    if (
+      protocol.aquaticUpdate() && inWater &&
+      environment.onGround() && environment.pose().height(user, environment) >= 0.4
+    ) {
+      Position lastPosition = environment.lastPosition();
+      double fluidDepth = user.waterflow().fluidDepthAt(
+        user, BoundingBox.fromPosition(user, environment, lastPosition)
+      );
+      boolean fluidStateEmpty = !Fluids.fluidPresentAt(user, lastPosition);
+      allowJumpInLiquid = fluidStateEmpty || fluidDepth <= 0.4;
+    }
+    if (inWater && !allowJumpInLiquid) {
+      motion.motionY += 0.04F;
+    } else if (environment.inLava()) {
+      // #handleJumpLava
+      motion.motionY += 0.04F;
+    } else if (environment.lastOnGround()) {
+      motion.motionY = user.protocolVersion() >= 768 ?
+        Math.max(environment.jumpMotion(), environment.baseMotionY()) :
+        environment.jumpMotion();
+      if (configuration.isSprinting()) {
+        motion.motionX -= environment.yawSine() * 0.2F;
+        motion.motionZ += environment.yawCosine() * 0.2F;
+      }
+    }
+  }
+
   @Override
   public Simulation simulateTick(
     User user, Motion motion,
@@ -223,11 +263,15 @@ class BaseSimulator extends Simulator {
     boolean inLava = environment.inLava();
 	  boolean swimming = environment.shouldHaveSwimmingPose();
     boolean crouching = pose == Pose.CROUCHING;
+    boolean visuallyCrawling = protocol.applyModernCollider()
+      && !inWater
+      && !environment.shouldHaveFallFlyingPose()
+      && pose == Pose.FALL_FLYING;
     boolean waterUpdate = protocol.aquaticUpdate();
 
     motion = motion.copy();
 
-    if (crouching || (!protocol.beeUpdate() && environment.isSneaking())) {
+    if (crouching || visuallyCrawling || (!protocol.beeUpdate() && environment.isSneaking())) {
       double sneakingSpeed = user.meta().abilities().attributeValue("player.sneaking_speed");
       if (Double.isNaN(sneakingSpeed)) {
         sneakingSpeed = 0.3 + Enchantments.resolveSwiftSpeedModifier(user.player()) * 0.15f;
@@ -261,34 +305,7 @@ class BaseSimulator extends Simulator {
       }
     }
 
-    if (jumped) {
-      boolean allowJumpInLiquid = false;
-      if (
-        protocol.aquaticUpdate() && inWater &&
-        environment.onGround() && environment.pose().height(user, environment) >= 0.4
-      ) {
-        Position lastPosition = environment.lastPosition();
-        double fluidDepth = user.waterflow().fluidDepthAt(
-          user, BoundingBox.fromPosition(user, environment, lastPosition)
-        );
-        boolean fluidStateEmpty = !Fluids.fluidPresentAt(user, lastPosition);
-        allowJumpInLiquid = fluidStateEmpty || fluidDepth <= 0.4;
-      }
-      if (inWater && !allowJumpInLiquid) {
-        motion.motionY += 0.04F;
-      } else if (inLava) {
-        // #handleJumpLava
-        motion.motionY += 0.04F;
-      } else if (environment.lastOnGround()) {
-        motion.motionY = user.protocolVersion() >= 768 ?
-          Math.max(environment.jumpMotion(), environment.baseMotionY()) :
-          environment.jumpMotion();
-        if (sprinting) {
-          motion.motionX -= yawSine * 0.2F;
-          motion.motionZ += yawCosine * 0.2F;
-        }
-      }
-    }
+    simulateJump(user, motion, environment, configuration);
     if (waterUpdate && swimming) {
       double d3 = environment.lookVector().getY();
       double d4 = d3 < -0.2D ? 0.085D : 0.06D;
@@ -429,7 +446,7 @@ class BaseSimulator extends Simulator {
       environment.resetMotionMultiplier();
     }
 
-    boolean elytraFlying = pose == Pose.FALL_FLYING;
+    boolean elytraFlying = environment.shouldHaveFallFlyingPose();
     boolean inWater = environment.inWater();
     boolean inLava = environment.inLava();
 	  double gravity = environment.gravity();

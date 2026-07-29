@@ -142,6 +142,10 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
     poseOverridden = true;
     this.pose = pose;
     updateSize();
+    if (user() != null) {
+      boundingBoxOverridden = true;
+      boundingBox = BoundingBox.fromPosition(user(), this, position());
+    }
     deferredMutations.add(environment -> environment.setPose(pose));
   }
 
@@ -171,9 +175,6 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
         positionY() - verifiedLastPositionY(),
         positionZ() - verifiedLastPositionZ()
       );
-      if (user() != null) {
-        updatePose();
-      }
     }
     deferredMutations.add(environment -> environment.updateMovement(
       newPositionX, newPositionY, newPositionZ,
@@ -1066,6 +1067,7 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
     if (hasMovement || hasRotation) {
       inactiveTickOverride(MoveMetric.EXTERNAL_VELOCITY);
     }
+    updatePose();
     deferredMutations.add(environment -> environment.tickComplete(hasMovement, hasRotation, true));
   }
 

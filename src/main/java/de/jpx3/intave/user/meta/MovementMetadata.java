@@ -362,9 +362,6 @@ public final class MovementMetadata implements SimulationEnvironment {
     }
 
     recheckWebStateFromLastTick();
-    if (hasMovement || hasRotation) {
-      updatePose();
-    }
   }
 
   @Override
@@ -460,15 +457,13 @@ public final class MovementMetadata implements SimulationEnvironment {
     return clientData.canUseElytra();
   }
 
-  public void manualPoseSet(Pose pose) {
-    this.pose = pose;
-    updatePose();
-  }
-
   @Override
   public void setPose(Pose pose) {
     this.pose = pose;
     updateSize();
+    if (boundingBoxSetup) {
+      boundingBox = BoundingBox.fromPosition(user, this, position());
+    }
   }
 
   private float jumpUpwardsMotion() {
@@ -931,7 +926,7 @@ public final class MovementMetadata implements SimulationEnvironment {
       inactiveTick(EXTERNAL_VELOCITY);
     }
 
-    updateSize();
+    updatePose();
 
     // misc
     if (ticks(SNEAKING) > 1) {

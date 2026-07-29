@@ -16,6 +16,7 @@ import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.block.cache.MockFullBlockStaticPlane;
 import de.jpx3.intave.block.fluid.Fluid;
 import de.jpx3.intave.block.shape.BlockShape;
+import de.jpx3.intave.check.movement.physics.environment.Pose;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.module.test.record.action.Action;
@@ -41,9 +42,8 @@ import java.util.zip.DeflaterOutputStream;
 import static org.junit.jupiter.api.Assertions.*;
 
 final class MovementRecordingSerializerTest {
-	private static final StreamCodec<ByteBuf, ByteBuf, List<MoveFrame>> FRAMES_CODEC = ByteBufStreamCodecs.listCodecOf(
-		MoveFrame.STREAM_CODEC
-	);
+	private static final StreamCodec<ByteBuf, ByteBuf, List<MoveFrame>> LEGACY_FRAMES_CODEC =
+		MoveFrame.LEGACY_LIST_STREAM_CODEC;
 	private static final StreamCodec<ByteBuf, ByteBuf, Map<Material, Map<Integer, BlockShape>>> COLLISION_SHAPES_CODEC = ByteBufStreamCodecs.mapCodec(
 		ByteBufStreamCodecs.MATERIAL,
 		ByteBufStreamCodecs.mapCodec(
@@ -61,7 +61,7 @@ final class MovementRecordingSerializerTest {
 		);
 	private static final StreamCodec<ByteBuf, ByteBuf, MovementRecording> FRAMES_ONLY_SMART_CODEC = ByteBufStreamCodecs.<MovementRecording>smartCodec(
 		codec ->
-			codec.field("frames", FRAMES_CODEC, MovementRecording::frames)
+			codec.field("frames", LEGACY_FRAMES_CODEC, MovementRecording::frames)
 				.field("internalId", ByteBufStreamCodecs.UUID, MovementRecording::internalId)
 				.field("collisionShapes", COLLISION_SHAPES_CODEC, MovementRecording::collisionShapes)
 				.field("fluids", FLUIDS_CODEC, MovementRecording::fluids),
@@ -72,7 +72,7 @@ final class MovementRecordingSerializerTest {
 	private static final StreamCodec<ByteBuf, ByteBuf, MovementRecording> FUTURE_SMART_CODEC = ByteBufStreamCodecs.<MovementRecording>smartCodec(
 		codec -> codec
 			.field("internalId", ByteBufStreamCodecs.UUID, MovementRecording::internalId)
-			.field("frames", FRAMES_CODEC, MovementRecording::frames)
+			.field("frames", LEGACY_FRAMES_CODEC, MovementRecording::frames)
 			.field("collisionShapes", COLLISION_SHAPES_CODEC, MovementRecording::collisionShapes)
 			.field("fluids", FLUIDS_CODEC, MovementRecording::fluids)
 			.field("format", ByteBufStreamCodecs.INTEGER, _ -> 2),
@@ -132,7 +132,9 @@ final class MovementRecordingSerializerTest {
 			Position.immutableEmpty(),
 			Rotation.zero(),
 			new MockFullBlockStaticPlane(),
-			Map.of("movement_speed", movementSpeed)
+			Map.of("movement_speed", movementSpeed),
+			true,
+			Pose.FALL_FLYING
 		);
 
 		ByteBuf buffer = Unpooled.buffer();
@@ -141,11 +143,39 @@ final class MovementRecordingSerializerTest {
 			MovementRecording decoded = MovementRecording.STREAM_CODEC.decode(buffer);
 
 			assertEquals(recording, decoded);
+			assertTrue(decoded.frames().get(0).gliding());
+			assertEquals(Pose.FALL_FLYING, decoded.frames().get(0).physicalPose());
 			Attribute decodedSpeed = decoded.attributesForFrame(0).get("movement_speed");
 			assertNotNull(decodedSpeed);
 			assertEquals(0.1, decodedSpeed.baseValue());
 			assertEquals(-0.025, decodedSpeed.modifiers().iterator().next().amount());
 			assertNull(decodedSpeed.modifiers().iterator().next().name());
+		} finally {
+			buffer.release();
+		}
+	}
+
+	@Test
+	void deserializeVersionOneFrameWithoutPhysicalPose() {
+		MoveFrame frame = new MoveFrame(
+			Position.immutableEmpty(),
+			Rotation.zero(),
+			Map.of(),
+			Input.none(),
+			true,
+			Pose.FALL_FLYING
+		);
+		ByteBuf buffer = Unpooled.buffer();
+		try {
+			buffer.writeInt(Integer.MIN_VALUE);
+			buffer.writeInt(1);
+			buffer.writeInt(1);
+			MoveFrame.VERSION_ONE_STREAM_CODEC.encode(buffer, frame);
+
+			MoveFrame decoded = MoveFrame.LIST_STREAM_CODEC.decode(buffer).get(0);
+
+			assertTrue(decoded.gliding());
+			assertNull(decoded.physicalPose());
 		} finally {
 			buffer.release();
 		}
@@ -190,7 +220,8 @@ final class MovementRecordingSerializerTest {
 				Input.random(),
 				i % 2 == 1 ? Position.immutableRandom() : null,
 				i % 2 == 0 ? Rotation.zero() : null,
-				blockCache
+				blockCache,
+				false
 			);
 		}
 		return movementRecording;
