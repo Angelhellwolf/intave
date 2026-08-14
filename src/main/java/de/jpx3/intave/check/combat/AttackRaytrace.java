@@ -87,7 +87,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
     this.zeroNetworkTolerance = plugin.getConfig().getBoolean("checks.timer.low-tolerance", false) && plugin.getConfig().getBoolean("checks.timer.block-stutter-hits", false);
     // Send a notice message to the server owner if zero tolerance is enabled
     if (zeroNetworkTolerance) {
-      IntaveLogger.logger().info("Zero network tolerance enabled");
+      IntaveLogger.logger().info("已启用零网络容差");
     }
   }
 
@@ -154,7 +154,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
             player.sendMessage(ChatColor.DARK_PURPLE + positionChange);
           }
         }
-        player.sendMessage(ChatColor.RED + "Distance " + formatDouble(distance, 12));
+        player.sendMessage(ChatColor.RED + "距离 " + formatDouble(distance, 12));
       }
 
       boolean inTeleport = movement.ticksPast(TELEPORT) == 0 || violationMeta.isInActiveTeleportBundle;
@@ -167,7 +167,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
           firstRaytraceSuccessful = true;
           if (user.receives(MessageChannel.DEBUG_ATTACK_RAYTRACE)) {
             Synchronizer.synchronize(() -> {
-              player.sendMessage("[AR] Prelim ray successful, reach: " + formatDouble(raytrace.reach(), 12) + " blocks");
+              player.sendMessage("[AR] 初步射线追踪成功，触及距离：" + formatDouble(raytrace.reach(), 12) + " 格");
             });
           }
         }
@@ -185,11 +185,11 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
       if (user.receives(MessageChannel.DEBUG_PACKET_HOLD)) {
         if (resendLater) {
           Synchronizer.synchronize(() -> {
-            player.sendMessage("%PH " + ChatColor.RED + "Await ATTACK at " + (System.currentTimeMillis() % 1000) + " since prelim ray failed");
+            player.sendMessage("%PH " + ChatColor.RED + "等待攻击于 " + (System.currentTimeMillis() % 1000) + "（初步射线失败）");
           });
         } else {
           Synchronizer.synchronize(() -> {
-            player.sendMessage("%PH " + ChatColor.GREEN + "Allowing ATTACK without hold at " + (System.currentTimeMillis() % 1000));
+            player.sendMessage("%PH " + ChatColor.GREEN + "允许无等待攻击于 " + (System.currentTimeMillis() % 1000));
           });
         }
       }
@@ -203,8 +203,8 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
         pendingActions.add(attack);
       } else {
         Violation violation = Violation.builderFor(AttackRaytrace.class)
-          .forPlayer(player).withMessage("attacked too many entities at once")
-          .withDetails("queued " + pendingActions.size() + " attacks")
+          .forPlayer(player).withMessage("同时攻击实体过多")
+          .withDetails("排队 " + pendingActions.size() + " 次攻击")
           .withVL(0)
           .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
           .build();
@@ -297,7 +297,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
         if (user.receives(MessageChannel.DEBUG_PACKET_HOLD)) {
           if (pendingAttack.shouldResend) {
             Synchronizer.synchronize(() -> {
-              player.sendMessage("%PH " + ChatColor.YELLOW + "Processing ATTACK at " + (System.currentTimeMillis() % 1000));
+              player.sendMessage("%PH " + ChatColor.YELLOW + "处理攻击于 " + (System.currentTimeMillis() % 1000));
             });
           }
         }
@@ -329,7 +329,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
         } else {
           if (user.receives(MessageChannel.DEBUG_ATTACK_RAYTRACE)) {
             Synchronizer.synchronize(() -> {
-              player.sendMessage("[AR] Attack timed out, ignoring attack");
+              player.sendMessage("[AR] 攻击处理超时，已忽略本次攻击");
             });
           }
         }
@@ -363,8 +363,8 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
       Violation violation = Violation.builderFor(AttackRaytrace.class)
         .forPlayer(player).withCustomThreshold("timeout")
         .withVL(0.5)
-        .withMessage("attacked player position too old")
-        .withDetails("already " + pendingFeedbacks + " new packets, latency: " +user.latency() + "ms")
+        .withMessage("攻击的玩家位置过旧")
+        .withDetails("已有 " + pendingFeedbacks + " 个新包，延迟: " +user.latency() + "ms")
         .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
         .build();
       Modules.violationProcessor().processViolation(violation);
@@ -411,8 +411,8 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
         Violation violation = Violation.builderFor(AttackRaytrace.class)
           .forPlayer(player).withCustomThreshold("timeout")
           .withVL(2)
-          .withMessage("has different combat/idle latency")
-          .withDetails(((int)general) + "ms to " + ((int)combat) + "ms combat")
+          .withMessage("战斗/空闲延迟不一致")
+          .withDetails(((int)general) + " 毫秒常规延迟，" + ((int)combat) + " 毫秒战斗延迟")
           .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
           .build();
         ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);
@@ -457,7 +457,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
           Violation violation = Violation.builderFor(AttackRaytrace.class)
             .forPlayer(player).withCustomThreshold("timeout")
             .withVL((violationLevel.backtrackVL - 3) * 0.5)
-            .withMessage("delayed " + entityName.toLowerCase(Locale.ROOT) + " movement packets")
+            .withMessage("延迟了 " + entityName.toLowerCase(Locale.ROOT) + " 的移动包")
 //            .withDetails("N("+((int)highest)+" | " + ((int)mean) + ", " + ((int)stdDev) + ") = " + formatDouble(latencyProbability * 100, 9) + "%")
 //            .withDetails(((int) highest) + "ms unlikely: " + formatDouble(latencyProbability * 100, 9) + "%")
             .addGranular("EXPR", "N("+((int)highest)+" | " + ((int)mean) + ", " + ((int)stdDev) + ")")
@@ -681,7 +681,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
 
         thresholdKey = "applicable-thresholds.hitbox";
         sibyl = String.format(
-          "%s/%d missed hit on %s",
+          "%s/%d 未命中 %s",
           player.getName(), user.protocolVersion(), entityName.toLowerCase()
         );
         metaOf(user).lastReachDetection = System.currentTimeMillis();
@@ -691,11 +691,11 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
       case REACH: {
         String displayReach = formatDouble(raytrace.reach(), 4);
         message = String.format(
-          "attacked %s %s from too far away %s",
+          "从过远距离攻击 %s %s %s",
           resolveArticle(entityName), entityName.toLowerCase(), estimationSuffix
         );
 //        if (IntaveControl.GOMME_MODE) {
-          details = displayReach + " blocks";
+          details = displayReach + " 格";
 //        } else {
 //          details = raytrace.from() + " ray to " + (raytrace.to() == null ? "/" + attacked.position.toPosition() + "/" : raytrace.to()) + " :: " + displayReach + " blocks";
 //        }
@@ -705,7 +705,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
         granular.put("REACH", displayReach);
         thresholdKey = "applicable-thresholds.reach";
         sibyl = String.format(
-          "%s/%d attacked %s from %s",
+          "%s/%d 攻击 %s 距离 %s",
           player.getName(), user.protocolVersion(), entityName.toLowerCase(), displayReach
         );
         reach = raytrace.reach();
@@ -728,7 +728,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
 
     if (user.receives(MessageChannel.DEBUG_ATTACK_RAYTRACE)) {
       Synchronizer.synchronize(() -> {
-        player.sendMessage("[AR] Raytrace result: " + result + ", reach: " + formatDouble(raytrace.reach(), 12) + ", expansion: " + expansion + ", estimated: " + estimated);
+        player.sendMessage("[AR] 射线追踪结果：" + result + "，触及距离：" + formatDouble(raytrace.reach(), 12) + "，扩展值：" + expansion + "，估算值：" + estimated);
       });
     }
 

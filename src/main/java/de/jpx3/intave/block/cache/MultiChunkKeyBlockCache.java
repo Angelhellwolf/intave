@@ -45,7 +45,8 @@ import static de.jpx3.intave.IntaveControl.DISABLE_BLOCK_CACHING_ENTIRELY;
 final class MultiChunkKeyBlockCache implements BlockCache {
   private final Player player;
   private final ShapeResolverPipeline shapeResolver;
-  private final BlockStore blockCache = CopyOnWriteArrayLocalBlockStore.of();
+  // 方块更新包与移动/世界切换路径可能并行清空缓存；统一串行化底层存储，避免 clear 与 put 交错导致空 sectors。
+  private final BlockStore blockCache = CopyOnWriteArrayLocalBlockStore.of().withSynchronization();
   private final Map<BlockPosition, BlockState> speculativeHeads = new ConcurrentHashMap<>(8);
   private final Map<BlockPosition, Integer> speculativeSequenceNumbers = new ConcurrentHashMap<>(8);
   private final HashSet<Long> speculationKeys = new HashSet<>(8);
@@ -128,7 +129,7 @@ final class MultiChunkKeyBlockCache implements BlockCache {
     User user = UserRepository.userOf(player);
     if (IntaveControl.BLOCK_CACHE_DEBUG || user.receives(MessageChannel.DEBUG_BLOCK_CACHE)) {
       Synchronizer.synchronize(() -> {
-        player.sendMessage(ChatColor.LIGHT_PURPLE + "SPECULATING " + ChatColor.AQUA+ type + ChatColor.LIGHT_PURPLE + " at " + ChatColor.GRAY + position);
+        player.sendMessage(ChatColor.LIGHT_PURPLE + "推测 " + ChatColor.AQUA + type + ChatColor.LIGHT_PURPLE + " 位于 " + ChatColor.GRAY + position);
       });
     }
   }
@@ -152,7 +153,7 @@ final class MultiChunkKeyBlockCache implements BlockCache {
       int posZ = blockPosition.getZ();
       if (sequenceNumber > seqReq) {
         if (IntaveControl.BLOCK_CACHE_DEBUG) {
-          player.sendMessage(ChatColor.LIGHT_PURPLE + "SKIP APPLYING " + ChatColor.AQUA + blockState.type() + ChatColor.LIGHT_PURPLE + " at " + ChatColor.GRAY + blockPosition + " " + sequenceNumber + " > " + seqReq);
+          player.sendMessage(ChatColor.LIGHT_PURPLE + "跳过应用 " + ChatColor.AQUA + blockState.type() + ChatColor.LIGHT_PURPLE + "，位置 " + ChatColor.GRAY + blockPosition + " " + sequenceNumber + " > " + seqReq);
         }
         continue;
       }
@@ -215,7 +216,7 @@ final class MultiChunkKeyBlockCache implements BlockCache {
     User user = UserRepository.userOf(player);
     if (IntaveControl.BLOCK_CACHE_DEBUG || user.receives(MessageChannel.DEBUG_BLOCK_CACHE)) {
       Synchronizer.synchronize(() -> {
-        player.sendMessage(ChatColor.LIGHT_PURPLE + "OVERRIDE " + ChatColor.AQUA  + type + ChatColor.LIGHT_PURPLE + " at " + ChatColor.GRAY + position + ChatColor.LIGHT_PURPLE + " for " + ChatColor.RED + reason);
+        player.sendMessage(ChatColor.LIGHT_PURPLE + "覆盖 " + ChatColor.AQUA + type + ChatColor.LIGHT_PURPLE + "，位置 " + ChatColor.GRAY + position + ChatColor.LIGHT_PURPLE + "，原因 " + ChatColor.RED + reason);
       });
     }
   }
@@ -242,7 +243,7 @@ final class MultiChunkKeyBlockCache implements BlockCache {
     User user = UserRepository.userOf(player);
     if (IntaveControl.BLOCK_CACHE_DEBUG || user.receives(MessageChannel.DEBUG_BLOCK_CACHE)) {
       Synchronizer.synchronize(() -> {
-        player.sendMessage(ChatColor.LIGHT_PURPLE + "LOCK " + ChatColor.GRAY + Position.of(posX, posY, posZ));
+        player.sendMessage(ChatColor.LIGHT_PURPLE + "锁定 " + ChatColor.GRAY + Position.of(posX, posY, posZ));
       });
     }
   }
@@ -253,7 +254,7 @@ final class MultiChunkKeyBlockCache implements BlockCache {
       User user = UserRepository.userOf(player);
       if (IntaveControl.BLOCK_CACHE_DEBUG || user.receives(MessageChannel.DEBUG_BLOCK_CACHE)) {
         Synchronizer.synchronize(() -> {
-          player.sendMessage(ChatColor.LIGHT_PURPLE + "UNLOCK " + ChatColor.GRAY + Position.of(posX, posY, posZ));
+          player.sendMessage(ChatColor.LIGHT_PURPLE + "解锁 " + ChatColor.GRAY + Position.of(posX, posY, posZ));
         });
       }
     }

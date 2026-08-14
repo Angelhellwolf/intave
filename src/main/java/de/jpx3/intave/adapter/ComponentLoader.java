@@ -86,10 +86,10 @@ public final class ComponentLoader {
 
   private void downloadComponentPlugin(File componentPluginFile, String componentName, String downloadURL) throws IOException, InvalidPluginException, InvalidDescriptionException {
     URL website = new URL(downloadURL);
-    System.out.println("[debug] Downloading " + componentName + " from " + downloadURL);
+    System.out.println("[debug] 正在从 " + downloadURL + " 下载 " + componentName);
     try (InputStream in = website.openStream()) {
       download(in, componentPluginFile.toPath());
-      plugin.logger().info(ChatColor.GREEN + "Downloaded " + componentName);
+      plugin.logger().info(ChatColor.GREEN + "已下载 " + componentName);
       Plugin componentPlugin = this.plugin.getServer().getPluginManager().loadPlugin(componentPluginFile);
 
       try {

@@ -99,7 +99,7 @@ public final class RestartCheck extends MetaCheckPart<BreakSpeedLimiter, Restart
 
 				if (balance > MAX_STORED_RESTART_ADVANTAGE_TICKS
 					&& meta.restartFlagBreakSequence != meta.blockBreakSequence) {
-					String message = "started breaking too quickly";
+					String message = "开始破坏过快";
 					String details = ((int) restartDelay) + " ticks between";
 					ViolationProcessor violationProcessor = Modules.violationProcessor();
 					Violation violation = Violation.builderFor(BreakSpeedLimiter.class)

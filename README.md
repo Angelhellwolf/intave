@@ -2,68 +2,66 @@
 ![Intave](docs/assets/hero_banner.png "Intave")
 
 
-Intave is an enterprise anticheat plugin for Minecraft servers in development since 2016.
-After almost a decade of use on the world's largest Minecraft servers
-and shutting down in mid-2025, we now decided to give back to the community by making Intave source-available to everyone.
+Intave 是一款面向 Minecraft 服务器的企业级反作弊插件，自 2016 年起持续开发。
+在世界顶级服务器上使用近十年、并于 2025 年中停止运营后，
+我们决定回馈社区，将 Intave 以源码可用（source-available）的形式向所有人开放。
 
-## Downloads
-- [Auto Loader](https://github.com/intave/loader/releases/download/v1.0.0/IntaveLoader.jar) (Recommended)
-- [Nightly Build](https://github.com/intave/intave/releases/download/nightly/Intave.jar)
+## 下载
+- [自动加载器](https://github.com/intave/loader/releases/download/v1.0.0/IntaveLoader.jar)（推荐）
+- [每日构建](https://github.com/intave/intave/releases/download/nightly/Intave.jar)
 - [Modrinth](https://modrinth.com/plugin/intave)
 
-## General
+## 概述
 
-Unlike traditional module-based anticheats, Intave accurately simulates player movement, client-side entity and block
-data to detect even the smallest manipulations. Through this approach, Intave successfully prevents any kind of combat,
-movement and interaction exploits, such as speed/fly cheats or reaching beyond the 3.0 block range.
+与传统模块化反作弊不同，Intave 精确模拟玩家移动、客户端实体与方块数据，
+从而发现极细微的操控。基于该思路，Intave 能有效阻止各类战斗、
+移动与交互类作弊，例如加速/飞行，或超出 3.0 格攻击距离等。
 
-Additionally, Intave provides heuristic checks to counter aimbot, auto-clicker, timer, placement, block breaking,
-inventory
-and many other cheats that cannot be detected by solely simulating client logic.
+此外，Intave 还提供启发式检测，用于对抗自瞄、连点、加速（Timer）、搭路、
+挖方块、背包操作，以及许多仅靠模拟客户端逻辑无法覆盖的作弊。
 
-For more information, see the documentation of Intave's
-checks [here](https://docs.intave.ac/mechanics/checks-01-overview.html).
+更多说明见 Intave 检测文档：
+[此处](https://docs.intave.ac/mechanics/checks-01-overview.html)。
 
-## Development
+## 开发
 
-### Setup
+### 环境搭建
 
-1. Clone the project: `git clone https://github.com/intave/intave.git`.
-2. Open the project as Gradle project; wait a few minutes for IntelliJ to index and build the
-   project.
+1. 克隆项目：`git clone https://github.com/intave/intave.git`。
+2. 以 Gradle 项目打开；等待数分钟，让 IntelliJ 完成索引与构建。
 
-### Testing
+### 测试
 
-Choose one of the `intave/run_X.X.X` gradle tasks corresponding to the Minecraft server version
-you want to test. Intave is then automatically installed on that server. In case of Intave failing to download
-ProtocolLib, make sure you manually install ProtocolLib on the server by moving it into the `plugins` directory.
+选择与目标 Minecraft 服务端版本对应的 `intave/run_X.X.X` Gradle 任务。
+Intave 会自动安装到该服务器。若 Intave 未能下载 ProtocolLib，
+请手动将 ProtocolLib 放入 `plugins` 目录。
 
-By doing so, you can run the plugin directly in the IDE. Breakpoints and hotswapping is
-enabled!
-We use [this IntelliJ plugin](https://plugins.jetbrains.com/plugin/14832-single-hotswap) for efficient hotswapping, which
-can swap method contents that don't have an indy lambda or anonymous class.
+这样即可在 IDE 中直接运行插件，并支持断点与热替换。
+我们使用 [此 IntelliJ 插件](https://plugins.jetbrains.com/plugin/14832-single-hotswap) 做高效热替换，
+可替换不含 indy lambda 或匿名类的方法体。
 
-## Contributing
+## 贡献
 
-We accept contributions to the project, but please make sure to read the [contributing guidelines](docs/CONTRIBUTING.md) before doing so.
-For a high-level overview of the project organization, see [this document](docs/STRUCTURE.md).
-A cheatsheet can be found [here](docs/CHEATSHEET.md) to quickly find your way around the codebase, contributions welcome!
-Our block system is briefly outlined in [this document](docs/BLOCK_SYSTEM.md).
-If you have any questions, feel free to get in touch with us on [Discord](https://intave.ac/go/discord).
+欢迎贡献，提交前请先阅读[贡献指南](docs/CONTRIBUTING.md)。
+项目结构高层概览见[本文档](docs/STRUCTURE.md)。
+快速上手速查表见[此处](docs/CHEATSHEET.md)，也欢迎补充！
+方块系统简述见[本文档](docs/BLOCK_SYSTEM.md)。
+有问题可在 [Discord](https://intave.ac/go/discord) 联系我们。
 
-## License
-We want to make Intave completely free and open, available for everyone, indefinitely.
-However, we don't want you or others to take this work, rebrand it and sell it as their own creation.
-We've seen this happen multiple times with other anticheats, and we explicitly forbid this kind of behavior.
-Still, we want to allow Minecraft servers commercial use of Intave and
-the ability to modify and adapt it to their needs, as long as they don't sell it as a product or publish it.
-Therefore, we decided to use the [Polyform Perimeter License 1.0.0](LICENSE.md),
-prohibiting any form of competitive use.
-We also want to encourage everyone to contribute back to the project instead of creating their personal spin-offs,
-making the project better for everyone instead of fragmenting the community and development efforts.
-This also technically means Intave isn't actually "open-source", but "source-available" for everyone to use and modify, but not to sell,
-rebrand as their own or mix into their own product or project, no matter the respective licenses.
-In case of source stealing or commercial redistribution we will be issuing DMCA takedowns and in blatant cases we will go 
-the extra mile to bring legal action against you, we are not joking about this.
-Please note that Intave uses third-party libraries, which are licensed under their respective licenses and
-may not be covered by the Polyform Perimeter License.
+## 许可证
+我们希望 Intave 永久免费开放，供所有人使用。
+但我们不希望任何人拿走这份成果、改名包装后当作自己的产品出售。
+其它反作弊项目上已多次发生此类情况，我们明确禁止此类行为。
+同时，我们允许 Minecraft 服务器将 Intave 用于商业运营，
+并允许按需修改与适配，前提是不得将其作为产品出售或公开发布。
+因此我们采用 [Polyform Perimeter License 1.0.0](LICENSE.md)，
+禁止任何形式的竞争性使用。
+我们也鼓励大家把改进回馈主项目，而不是各自维护分支，
+以免社区与开发力量被分散。
+从技术上说，Intave 并非严格意义上的「开源」，而是「源码可用」：
+可使用、可修改，但不得出售、不得冒充原创，也不得并入你自己的产品或项目，
+不论其它许可证如何约定。
+若发生盗源或商业再分发，我们将发起 DMCA 下架；情节严重者将追究法律责任，
+并非戏言。
+请注意：Intave 使用的第三方库各自遵循其许可证，
+可能不受 Polyform Perimeter License 约束。

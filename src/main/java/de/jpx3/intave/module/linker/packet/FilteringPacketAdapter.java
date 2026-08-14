@@ -12,7 +12,6 @@ import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 
 import java.util.Arrays;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -123,30 +122,13 @@ public final class FilteringPacketAdapter extends WeakReferencePacketAdapter imp
 
   private void processException(PacketType packetType, RuntimeException exception) {
     String simpleName = exception.getClass().getSimpleName();
-    IntaveLogger.logger().printLine("[Intave] " + resolveIndefArticle(simpleName) + " " + simpleName + " occurred while processing a " + packetType.name() + " packet (" + subscriber.getClass().getSimpleName() + "." + methodName + ")");
+    IntaveLogger.logger().printLine("[Intave] 处理 " + packetType.name() + " 数据包时发生 " + simpleName + "（" + subscriber.getClass().getSimpleName() + "." + methodName + "）");
     exception.printStackTrace();
   }
 
   private void processError(PacketType packetType, Error error) {
     String simpleName = error.getClass().getSimpleName();
-    IntaveLogger.logger().printLine("[Intave] " + resolveIndefArticle(simpleName) + " " + simpleName + " occurred while processing a " + packetType.name() + " packet (" + subscriber.getClass().getSimpleName() + "." + methodName + ")");
+    IntaveLogger.logger().printLine("[Intave] 处理 " + packetType.name() + " 数据包时发生 " + simpleName + "（" + subscriber.getClass().getSimpleName() + "." + methodName + "）");
     error.printStackTrace();
-  }
-
-  private static final char[] vocals = "AEIOU".toCharArray();
-
-  private String resolveIndefArticle(String exceptionName) {
-    if (exceptionName.isEmpty()) {
-      return "";
-    }
-    char c = exceptionName.toUpperCase(Locale.ROOT).toCharArray()[0];
-    boolean isVocal = false;
-    for (char vocal : vocals) {
-      if (vocal == c) {
-        isVocal = true;
-        break;
-      }
-    }
-    return isVocal ? "An" : "A";
   }
 }

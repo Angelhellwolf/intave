@@ -60,7 +60,7 @@ public final class RotationModuloResetHeuristic extends ClassicHeuristic<Rotatio
       if (entityInLineOfSight(user)) {
         float penaltyYaw = movementData.lastRotationYaw;
         if (penaltyYaw != 0) {
-          flag(player, "possible rotation reset");
+          flag(player, "可能的视角重置");
         }
       }
       heuristicMeta.roundedRotationLooking = false;

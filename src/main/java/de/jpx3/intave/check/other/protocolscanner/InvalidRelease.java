@@ -46,11 +46,10 @@ public final class InvalidRelease extends CheckPart<ProtocolScanner> {
 			// Fix https://github.com/Raven-APlus/RavenAPlus/blob/master/src/main/java/keystrokesmod/module/impl/movement/noslow/IntaveNoSlow.java
 			if (face != EnumWrappers.Direction.DOWN) {
 				Violation violation = Violation.builderFor(ProtocolScanner.class)
-					.forPlayer(player).withMessage("sent invalid release").withDetails("face " + face.name().toLowerCase(Locale.ROOT))
+					.forPlayer(player).withMessage("发送了无效的物品释放数据包").withDetails("方向 " + face.name().toLowerCase(Locale.ROOT))
 					.withVL(3)
 					.build();
 				Modules.violationProcessor().processViolation(violation);
-				user.meta().inventory().lastFoodConsumptionBlockRequest = System.currentTimeMillis();
 			}
 		}
 	}

@@ -56,7 +56,7 @@ public final class HurttimeModifier {
       return (int) maxDamageTicks.get(handle);
     } catch (IllegalAccessException exception) {
       exception.printStackTrace();
-      IntaveLogger.logger().error("Intave has problems accessing an entity field");
+      IntaveLogger.logger().error("Intave 访问实体字段时出现问题");
       hitDelayLinkageError = true;
     }
     return -1;
@@ -69,7 +69,7 @@ public final class HurttimeModifier {
       maxDamageTicks.set(handle, noDamageTicks);
     } catch (IllegalAccessException exception) {
       exception.printStackTrace();
-      IntaveLogger.logger().error("Intave has problems accessing an entity field");
+      IntaveLogger.logger().error("Intave 访问实体字段时出现问题");
       hitDelayLinkageError = true;
     }
   }

@@ -46,7 +46,7 @@ public final class LogTransmittor implements BukkitEventSubscriber {
           if (request.fulfilled) {
             requests.remove(request);
           } else if (request.timedOut()) {
-            request.fulfill("log-id unavailable");
+            request.fulfill("日志 ID 不可用");
             requests.remove(request);
           }
         }
@@ -71,7 +71,7 @@ public final class LogTransmittor implements BukkitEventSubscriber {
       if (ConsoleOutput.CLOUD_LOG_IDS) {
         Player player1 = Bukkit.getPlayer(uuid);
         if (player1 != null &&player1.isOnline()) {
-          IntaveLogger.logger().info(player1.getName() + " was assigned log-id " + logId);
+          IntaveLogger.logger().info("已为 " + player1.getName() + " 分配日志 ID：" + logId);
         }
       }
     });
@@ -94,7 +94,7 @@ public final class LogTransmittor implements BukkitEventSubscriber {
       }
       uploadLogOf(player, logIdCallback);
     } else {
-      logIdCallback.accept("No Log-Id");
+      logIdCallback.accept("无日志 ID");
     }
   }
 

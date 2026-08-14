@@ -90,7 +90,7 @@ public final class RotationAccuracyYawHeuristic extends ClassicHeuristic<Rotatio
       && !attackData.recentlySwitchedEntity(200)
     ) {
       if (heuristicMeta.snapVL++ > 0) {
-        String description = "suspicious rotation snap (" + yawSpeed + ")";
+        String description = "可疑视角瞬转（" + yawSpeed + ")";
         flag(player, description);
         user.nerf(AttackNerfStrategy.CRITICALS, nerfId);
       }
@@ -111,7 +111,7 @@ public final class RotationAccuracyYawHeuristic extends ClassicHeuristic<Rotatio
       heuristicMeta.followBalance = 0;
     }
     if (heuristicMeta.followBalance > 25) {
-      flag(user.player(), "follows entity movement too precisely");
+      flag(user.player(), "跟随实体移动过于精确");
       heuristicMeta.followBalance -= 7;
       user.nerf(AttackNerfStrategy.CRITICALS, nerfId);
     }
@@ -131,7 +131,7 @@ public final class RotationAccuracyYawHeuristic extends ClassicHeuristic<Rotatio
     int suspiciousLevel = (int) heuristicMeta.balanceYawAccuracy;
     if (suspiciousLevel > 8) {
       if (heuristicMeta.rotationAccuracyVL++ > 3) {
-        String description = "high accuracy rotation yaw vl:" + suspiciousLevel;
+        String description = "高 yaw 精度旋转 vl:" + suspiciousLevel;
         flag(user.player(), description);
         user.nerf(AttackNerfStrategy.CRITICALS, nerfId);
       }
@@ -146,7 +146,7 @@ public final class RotationAccuracyYawHeuristic extends ClassicHeuristic<Rotatio
     if (distanceToPerfectYaw > 4.0) {
       heuristicMeta.balanceYawAccuracyOther = 0;
     } else if (heuristicMeta.balanceYawAccuracyOther++ > 50) {
-      String description = "keeps high yaw accuracy in " + (int) heuristicMeta.balanceYawAccuracyOther + " rotations";
+      String description = "在 " + (int) heuristicMeta.balanceYawAccuracyOther + " 次旋转中保持高 yaw 精度";
       flag(user.player(), description);
       heuristicMeta.balanceYawAccuracyOther = 0;
     }
@@ -175,7 +175,7 @@ public final class RotationAccuracyYawHeuristic extends ClassicHeuristic<Rotatio
       double increase = MathHelper.minmax(-0.2, (1 - deviation) * 4, 4);
       heuristicMeta.bitBoxCornerBalance = (int) MathHelper.minmax(0, heuristicMeta.bitBoxCornerBalance + increase, 100);
       if (heuristicMeta.bitBoxCornerBalance > 30) {
-        flag(user.player(), "high accuracy rotation yaw on hit-box corners");
+        flag(user.player(), "碰撞箱角落高 yaw 精度旋转");
         heuristicMeta.bitBoxCornerBalance -= 20;
         user.nerf(DMG_LIGHT, nerfId);
       }
@@ -204,11 +204,11 @@ public final class RotationAccuracyYawHeuristic extends ClassicHeuristic<Rotatio
       double maxRatio = maxDistanceToPerfectYaw / yawAverage;
       if (maxRatio < 2 && maxDistanceToPerfectYaw < 30) {
 //        String descriptor = "rotated suspiciously (" + MathHelper.formatDouble(maxRatio, 4) + " / " + MathHelper.formatDouble(maxDistanceToPerfectYaw, 4) + ")";
-        String descriptor = SibylCensor.thisPlease("rotated suspiciously (%s / %s)", MathHelper.formatDouble(maxRatio, 4), MathHelper.formatDouble(maxDistanceToPerfectYaw, 4));
+        String descriptor = SibylCensor.thisPlease("视角可疑（%s / %s）", MathHelper.formatDouble(maxRatio, 4), MathHelper.formatDouble(maxDistanceToPerfectYaw, 4));
         flag(user.player(), descriptor);
       }
       if (yawAverage >= 3.5 && maxDistanceToPerfectYaw <= 12.5 && averageRatio > 1) {
-        String descriptor = "precise rotation yaw (" + MathHelper.formatDouble(yawAverage, 4) + ")";
+        String descriptor = "精确 yaw 旋转（" + MathHelper.formatDouble(yawAverage, 4) + ")";
         flag(user.player(), descriptor);
       }
       heuristicMeta.distancesToPerfectYaw.clear();

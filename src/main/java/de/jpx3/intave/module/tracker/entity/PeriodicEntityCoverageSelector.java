@@ -106,7 +106,7 @@ public final class PeriodicEntityCoverageSelector {
       if (!traced.contains(entity)) {
         entityRemovalListener.accept(user, entity);
         if (user.meta().connection().debugEntityTracing) {
-          player.sendMessage(ChatColor.LIGHT_PURPLE + "Removed " + entity.entityName()+"/"+entity.entityId() + " " + entity.boundingBox() + " from " + user.player().getName());
+          player.sendMessage(ChatColor.LIGHT_PURPLE + "已移除 " + entity.entityName()+"/"+entity.entityId() + " " + entity.boundingBox() + " 从 " + user.player().getName());
         }
       }
     }
@@ -115,7 +115,7 @@ public final class PeriodicEntityCoverageSelector {
       if (!lastTraced.contains(entity)) {
         entityAdditionListener.accept(user, entity);
         if (user.meta().connection().debugEntityTracing) {
-          player.sendMessage(ChatColor.LIGHT_PURPLE + "Added " + entity.entityName()+"/"+entity.entityId() + " " + entity.boundingBox() + " to " + user.player().getName());
+          player.sendMessage(ChatColor.LIGHT_PURPLE + "已为 " + user.player().getName() + " 添加 " + entity.entityName() + "/" + entity.entityId() + " " + entity.boundingBox());
         }
       }
     }

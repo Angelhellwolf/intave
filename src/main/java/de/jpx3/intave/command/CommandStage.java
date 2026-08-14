@@ -135,11 +135,11 @@ public abstract class CommandStage {
     }
 
     if (messages.isEmpty()) {
-      sender.sendMessage(IntavePlugin.prefix() + "No subcommands available");
+      sender.sendMessage(IntavePlugin.prefix() + "无可用子命令");
       return;
     }
 
-    sender.sendMessage(IntavePlugin.prefix() + "Available subcommands:");
+    sender.sendMessage(IntavePlugin.prefix() + "可用子命令:");
 
     if (messages.size() < COMMAND_SHOW_LIMIT) {
       for (String message : messages) {
@@ -151,7 +151,7 @@ public abstract class CommandStage {
         sender.sendMessage(IntavePlugin.prefix() + commandPath() + message);
       }
       int remaining = messages.size() - COMMAND_SHOW_LIMIT;
-      sender.sendMessage(IntavePlugin.prefix() + "<Use tab completion to see " + nameOf(remaining) + " more>");
+      sender.sendMessage(IntavePlugin.prefix() + "<使用 Tab 补全查看另外 " + nameOf(remaining) + " 个>");
     }
   }
 
@@ -182,7 +182,7 @@ public abstract class CommandStage {
     if (availableSelectors.isEmpty()) {
       showAllCommands(sender);
     } else {
-      sender.sendMessage(IntavePlugin.prefix() + "Did you mean " + describeListSelection(availableSelectors) + "?");
+      sender.sendMessage(IntavePlugin.prefix() + "你是想用 " + describeListSelection(availableSelectors) + "?");
     }
   }
 
@@ -195,7 +195,7 @@ public abstract class CommandStage {
     } else {
       String elementsListed = String.join(", ", elements.subList(0, size - 1));
       String lastElement = elements.get(size - 1);
-      return elementsListed + " or " + lastElement;
+      return elementsListed + " 还是 " + lastElement;
     }
   }
 

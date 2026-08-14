@@ -27,65 +27,65 @@ public final class ProxyStage extends CommandStage {
     selectors = {"command", "proxcommand"},
     usage = "<player> <command...>",
     permission = "intave.command.proxy",
-    description = "Remotely executes commands on the proxy"
+    description = "在代理上远程执行命令"
   )
   public void proxyCommand(CommandSender sender, Player uplink, String[] commandParts) {
     if (!plugin.proxy().isChannelOpen()) {
-      sender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Not connected to a proxy");
+      sender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "未连接到代理");
       return;
     }
     String command = Arrays.stream(commandParts).map(commandPart -> commandPart + " ").collect(Collectors.joining()).trim();
     IntavePacket packet = new IntavePacketOutExecuteCommand(uplink.getUniqueId(), command);
     plugin.proxy().sendPacket(uplink, packet);
-    sender.sendMessage(IntavePlugin.prefix() + "Remote command execution of \"/" + command + "\" issued");
+    sender.sendMessage(IntavePlugin.prefix() + "已下发远程命令执行 \"/" + command + "\"");
   }
 
   @SubCommand(
     selectors = {"kick", "proxkick"},
     usage = "<player> [<message...>]",
     permission = "intave.command.proxy",
-    description = "Remotely kicks the target player from the proxy"
+    description = "从代理远程踢出目标玩家"
   )
   public void proxyKick(CommandSender sender, Player target, @Optional String[] message) {
     if (!plugin.proxy().isChannelOpen()) {
-      sender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Not connected to a proxy");
+      sender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "未连接到代理");
       return;
     }
-    String reason = message == null ? "None provided" : Arrays.stream(message).map(commandPart -> commandPart + " ").collect(Collectors.joining()).trim();
+    String reason = message == null ? "未提供" : Arrays.stream(message).map(commandPart -> commandPart + " ").collect(Collectors.joining()).trim();
     performPunishment(target, IntavePacketOutPunishment.PunishmentType.KICK, reason);
-    sender.sendMessage(IntavePlugin.prefix() + "Remote kick execution issued");
+    sender.sendMessage(IntavePlugin.prefix() + "已下发远程踢出");
   }
 
   @SubCommand(
     selectors = {"tempban", "proxtempban"},
     usage = "<player> [<message...>]",
     permission = "intave.command.proxy",
-    description = "Remotely temp-bans the target player from the proxy"
+    description = "从代理远程临时封禁目标玩家"
   )
   public void proxyTempBan(CommandSender sender, Player target, @Optional String[] reasonParts) {
     if (!plugin.proxy().isChannelOpen()) {
-      sender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Not connected to a proxy");
+      sender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "未连接到代理");
       return;
     }
-    String reason = reasonParts == null ? "None provided" : Arrays.stream(reasonParts).map(commandPart -> commandPart + " ").collect(Collectors.joining()).trim();
+    String reason = reasonParts == null ? "未提供" : Arrays.stream(reasonParts).map(commandPart -> commandPart + " ").collect(Collectors.joining()).trim();
     performPunishment(target, IntavePacketOutPunishment.PunishmentType.TEMP_BAN, reason);
-    sender.sendMessage(IntavePlugin.prefix() + "Remote temp-ban execution issued");
+    sender.sendMessage(IntavePlugin.prefix() + "已下发远程临时封禁");
   }
 
   @SubCommand(
     selectors = {"ban", "proxban"},
     usage = "<player> [<message...>]",
     permission = "intave.command.proxy",
-    description = "Remotely bans the target player from the proxy"
+    description = "从代理远程封禁目标玩家"
   )
   public void proxyBan(CommandSender sender, Player target, @Optional String[] reasonParts) {
     if (!plugin.proxy().isChannelOpen()) {
-      sender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Not connected to a proxy");
+      sender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "未连接到代理");
       return;
     }
-    String reason = reasonParts == null ? "None provided" : Arrays.stream(reasonParts).map(commandPart -> commandPart + " ").collect(Collectors.joining()).trim();
+    String reason = reasonParts == null ? "未提供" : Arrays.stream(reasonParts).map(commandPart -> commandPart + " ").collect(Collectors.joining()).trim();
     performPunishment(target, IntavePacketOutPunishment.PunishmentType.BAN, reason);
-    sender.sendMessage(IntavePlugin.prefix() + "Remote ban execution issued");
+    sender.sendMessage(IntavePlugin.prefix() + "已下发远程封禁");
   }
 
   private void performPunishment(

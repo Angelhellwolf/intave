@@ -20,7 +20,7 @@ public final class InternalDebugStage extends CommandStage {
 
   @SubCommand(
     selectors = "enable",
-    description = "Enable debug mode",
+    description = "启用调试模式",
     permission = "sibyl"
   )
   public void enableAll(User user, @Optional MessageCategory category) {
@@ -28,16 +28,16 @@ public final class InternalDebugStage extends CommandStage {
 
     if (category != null) {
       outputConfiguration.activateCategory(category);
-      user.player().sendMessage(ChatColor.GREEN + "Debug mode for " + category.description().toLowerCase(Locale.ROOT) + " activated");
+      user.player().sendMessage(ChatColor.GREEN + "已启用 " + category.description().toLowerCase(Locale.ROOT) + " 调试模式");
     } else {
       outputConfiguration.activateAllCategories();
-      user.player().sendMessage(ChatColor.GREEN + "All debug modes enabled.");
+      user.player().sendMessage(ChatColor.GREEN + "已启用全部调试模式。");
     }
   }
 
   @SubCommand(
     selectors = "disable",
-    description = "Disable debug mode",
+    description = "关闭调试模式",
     permission = "sibyl"
   )
   public void disableAll(User user, @Optional MessageCategory category) {
@@ -45,65 +45,65 @@ public final class InternalDebugStage extends CommandStage {
 
     if (category != null) {
       outputConfiguration.deactivateCategory(category);
-      user.player().sendMessage(ChatColor.GREEN + "Debug mode for " + category.description().toLowerCase(Locale.ROOT) + " deactivated");
+      user.player().sendMessage(ChatColor.GREEN + "已关闭 " + category.description().toLowerCase(Locale.ROOT) + " 调试模式");
     } else {
       outputConfiguration.deactivateAllCategories();
-      user.player().sendMessage(ChatColor.GREEN + "All debug modes disabled.");
+      user.player().sendMessage(ChatColor.GREEN + "已关闭全部调试模式。");
     }
   }
 
   @SubCommand(
     selectors = "color",
-    description = "Set color",
+    description = "设置颜色",
     permission = "sibyl"
   )
   public void setColor(User user, MessageCategory category, ChatColor color) {
     OutputConfiguration outputConfiguration = DebugBroadcast.configurationOf(user.id());
     outputConfiguration.setColor(category, color);
-    user.player().sendMessage(ChatColor.GREEN + "Color for " + category.description().toLowerCase(Locale.ROOT) + " set to " + color.name());
+    user.player().sendMessage(ChatColor.GREEN + category.description().toLowerCase(Locale.ROOT) + " 颜色已设为 " + color.name());
   }
 
   @SubCommand(
     selectors = "severity",
-    description = "Set required severity",
+    description = "设置最低严重级别",
     permission = "sibyl"
   )
   public void setMinimumSeverity(User user, MessageSeverity severity) {
     OutputConfiguration outputConfiguration = DebugBroadcast.configurationOf(user.id());
     outputConfiguration.setMinimumSeverity(severity);
-    user.player().sendMessage(ChatColor.GREEN + "Minimum severity set to " + severity.name());
+    user.player().sendMessage(ChatColor.GREEN + "最低严重级别已设为 " + severity.name());
   }
 
   @SubCommand(
     selectors = "detail",
-    description = "Set message",
+    description = "设置消息详情",
     permission = "sibyl"
   )
   public void setOutputDetail(User user, MessageDetail detail, @Optional MessageCategory category) {
     OutputConfiguration outputConfiguration = DebugBroadcast.configurationOf(user.id());
     if (category != null) {
       outputConfiguration.setMessageDetail(category, detail);
-      user.player().sendMessage(ChatColor.GREEN + "Detail for " + category.description().toLowerCase(Locale.ROOT) + " set to " + detail.name());
+      user.player().sendMessage(ChatColor.GREEN + category.description().toLowerCase(Locale.ROOT) + " 详情已设为 " + detail.name());
     } else {
       outputConfiguration.setDefaultMessageDetail(detail);
-      user.player().sendMessage(ChatColor.GREEN + "Detail set to " + detail.name());
+      user.player().sendMessage(ChatColor.GREEN + "详情已设为 " + detail.name());
     }
   }
 
   @SubCommand(
     selectors = "prefix",
-    description = "Set formatter",
+    description = "设置前缀格式",
     permission = "sibyl"
   )
   public void setFormatter(User user, PrefixDetail detail) {
     OutputConfiguration outputConfiguration = DebugBroadcast.configurationOf(user.id());
     outputConfiguration.setDefaultPrefixDetail(detail);
-    user.player().sendMessage(ChatColor.GREEN + "Prefix set to " + detail.name());
+    user.player().sendMessage(ChatColor.GREEN + "前缀已设为 " + detail.name());
   }
 
   @SubCommand(
     selectors = "settarget",
-    description = "Set target",
+    description = "设置目标",
     permission = "sibyl"
   )
   public void setTarget(User user, MessageCategory cat, @Optional Player[] targets) {
@@ -119,55 +119,55 @@ public final class InternalDebugStage extends CommandStage {
       }
       return false;
     });
-    user.player().sendMessage(ChatColor.GREEN + "Target set for " + cat.description().toLowerCase(Locale.ROOT));
+    user.player().sendMessage(ChatColor.GREEN + "已为 " + cat.description().toLowerCase(Locale.ROOT) + " 设置目标");
   }
 
   @SubCommand(
     selectors = "selftarget",
-    description = "Set self target",
+    description = "设置自身目标",
     permission = "sibyl"
   )
   public void setSelfTarget(User user, MessageCategory cat) {
     OutputConfiguration outputConfiguration = DebugBroadcast.configurationOf(user.id());
     outputConfiguration.addConstraint(cat, player -> player.equals(user.player()));
-    user.player().sendMessage(ChatColor.GREEN + "Self target set for " + cat.description().toLowerCase(Locale.ROOT));
+    user.player().sendMessage(ChatColor.GREEN + "已为 " + cat.description().toLowerCase(Locale.ROOT) + " 设置自身目标");
   }
 
   @SubCommand(
     selectors = "remtarget",
-    description = "Remove target",
+    description = "移除目标",
     permission = "sibyl"
   )
   public void removeTarget(User user, MessageCategory cat) {
     OutputConfiguration outputConfiguration = DebugBroadcast.configurationOf(user.id());
     outputConfiguration.removeConstraint(cat);
-    user.player().sendMessage(ChatColor.GREEN + "Target removed for " + cat.description().toLowerCase(Locale.ROOT));
+    user.player().sendMessage(ChatColor.GREEN + "已移除 " + cat.description().toLowerCase(Locale.ROOT) + " 的目标");
   }
 
   @SubCommand(
     selectors = "status",
-    description = "Remove self target",
+    description = "移除自身目标",
     permission = "sibyl"
   )
   public void status(User user) {
     OutputConfiguration outputConfiguration = DebugBroadcast.configurationOf(user.id());
     Player player = user.player();
-    player.sendMessage(IntavePlugin.prefix() + "Debug mode status");
+    player.sendMessage(IntavePlugin.prefix() + "调试模式状态");
     String prefixSelectorName = outputConfiguration.prefixSelector().name().toLowerCase(Locale.ROOT).replace("_", " ");
-    player.sendMessage(IntavePlugin.prefix() + ChatColor.GRAY + "Prefix is " + prefixSelectorName + ". Example: " + outputConfiguration.prefixSelector().formatPrefix(MessageSeverity.MEDIUM, "NAME") + "");
+    player.sendMessage(IntavePlugin.prefix() + ChatColor.GRAY + "前缀为 " + prefixSelectorName + "。示例: " + outputConfiguration.prefixSelector().formatPrefix(MessageSeverity.MEDIUM, "NAME") + "");
 
     for (MessageCategory category : MessageCategory.values()) {
       ChatColor color = outputConfiguration.colorOf(category);
-      String active = outputConfiguration.isActive(category) ? ChatColor.GREEN + "enabled" + ChatColor.GRAY : ChatColor.RED + "disabled" + ChatColor.GRAY;
+      String active = outputConfiguration.isActive(category) ? ChatColor.GREEN + "已启用" + ChatColor.GRAY : ChatColor.RED + "已关闭" + ChatColor.GRAY;
       String format = outputConfiguration.detailOf(category).name().toLowerCase(Locale.ROOT);
       String description = category.description().toLowerCase(Locale.ROOT);
-      player.sendMessage(color + " " + category.name() + ChatColor.GRAY + " (" + color + description + ChatColor.GRAY + ")" + " " + active + " in " + format + " format");
+      player.sendMessage(color + " " + category.name() + ChatColor.GRAY + "（" + color + description + ChatColor.GRAY + "）" + " " + active + "，格式 " + format);
     }
   }
 
   @SubCommand(
     selectors = "jump",
-    description = "Cause a physics false flag, resulting in a jump",
+    description = "触发物理误判以产生跳跃",
     permission = "sibyl"
   )
   public void falseFlag(User user) {

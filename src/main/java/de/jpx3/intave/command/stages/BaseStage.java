@@ -67,14 +67,14 @@ public final class BaseStage extends CommandStage {
   @SubCommand(
     selectors = "violations",
     usage = "<player...>",
-    description = "Toggle simple violation messages",
+    description = "切换简易违规消息",
     permission = "intave.command.verbose"
   )
   public void violationCommand(User user, @Optional Player[] selectedPlayers) {
     Player player = user.player();
     if (user.receives(MessageChannel.VIOLATION_FINE)) {
       user.toggleReceive(MessageChannel.VIOLATION_FINE);
-      player.sendMessage(IntavePlugin.prefix() + "You are " + ChatColor.RED + "no longer " + IntavePlugin.defaultColor() + "receiving fine violation messages");
+      player.sendMessage(IntavePlugin.prefix() + "你" + ChatColor.RED + "不再" + IntavePlugin.defaultColor() + "接收详细违规消息");
     }
 
     boolean receivesSimple = user.receives(MessageChannel.VIOLATION_SIMPLE);
@@ -84,7 +84,7 @@ public final class BaseStage extends CommandStage {
         List<UUID> uniqueIds = Arrays.stream(selectedPlayers).map(Entity::getUniqueId).distinct().collect(Collectors.toList());
         user.setChannelConstraint(MessageChannel.VIOLATION_SIMPLE, player1 -> uniqueIds.contains(player1.getUniqueId()));
         String names = ChatColor.RED + describePlayerList(Arrays.stream(selectedPlayers).map(Entity::getName).map(s -> ChatColor.RED + s).collect(Collectors.toList()));
-        player.sendMessage(IntavePlugin.prefix() + "You have specified simple violation messages to " + names);
+        player.sendMessage(IntavePlugin.prefix() + "已将简易违规消息限定为 " + names);
         return;
       }
     }
@@ -93,16 +93,16 @@ public final class BaseStage extends CommandStage {
     user.removeChannelConstraint(MessageChannel.VIOLATION_SIMPLE);
 
     if (receivesSimple) {
-      player.sendMessage(IntavePlugin.prefix() + "You are " + ChatColor.RED + "no longer " + IntavePlugin.defaultColor() + "receiving simple violation messages");
+      player.sendMessage(IntavePlugin.prefix() + "你" + ChatColor.RED + "不再" + IntavePlugin.defaultColor() + "接收简易违规消息");
     } else {
       if (selectedPlayers == null) {
-        String target = ChatColor.RED + "everyone";
-        player.sendMessage(IntavePlugin.prefix() + "You are " + ChatColor.GREEN + "now " + IntavePlugin.defaultColor() + "receiving simple violation messages for " + target);
+        String target = ChatColor.RED + "所有人";
+        player.sendMessage(IntavePlugin.prefix() + "你" + ChatColor.GREEN + "现在" + IntavePlugin.defaultColor() + "接收 " + target + " 的简易违规消息");
       } else {
         List<UUID> uniqueIds = Arrays.stream(selectedPlayers).map(Entity::getUniqueId).distinct().collect(Collectors.toList());
         user.setChannelConstraint(MessageChannel.VIOLATION_SIMPLE, player1 -> uniqueIds.contains(player1.getUniqueId()));
         String names = ChatColor.RED + describePlayerList(Arrays.stream(selectedPlayers).map(Entity::getName).map(s -> ChatColor.RED + s).collect(Collectors.toList()));
-        player.sendMessage(IntavePlugin.prefix() + "You are " + ChatColor.GREEN + "now" + IntavePlugin.defaultColor() + " receiving simple violation messages for " + names);
+        player.sendMessage(IntavePlugin.prefix() + "你" + ChatColor.GREEN + "现在" + IntavePlugin.defaultColor() + "接收 " + names + " 的简易违规消息");
       }
     }
   }*/
@@ -110,14 +110,14 @@ public final class BaseStage extends CommandStage {
   @SubCommand(
     selectors = "verbose",
     usage = "<player...>",
-    description = "Toggle fine violation messages",
+    description = "切换详细违规消息",
     permission = "intave.command.verbose"
   )
   public void verboseCommand(User user, @Optional Player[] selectedPlayers) {
     Player player = user.player();
     if (user.receives(MessageChannel.VIOLATION_SIMPLE)) {
       user.toggleReceive(MessageChannel.VIOLATION_SIMPLE);
-      player.sendMessage(IntavePlugin.prefix() + "You are " + ChatColor.RED + "no longer " + IntavePlugin.defaultColor() + "receiving simple violation messages");
+      player.sendMessage(IntavePlugin.prefix() + "你" + ChatColor.RED + "不再" + IntavePlugin.defaultColor() + "接收简易违规消息");
     }
 
     boolean receivesVerbose = user.receives(MessageChannel.VIOLATION_FINE);
@@ -130,7 +130,7 @@ public final class BaseStage extends CommandStage {
         List<UUID> uniqueIds = Arrays.stream(selectedPlayers).map(Entity::getUniqueId).distinct().collect(Collectors.toList());
         user.setChannelConstraint(MessageChannel.VIOLATION_FINE, player1 -> uniqueIds.contains(player1.getUniqueId()));
         String names = ChatColor.RED + describePlayerList(Arrays.stream(selectedPlayers).map(Entity::getName).map(s -> ChatColor.RED + s).collect(Collectors.toList()));
-        player.sendMessage(IntavePlugin.prefix() + "You have specified " + modeName + " fine violation output to " + names);
+        player.sendMessage(IntavePlugin.prefix() + "已将 " + modeName + " 详细违规输出限定为 " + names);
         return;
       }
     } /*else if (selectedPlayers == null && !IntavePlugin.singletonInstance().sibyl().isAuthenticated(player)) {
@@ -142,16 +142,16 @@ public final class BaseStage extends CommandStage {
     user.removeChannelConstraint(MessageChannel.VIOLATION_FINE);
 
     if (receivesVerbose) {
-      player.sendMessage(IntavePlugin.prefix() + "You are " + ChatColor.RED + "no longer " + IntavePlugin.defaultColor() + "receiving fine violation output");
+      player.sendMessage(IntavePlugin.prefix() + "你" + ChatColor.RED + "不再" + IntavePlugin.defaultColor() + "接收详细违规输出");
     } else {
       if (selectedPlayers == null) {
-        String target = ChatColor.RED + "everyone";
-        player.sendMessage(IntavePlugin.prefix() + "You are " + ChatColor.GREEN + "now " + IntavePlugin.defaultColor() + "receiving fine violation output for " + target);
+        String target = ChatColor.RED + "所有人";
+        player.sendMessage(IntavePlugin.prefix() + "你" + ChatColor.GREEN + "现在" + IntavePlugin.defaultColor() + "接收 " + target + " 的详细违规输出");
       } else {
         List<UUID> uniqueIds = Arrays.stream(selectedPlayers).map(Entity::getUniqueId).distinct().collect(Collectors.toList());
         user.setChannelConstraint(MessageChannel.VIOLATION_FINE, player1 -> uniqueIds.contains(player1.getUniqueId()));
         String names = ChatColor.RED + describePlayerList(Arrays.stream(selectedPlayers).map(Entity::getName).map(s -> ChatColor.RED + s).collect(Collectors.toList()));
-        player.sendMessage(IntavePlugin.prefix() + "You are " + ChatColor.GREEN + "now" + IntavePlugin.defaultColor() + " receiving fine violation output for " + names);
+        player.sendMessage(IntavePlugin.prefix() + "你" + ChatColor.GREEN + "现在" + IntavePlugin.defaultColor() + "接收 " + names + " 的详细违规输出");
       }
     }
   }
@@ -159,7 +159,7 @@ public final class BaseStage extends CommandStage {
   @SubCommand(
     selectors = {"cms", "combatmodifiers"},
     usage = "",
-    description = "Toggle combat modifier debugs",
+    description = "切换战斗修正调试",
     permission = "intave.command.combatmodifiers"
   )
   public void combatModifiersCommand(User user) {
@@ -168,9 +168,9 @@ public final class BaseStage extends CommandStage {
 
     user.toggleReceive(MessageChannel.COMBAT_MODIFIERS);
     if (receivesCombatModifiers) {
-      player.sendMessage(IntavePlugin.prefix() + "You are " + ChatColor.RED + "no longer " + IntavePlugin.defaultColor() + "receiving combat modifier debugs");
+      player.sendMessage(IntavePlugin.prefix() + "你" + ChatColor.RED + "不再" + IntavePlugin.defaultColor() + "接收战斗修正调试信息");
     } else {
-      player.sendMessage(IntavePlugin.prefix() + "You are " + ChatColor.GREEN + "now " + IntavePlugin.defaultColor() + "receiving combat modifier debugs");
+      player.sendMessage(IntavePlugin.prefix() + "你" + ChatColor.GREEN + "现在" + IntavePlugin.defaultColor() + "接收战斗修正调试信息");
     }
   }
 
@@ -178,18 +178,18 @@ public final class BaseStage extends CommandStage {
     int size = elements.size();
     String defaultColor = IntavePlugin.defaultColor();
     if (size == 0) {
-      return defaultColor + "nobody";
+      return defaultColor + "无人";
     } else if (size == 1) {
       return elements.get(0);
     } else {
-      return defaultColor + String.join(defaultColor + ", ", elements.subList(0, size - 1)) + defaultColor + " and " + elements.get(size - 1);
+      return defaultColor + String.join(defaultColor + "、", elements.subList(0, size - 1)) + defaultColor + " 和 " + elements.get(size - 1);
     }
   }
 
   @SubCommand(
     selectors = "debug",
     usage = "<debug type>",
-    description = "Toggle debug messages",
+    description = "切换调试消息",
     permission = "intave.command.verbose"
   )
   public void debug(User user, DebugType type) {
@@ -201,9 +201,9 @@ public final class BaseStage extends CommandStage {
 
     String cleanType = type.name().toLowerCase().replace("_", " ");
     if (receivesDebug) {
-      player.sendMessage(IntavePlugin.prefix() + "You are " + ChatColor.RED + "no longer " + IntavePlugin.defaultColor() + "receiving " + ChatColor.RED + cleanType + IntavePlugin.defaultColor() + " debug messages");
+      player.sendMessage(IntavePlugin.prefix() + "你" + ChatColor.RED + "不再" + IntavePlugin.defaultColor() + "接收 " + ChatColor.RED + cleanType + IntavePlugin.defaultColor() + " 调试消息");
     } else {
-      player.sendMessage(IntavePlugin.prefix() + "You are " + ChatColor.GREEN + "now " + IntavePlugin.defaultColor() + "receiving " + ChatColor.RED + cleanType + IntavePlugin.defaultColor() + " debug messages");
+      player.sendMessage(IntavePlugin.prefix() + "你" + ChatColor.GREEN + "现在" + IntavePlugin.defaultColor() + "接收 " + ChatColor.RED + cleanType + IntavePlugin.defaultColor() + " 调试消息");
     }
   }
 
@@ -238,7 +238,7 @@ public final class BaseStage extends CommandStage {
     selectors = {"cps", "clicks"},
     permission = "intave.command.cps",
     usage = "[<player...>]",
-    description = "Display click visualizer"
+    description = "显示点击可视化"
   )
   public void cpsCommand(User user, @Optional Player selectedPlayer) {
     Player player = user.player();
@@ -254,12 +254,12 @@ public final class BaseStage extends CommandStage {
 //      if (isSameActionTarget) {
 //      }
       actionBar.unsubscribe(user);
-      player.sendMessage(IntavePlugin.prefix() + "Unsubscribed from " + ChatColor.RED + selectedPlayer.getName() + IntavePlugin.defaultColor() + "'s clicks");
+      player.sendMessage(IntavePlugin.prefix() + "已取消订阅 " + ChatColor.RED + selectedPlayer.getName() + IntavePlugin.defaultColor() + " 的点击");
       return;
     }
 
     actionBar.subscribe(user, UserRepository.userOf(selectedPlayer), DisplayType.CLICKS);
-    player.sendMessage(IntavePlugin.prefix() + "Subscribed to " + ChatColor.RED + selectedPlayer.getName() + IntavePlugin.defaultColor() + "'s clicks");
+    player.sendMessage(IntavePlugin.prefix() + "已订阅 " + ChatColor.RED + selectedPlayer.getName() + IntavePlugin.defaultColor() + " 的点击");
   }
 
   @SubCommand(
@@ -271,14 +271,14 @@ public final class BaseStage extends CommandStage {
     if (!BukkitPermissionCheck.permissionCheck(sender, "intave.command.verbose")) {
       showAllCommands(sender);
     } else {
-      sender.sendMessage(IntavePlugin.prefix() + "Did you mean verbose or notify?");
+      sender.sendMessage(IntavePlugin.prefix() + "你是想用 verbose 还是 notify？");
     }
   }
 
   @SubCommand(
     selectors = {"notify", "notifications"},
     usage = "[<player...>]",
-    description = "Toggle notifications",
+    description = "切换通知",
     permission = "intave.command.notify"
   )
   public void notifyCommand(User user, @Optional Player[] selectedPlayers) {
@@ -290,7 +290,7 @@ public final class BaseStage extends CommandStage {
         List<UUID> uniqueIds = Arrays.stream(selectedPlayers).map(Entity::getUniqueId).distinct().collect(Collectors.toList());
         user.setChannelConstraint(MessageChannel.NOTIFY, player1 -> uniqueIds.contains(player1.getUniqueId()));
         String names = ChatColor.RED + describePlayerList(Arrays.stream(selectedPlayers).map(Entity::getName).map(s -> ChatColor.RED + s).collect(Collectors.toList()));
-        player.sendMessage(IntavePlugin.prefix() + "You have specified notifications to " + names);
+        player.sendMessage(IntavePlugin.prefix() + "已将通知限定为 " + names);
         return;
       }
     }
@@ -299,16 +299,16 @@ public final class BaseStage extends CommandStage {
     user.removeChannelConstraint(MessageChannel.NOTIFY);
 
     if (receivesNotify) {
-      player.sendMessage(IntavePlugin.prefix() + "You are " + ChatColor.RED + "no longer " + IntavePlugin.defaultColor() + "receiving notifications");
+      player.sendMessage(IntavePlugin.prefix() + "你" + ChatColor.RED + "不再" + IntavePlugin.defaultColor() + "接收通知");
     } else {
       if (selectedPlayers == null) {
-        String target = ChatColor.RED + "everyone";
-        player.sendMessage(IntavePlugin.prefix() + "You are " + ChatColor.GREEN + "now " + IntavePlugin.defaultColor() + "receiving notifications for " + target);
+        String target = ChatColor.RED + "所有人";
+        player.sendMessage(IntavePlugin.prefix() + "你" + ChatColor.GREEN + "现在" + IntavePlugin.defaultColor() + "接收 " + target + " 的通知");
       } else {
         List<UUID> uniqueIds = Arrays.stream(selectedPlayers).map(Entity::getUniqueId).distinct().collect(Collectors.toList());
         user.setChannelConstraint(MessageChannel.NOTIFY, player1 -> uniqueIds.contains(player1.getUniqueId()));
         String names = ChatColor.RED + describePlayerList(Arrays.stream(selectedPlayers).map(Entity::getName).map(s -> ChatColor.RED + s).collect(Collectors.toList()));
-        player.sendMessage(IntavePlugin.prefix() + "You are " + ChatColor.GREEN + "now" + IntavePlugin.defaultColor() + " receiving notifications for " + names);
+        player.sendMessage(IntavePlugin.prefix() + "你" + ChatColor.GREEN + "现在" + IntavePlugin.defaultColor() + "接收 " + names + " 的通知");
       }
     }
   }
@@ -322,16 +322,16 @@ public final class BaseStage extends CommandStage {
       User user = UserRepository.userOf(player);
       ProtocolMetadata protocol = user.meta().protocol();
       playerVersion = protocol.versionString() + "@" + protocol.protocolVersion();
-      sender.sendMessage(ChatColor.GRAY + "Player is " + ChatColor.WHITE + playerVersion);
+      sender.sendMessage(ChatColor.GRAY + "玩家版本为 " + ChatColor.WHITE + playerVersion);
     } else {
-      sender.sendMessage(ChatColor.GRAY + "Run this command in-game to display client version");
+      sender.sendMessage(ChatColor.GRAY + "请在游戏内执行此命令以显示客户端版本");
     }
     String intaveVersion = IntavePlugin.fullVersion();
     String serverVersion = Bukkit.getName() + "@" + Bukkit.getVersion();
     String protocolLibVersion = ProtocolLibrary.getPlugin().getDescription().getVersion();
-    sender.sendMessage(ChatColor.GRAY + "Spigot is " + ChatColor.WHITE + serverVersion);
-    sender.sendMessage(ChatColor.GRAY + "ProtocolLib is " + ChatColor.WHITE + protocolLibVersion);
-    sender.sendMessage(ChatColor.GRAY + "Intave is " + ChatColor.WHITE + intaveVersion);
+    sender.sendMessage(ChatColor.GRAY + "服务端软件 Spigot 版本为 " + ChatColor.WHITE + serverVersion);
+    sender.sendMessage(ChatColor.GRAY + "数据包组件 ProtocolLib 版本为 " + ChatColor.WHITE + protocolLibVersion);
+    sender.sendMessage(ChatColor.GRAY + "反作弊插件 Intave 版本为 " + ChatColor.WHITE + intaveVersion);
 
     TextComponent message = new TextComponent("[Copy report message to chat]");
     message.setColor(net.md_5.bungee.api.ChatColor.GRAY);
@@ -350,7 +350,7 @@ public final class BaseStage extends CommandStage {
     recorder.setRecordingStatus(user, !recording);
 
     if (recording) {
-      user.player().sendMessage(ChatColor.RED + "Stopped recording..");
+      user.player().sendMessage(ChatColor.RED + "已停止录制..");
 
       File file;
       File resourcesFolder = new File(IntavePlugin.singletonInstance().dataFolder(), "../../../../src/test/resources");
@@ -369,23 +369,23 @@ public final class BaseStage extends CommandStage {
       try {
         recorder.saveRecordingDataTo(user, file);
       } catch (IOException e) {
-        user.player().sendMessage(ChatColor.RED + "Failed to save recording: " + e.getMessage());
+        user.player().sendMessage(ChatColor.RED + "保存录制失败: " + e.getMessage());
         return;
       }
       try {
-        user.player().sendMessage(ChatColor.GREEN + "Saved recording to " + file.getCanonicalPath());
+        user.player().sendMessage(ChatColor.GREEN + "录制已保存至 " + file.getCanonicalPath());
       } catch (IOException e) {
-        user.player().sendMessage(ChatColor.GREEN + "Saved recording to " + file.getAbsolutePath());
+        user.player().sendMessage(ChatColor.GREEN + "录制已保存至 " + file.getAbsolutePath());
       }
     } else {
-      user.player().sendMessage(ChatColor.GREEN + "Started recording..");
+      user.player().sendMessage(ChatColor.GREEN + "已开始录制..");
     }
   }
 
   @SubCommand(
     selectors = {"history", "logs"},
     usage = "<player>",
-    description = "Show violation history",
+    description = "显示违规历史",
     permission = "intave.command.history"
   )
   public void historyCommand(CommandSender sender, String playerName) {
@@ -397,14 +397,14 @@ public final class BaseStage extends CommandStage {
       LongTermViolationStorage violationStorage = targetUser.storageOf(LongTermViolationStorage.class);
       outputHistory(sender, name, id, violationStorage);
     } else {
-      sender.sendMessage(IntavePlugin.prefix() + ChatColor.YELLOW + "Loading history..");
+      sender.sendMessage(IntavePlugin.prefix() + ChatColor.YELLOW + "正在加载历史..");
       ProfileLookup.lookupIdFromName(playerName, uuid -> {
         if (uuid == null) {
-          sender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Player \"" + playerName + "\" not found");
+          sender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "未找到玩家 \"" + playerName + "\"");
         } else {
           Modules.storage().nullableManualStorageRequest(uuid, playerStorage -> {
             if (playerStorage == null) {
-              sender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + playerName + " hasn't played yet");
+              sender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + playerName + " 尚未进过服");
             } else {
               outputHistory(sender, playerName, uuid, playerStorage.storageOf(LongTermViolationStorage.class));
             }
@@ -417,7 +417,7 @@ public final class BaseStage extends CommandStage {
   @SubCommand(
     selectors = "info",
     usage = "<player>",
-    description = "Show player info",
+    description = "显示玩家信息",
     permission = "intave.command.verbose"
   )
   public void infoCommand(CommandSender sender, Player target) {
@@ -439,28 +439,28 @@ public final class BaseStage extends CommandStage {
     UUID offlineTest = UUID.nameUUIDFromBytes(("OfflinePlayer:" + target.getName()).getBytes());
     boolean isOffline = target.getUniqueId().equals(offlineTest);
 
-    sender.sendMessage(IntavePlugin.prefix() + "Information");
+    sender.sendMessage(IntavePlugin.prefix() + "玩家信息");
     // Name, UUID, Brand/Locale, Version, Latency, Trust, Playtime, Joins, Mitigated,
-    sender.sendMessage(ChatColor.GRAY + "Name: " + ChatColor.RED + target.getName());
-    sender.sendMessage(ChatColor.GRAY + "UUID: " + ChatColor.RED + target.getUniqueId() + (isOffline ? ChatColor.GRAY + " (offline)" : ""));
-    sender.sendMessage(ChatColor.GRAY + "Brand/Locale: " + ChatColor.RED + brand + ChatColor.GRAY + "/" + ChatColor.RED + language);
-    sender.sendMessage(ChatColor.GRAY + "Version: " + ChatColor.RED + versionString + ChatColor.GRAY + " (" + ChatColor.RED + protocolVersion + ChatColor.GRAY + ")");
-    sender.sendMessage(ChatColor.GRAY + "Latency: " + ChatColor.RED + latency + ChatColor.GRAY + "ms (+-" + ChatColor.RED + latencyJitter + ChatColor.GRAY + "ms)");
-    sender.sendMessage(ChatColor.GRAY + "Trust: " + trustFactor.coloredBaseName());
+    sender.sendMessage(ChatColor.GRAY + "名称: " + ChatColor.RED + target.getName());
+    sender.sendMessage(ChatColor.GRAY + "玩家 UUID: " + ChatColor.RED + target.getUniqueId() + (isOffline ? ChatColor.GRAY + " (离线)" : ""));
+    sender.sendMessage(ChatColor.GRAY + "品牌/语言: " + ChatColor.RED + brand + ChatColor.GRAY + "/" + ChatColor.RED + language);
+    sender.sendMessage(ChatColor.GRAY + "版本: " + ChatColor.RED + versionString + ChatColor.GRAY + " (" + ChatColor.RED + protocolVersion + ChatColor.GRAY + ")");
+    sender.sendMessage(ChatColor.GRAY + "延迟: " + ChatColor.RED + latency + ChatColor.GRAY + "ms (±" + ChatColor.RED + latencyJitter + ChatColor.GRAY + "ms)");
+    sender.sendMessage(ChatColor.GRAY + "信任: " + trustFactor.coloredBaseName());
 
     String activePlaytimeDisplay = DurationTranslator.translateMinutes(activePlaytime * 60 * 1000L);
     String afkPlaytimeDisplay = DurationTranslator.translateMinutes(afkPlaytime * 60 * 1000L);
 
-    sender.sendMessage(ChatColor.GRAY + "Playtime (active/afk): " + ChatColor.RED + activePlaytimeDisplay + ChatColor.GRAY + "/" + ChatColor.RED + afkPlaytimeDisplay);
-    sender.sendMessage(ChatColor.GRAY + "Joins: " + ChatColor.RED + joins);
-    sender.sendMessage(ChatColor.GRAY + "Nerfed: " + ChatColor.RED + mitigated);
+    sender.sendMessage(ChatColor.GRAY + "游玩时长 (活跃/挂机): " + ChatColor.RED + activePlaytimeDisplay + ChatColor.GRAY + "/" + ChatColor.RED + afkPlaytimeDisplay);
+    sender.sendMessage(ChatColor.GRAY + "加入次数: " + ChatColor.RED + joins);
+    sender.sendMessage(ChatColor.GRAY + "已削弱: " + ChatColor.RED + mitigated);
   }
 
   private void outputHistory(CommandSender sender, String name, UUID id, LongTermViolationStorage violationStorage) {
     StorageViolationEvents violations = violationStorage.violations();
-    sender.sendMessage(String.format("%sHistory of " + ChatColor.RED + "%s%s:", IntavePlugin.prefix(), name, IntavePlugin.defaultColor()));
+    sender.sendMessage(String.format("%s" + ChatColor.RED + "%s%s 的历史:", IntavePlugin.prefix(), name, IntavePlugin.defaultColor()));
     if (violations.isEmpty()) {
-      sender.sendMessage(IntavePlugin.prefix() + ChatColor.GREEN + "No violations found");
+      sender.sendMessage(IntavePlugin.prefix() + ChatColor.GREEN + "未发现违规");
       return;
     }
     printHistory(sender, "Reach", violations.fromCheck("attackraytrace"));
@@ -481,13 +481,13 @@ public final class BaseStage extends CommandStage {
     }
     if (violations.size() == 1) {
       StorageViolationEvent firstViolation = violations.first();
-      String baseMessage = MessageFormat.format("{0}- detected for using {1}{2}{0} {3}", IntavePlugin.defaultColor(), ChatColor.RED, cheat, durationToString(firstViolation.timePassedSince()));
+      String baseMessage = MessageFormat.format("{0}- 检测到使用 {1}{2}{0} {3}", IntavePlugin.defaultColor(), ChatColor.RED, cheat, durationToString(firstViolation.timePassedSince()));
       String defaultColor = IntavePlugin.defaultColor();
       TextComponent textComponent = new TextComponent(baseMessage);
       textComponent.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TextComponent[]{
-        new TextComponent(defaultColor + "Check " + ChatColor.RED + correctlyFormattedCheckName(firstViolation.checkName())),
-        new TextComponent(defaultColor + " reached " + ChatColor.RED + firstViolation.violationLevel() + defaultColor + "VL"),
-        new TextComponent(defaultColor + " on " + ChatColor.RED + dateFormat(firstViolation.timestamp())),
+        new TextComponent(defaultColor + "检测 " + ChatColor.RED + correctlyFormattedCheckName(firstViolation.checkName())),
+        new TextComponent(defaultColor + " 达到 " + ChatColor.RED + firstViolation.violationLevel() + defaultColor + "VL"),
+        new TextComponent(defaultColor + " 于 " + ChatColor.RED + dateFormat(firstViolation.timestamp())),
       }));
       if (sender instanceof Player) {
         ((Player) sender).spigot().sendMessage(textComponent);
@@ -497,16 +497,16 @@ public final class BaseStage extends CommandStage {
       return;
     }
 
-    String baseMessage = IntavePlugin.defaultColor() + "- detected multiple times for using " + ChatColor.RED + cheat + IntavePlugin.defaultColor() + ", last was " + durationToString(violations.newest().timePassedSince());
+    String baseMessage = IntavePlugin.defaultColor() + "- 多次检测到使用 " + ChatColor.RED + cheat + IntavePlugin.defaultColor() + "，最近一次 " + durationToString(violations.newest().timePassedSince());
     String defaultColor = IntavePlugin.defaultColor();
     TextComponent newLine = new TextComponent(ComponentSerializer.parse("{text: \"\n\"}"));
     TextComponent[] textComponents = new TextComponent[violations.size()];
     int i = 0;
     for (StorageViolationEvent violation : violations) {
       TextComponent textComponent = new TextComponent(
-        new TextComponent(defaultColor + "Check " + ChatColor.RED + correctlyFormattedCheckName(violation.checkName())),
-        new TextComponent(defaultColor + " reached " + ChatColor.RED + violation.violationLevel() + defaultColor + "VL"),
-        new TextComponent(defaultColor + " on " + ChatColor.RED + dateFormat(violation.timestamp()))
+        new TextComponent(defaultColor + "检测 " + ChatColor.RED + correctlyFormattedCheckName(violation.checkName())),
+        new TextComponent(defaultColor + " 达到 " + ChatColor.RED + violation.violationLevel() + defaultColor + "VL"),
+        new TextComponent(defaultColor + " 于 " + ChatColor.RED + dateFormat(violation.timestamp()))
       );
       if (i != violations.size() - 1) {
         textComponent.addExtra(newLine);
@@ -541,18 +541,18 @@ public final class BaseStage extends CommandStage {
     long hours = minutes / 60;
     long days = hours / 24;
     if (days > 0) {
-      return days + " days ago";
+      return days + " 天前";
     }
     if (hours > 0) {
-      return hours + " hours ago";
+      return hours + " 小时前";
     }
     if (minutes > 0) {
-      return minutes + " minutes ago";
+      return minutes + " 分钟前";
     }
     if (seconds > 0) {
-      return seconds + " seconds ago";
+      return seconds + " 秒前";
     }
-    return "a few seconds ago";
+    return "几秒前";
   }
 
   private StorageViolationEvents filterByCheck(String check, StorageViolationEvents allViolations) {
@@ -566,7 +566,7 @@ public final class BaseStage extends CommandStage {
   @SubCommand(
     selectors = "version",
     usage = "",
-    description = "Show version info"
+    description = "显示版本信息"
   )
   public void versionCommand(CommandSender commandSender) {
     sendVersionMessage(commandSender);
@@ -597,7 +597,7 @@ public final class BaseStage extends CommandStage {
   @SubCommand(
     selectors = "cloud",
     usage = "",
-    description = "Access cloud related features",
+    description = "云端相关功能",
     permission = "intave.command.cloud"
   )
   @Forward(
@@ -622,7 +622,7 @@ public final class BaseStage extends CommandStage {
   @SubCommand(
     selectors = "diagnostics",
     usage = "",
-    description = "Runtime information and diagnostics tools",
+    description = "运行时信息与诊断工具",
     permission = "intave.command.diagnostics.*"
   )
   @Forward(
@@ -646,7 +646,7 @@ public final class BaseStage extends CommandStage {
   @SubCommand(
     selectors = {"performance", "timings"},
     usage = "",
-    description = "Performance data output",
+    description = "性能数据输出",
     permission = "intave.command.diagnostics.*"
   )
   @Forward(
@@ -659,7 +659,7 @@ public final class BaseStage extends CommandStage {
   @SubCommand(
     selectors = "internals",
     usage = "",
-    description = "Console-reserved commands",
+    description = "控制台专用命令",
     permission = "intave.command.internals.*"
   )
   @Forward(
@@ -684,19 +684,19 @@ public final class BaseStage extends CommandStage {
     IntaveVersion versionInformation = IntavePlugin.singletonInstance().versions().versionInformation(IntavePlugin.versionTag());
     String version;
     if (!hasVersionViewPermission) {
-      version = "(version hidden)";
+      version = "（版本已隐藏）";
     } else if (versionInformation != null) {
       boolean outdated = versionInformation.outdated();
-      version = IntavePlugin.fullVersion() + " (" + (outdated ? "outdated, " : "") + DurationTranslator.translateHours(System.currentTimeMillis() - versionInformation.release()) + " old)";
+      version = IntavePlugin.fullVersion() + "（" + (outdated ? "已过时，" : "") + DurationTranslator.translateHours(System.currentTimeMillis() - versionInformation.release()) + " 前）";
     } else {
-      version = IntavePlugin.fullVersion() + " (unknown version)";
+      version = IntavePlugin.fullVersion() + "（未知版本）";
     }
 
     String prefix = IntavePlugin.prefix();
     player.sendMessage(new String[]{
-      prefix + "Running Intave " + version,
-      prefix + "Serving as automated cheat-removal and defense tool",
-      prefix + "Visit " + ChatColor.UNDERLINE + "intave.de" + IntavePlugin.defaultColor() + " for more information",
+      prefix + "正在运行 Intave " + version,
+      prefix + "用作自动化反作弊与防御工具",
+      prefix + "访问 " + ChatColor.UNDERLINE + "intave.de" + IntavePlugin.defaultColor() + " 了解更多",
     });
   }
 

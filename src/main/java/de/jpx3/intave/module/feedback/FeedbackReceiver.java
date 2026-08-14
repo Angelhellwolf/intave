@@ -65,8 +65,8 @@ public final class FeedbackReceiver extends Module {
       connection.eligibleForTransactionTimeout &&
       FaultKicks.IGNORING_FEEDBACK
     ) {
-      IntaveLogger.logger().error(player.getName() + " is not responding to any feedback packets");
-      user.kick("Not responding to feedback packets");
+      IntaveLogger.logger().error(player.getName() + " 未响应任何反馈数据包");
+      user.kick("未响应反馈数据包");
       if (IntaveControl.NETTY_DUMP_ON_TIMEOUT) {
         dumpNettyThreads();
       }
@@ -84,7 +84,7 @@ public final class FeedbackReceiver extends Module {
           }
         }
         if (containsIntave) {
-          System.out.println("Thread: " + thread.getName());
+          System.out.println("线程：" + thread.getName());
           Exception exception = new Exception();
           exception.setStackTrace(stackTraceElements);
           exception.printStackTrace();
@@ -154,8 +154,8 @@ public final class FeedbackReceiver extends Module {
         return;
       }
       activeGenerator = IdGeneratorMode.highestCompatibility();
-      IntaveLogger.logger().info("Detected foreign transaction id " + userKey + " for " + player.getName());
-      IntaveLogger.logger().info("Switching to highest compatibility transaction id selection mode");
+      IntaveLogger.logger().info("检测到玩家 " + player.getName() + " 使用外部事务 ID " + userKey);
+      IntaveLogger.logger().info("正在切换到最高兼容性的事务 ID 选择模式");
     }
   }
 
@@ -183,7 +183,7 @@ public final class FeedbackReceiver extends Module {
 
     if (!hasValidUserKey(packet, noPingMask)) {
       if (IntaveControl.DEBUG_FEEDBACK_PACKETS) {
-        System.out.println("Received " + packet.getIntegers().readSafely(0) + " from " + player.getName() + " but no user key was found");
+        System.out.println("从 " + player.getName() + " 收到 " + packet.getIntegers().readSafely(0) + "，但找不到用户密钥");
       }
       return;
     }
@@ -192,7 +192,7 @@ public final class FeedbackReceiver extends Module {
     FeedbackRequest<?> response = feedbackQueue.peek(userKey);
     if (response == null) {
       if (IntaveControl.DEBUG_FEEDBACK_PACKETS) {
-        System.out.println("Received " + userKey + "/" + packet.getIntegers().readSafely(0) + " from " + player.getName() + " but no request was found");
+        System.out.println("从 " + player.getName() + " 收到 " + userKey + "/" + packet.getIntegers().readSafely(0) + "，但找不到对应请求");
       }
       return;
     }
@@ -201,31 +201,26 @@ public final class FeedbackReceiver extends Module {
     long received = response.num();
 
     if (IntaveControl.DEBUG_FEEDBACK_PACKETS) {
-      System.out.println("Expected: " + expected + ", received: " + received);
-    }
-
-    if (received != expected) {
-      for (FeedbackRequest<?> missedRequest : feedbackQueue.pollUpTo(Math.max(expected, received))) {
-        if (IntaveControl.DEBUG_FEEDBACK_PACKETS) {
-          System.out.println("Emulating " + missedRequest.userKey() + "/" + missedRequest.num() + " for " + player.getName());
-        }
-        receiveRequest(user, missedRequest);
-      }
-      user.noteFeedbackFault();
+      System.out.println("预期值：" + expected + "，实际值：" + received);
     }
 
     if (IntaveControl.DEBUG_FEEDBACK_PACKETS) {
-      System.out.println("Received " + userKey + "/" + response.num() + " from " + player.getName());
+      System.out.println("从 " + player.getName() + " 收到 " + userKey + "/" + response.num());
 //      Synchronizer.synchronize(() -> {
 //        player.sendMessage("Received " + userKey + "/" +response.num());
 //      });
     }
 
-    FeedbackRequest<?> poll = feedbackQueue.poll();
-    if (poll != response) {
-      throw new IllegalStateException("Polling from feedback queue did not return the expected request");
+    response.markAcknowledgedByClient();
+    for (FeedbackRequest<?> acknowledged : feedbackQueue.pollAcknowledged()) {
+      receiveAcknowledgedRequest(user, acknowledged);
     }
 
+    event.setCancelled(true);
+  }
+
+  private void receiveAcknowledgedRequest(User user, FeedbackRequest<?> response) {
+    ConnectionMetadata connection = user.meta().connection();
     if (IntaveControl.CLIENT_KEEP_ALIVE_NETTY_CHECK) {
       if (!response.preThreadInjectionPassed() && !MinecraftVersions.VER1_12_0.atOrAbove() && !user.meta().protocol().affectedByLevitation()) {
         if (connection.transactionKeepAliveInvalidOrderVL++ > 10) {
@@ -261,7 +256,6 @@ public final class FeedbackReceiver extends Module {
 //    });
 
     LatencyStudy.receivedTransactionAfter(passedTime);
-    event.setCancelled(true);
   }
 
   private short userKeyFrom(PacketContainer packet, boolean noPingMask) {
@@ -312,7 +306,7 @@ public final class FeedbackReceiver extends Module {
       feedbackRequest.acknowledge(player);
     } catch (Exception e) {
       if (IntaveControl.DEBUG) {
-        IntaveLogger.logger().error("Error while acknowledging " + feedbackRequest.callback() + " for " + feedbackRequest.target());
+        IntaveLogger.logger().error("确认目标 " + feedbackRequest.target() + " 的回调 " + feedbackRequest.callback() + " 时出错");
         e.printStackTrace();
       }
     }

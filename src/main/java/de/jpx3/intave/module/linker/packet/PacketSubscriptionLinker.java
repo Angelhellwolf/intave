@@ -248,7 +248,7 @@ public final class PacketSubscriptionLinker extends Module {
       if (excluded(packetType)) {
         String typeName = packetType.name();
         if (!exclusionNoted.contains(typeName)) {
-          IntaveLogger.logger().info("Ignoring " + typeName + " packets");
+          IntaveLogger.logger().info("正在忽略 " + typeName + " 数据包");
         }
         exclusionNoted.add(typeName);
         input[i] = null;
@@ -294,7 +294,7 @@ public final class PacketSubscriptionLinker extends Module {
   private PacketType[] translateClientPacketType(PacketId.Client clientPacket, boolean debug) {
     PacketType[] results = searchByName(selectPacketTypesFor(ConnectionSide.CLIENT_SIDE), clientPacket.lookupName());
     if (debug) {
-      IntaveLogger.logger().info("Translated " + clientPacket.lookupName() + " to " + Arrays.toString(results));
+      IntaveLogger.logger().info("已将 " + clientPacket.lookupName() + " 转换为 " + Arrays.toString(results));
     }
     return results;
   }
@@ -302,7 +302,7 @@ public final class PacketSubscriptionLinker extends Module {
   private PacketType[] translateServerPacketType(PacketId.Server serverPacket, boolean debug) {
     PacketType[] results = searchByName(selectPacketTypesFor(ConnectionSide.SERVER_SIDE), serverPacket.lookupName());
     if (debug) {
-      IntaveLogger.logger().info("Translated " + serverPacket.lookupName() + " to " + Arrays.toString(results));
+      IntaveLogger.logger().info("已将 " + serverPacket.lookupName() + " 转换为 " + Arrays.toString(results));
     }
     return results;
   }
@@ -403,7 +403,7 @@ public final class PacketSubscriptionLinker extends Module {
 //            throw new RuntimeException("Failed to create packet reader for packet " + event.getPacketType() + " in " + subscriber.getClass().getCanonicalName(), e);
             block.set(true);
 //            IntaveLogger.logger().error("Failed to create packet reader for packet " + event.getPacketType() + " in " + subscriber.getClass().getCanonicalName());
-            IntaveLogger.logger().info(subscriber.getClass().getCanonicalName() + " skipped packet type due to ProtocolLib missing packet " + event.getPacketType().name());
+            IntaveLogger.logger().info(subscriber.getClass().getCanonicalName() + " 已跳过数据包类型，因为 ProtocolLib 缺少数据包 " + event.getPacketType().name());
             return;
           }
         }

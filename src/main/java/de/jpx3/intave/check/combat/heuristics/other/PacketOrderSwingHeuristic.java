@@ -49,7 +49,7 @@ public final class PacketOrderSwingHeuristic extends ClassicHeuristic<PacketOrde
       return;
     }
     if (reader.isAttackPacket() && protocol.emptyFlyingPacketsAreExplicitlySent() && !heuristicMeta.swingTick) {
-      String description = "swing not correlated with attack (" + user.meta().protocol().versionString() + ")";
+      String description = "挥手与攻击不相关（" + user.meta().protocol().versionString() + ")";
       flag(user.player(), description);
       //dmc11
       user.nerf(AttackNerfStrategy.DMG_LIGHT, "11");

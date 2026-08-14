@@ -115,7 +115,7 @@ public final class RotationSpeed extends PlayerCheckPart<PlacementAnalysis> {
 				Violation violation = Violation.builderFor(PlacementAnalysis.class)
 					.forPlayer(player).withDefaultThreshold()
 					.withMessage(COMMON_FLAG_MESSAGE)
-					.withDetails("high rotation activity while placing blocks")
+					.withDetails("放置方块时视角活动过高")
 					.appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
 					.withCustomThreshold(PlacementAnalysis.legacyConfigurationLayout() ? "thresholds" : "cloud-thresholds.on-premise")
 					.withVL(10).build();

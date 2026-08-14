@@ -79,7 +79,7 @@ public class ToolSwitchHeuristic extends ClassicHeuristic<ToolSwitchHeuristic.To
 
       // Violate if buffer is too high
       if (++meta.vl > 3) {
-        flag(player, "sent suspicious slot packets while breaking blocks (" + meta.ticksSinceLastStop + " ticks)");
+        flag(player, "破坏方块时发送可疑槽位包（" + meta.ticksSinceLastStop + " tick）");
 
         // Apply damage cancel if this happens too often
         if (++meta.cancelVl > 1) {

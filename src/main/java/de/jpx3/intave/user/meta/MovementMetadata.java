@@ -183,7 +183,7 @@ public final class MovementMetadata implements SimulationEnvironment {
   public int legacyVehicleStrafeKey = 0;
   public boolean clientPressedJump = false;
   public boolean forceCorrectReduce = false;
-  // Count resets on start item-usage and increases if the simulation suspects the player ignored item-usage slowdown
+  // Counts consecutive simulations that suggest the player ignored item-use slowdown.
   public int handItemSimulationFails = 0;
   private boolean hasJumpFactor;
   private double resetMotion, frictionPosSubtraction;
@@ -1623,11 +1623,11 @@ public final class MovementMetadata implements SimulationEnvironment {
     this.vehicleCanBeRidden = rideableVehicleNames.stream().anyMatch(s -> entityName.toLowerCase().contains(s.toLowerCase()));
 
     if (IntaveControl.DEBUG_MOUNTING) {
-      player.sendMessage(ChatColor.RED + "Mounting " + ridingEntity.entityName() + " " + MathHelper.formatDouble(attachMoveDistance, 4) + " blocks away");
+      player.sendMessage(ChatColor.RED + "骑乘 " + ridingEntity.entityName() + " " + MathHelper.formatDouble(attachMoveDistance, 4) + " 格外");
     }
 
     if (user.receives(MessageChannel.DEBUG_MOUNTS)) {
-      player.sendMessage(IntavePlugin.prefix() + "Mounting " + ridingEntity.entityName() + " " + MathHelper.formatDouble(attachMoveDistance, 4) + " blocks away");
+      player.sendMessage(IntavePlugin.prefix() + "骑乘 " + ridingEntity.entityName() + " " + MathHelper.formatDouble(attachMoveDistance, 4) + " 格外");
     }
   }
 
@@ -1644,8 +1644,8 @@ public final class MovementMetadata implements SimulationEnvironment {
       return;
     }
     if (IntaveControl.DEBUG_MOUNTING) {
-      player.sendMessage(ChatColor.RED + "Dismounting " + vehicle.entityName() + " " + reason);
-      System.out.println("Dismounting " + vehicle.entityName() + " " + reason);
+      player.sendMessage(ChatColor.RED + "下马 " + vehicle.entityName() + " " + reason);
+      System.out.println("下马 " + vehicle.entityName() + " " + reason);
       Thread.dumpStack();
     }
     setVerifiedLocation(player.getLocation());
@@ -1654,12 +1654,12 @@ public final class MovementMetadata implements SimulationEnvironment {
         // player.getLocation() is assumed to be correct
         player.teleport(player.getLocation());
         if (user.receives(MessageChannel.DEBUG_TELEPORT)) {
-          player.sendMessage(IntavePlugin.prefix() + "Teleport to " + player.getLocation().getBlockX() + " " + player.getLocation().getBlockY() + " " + player.getLocation().getBlockZ() + " " + " because " + ChatColor.RED + " you dismounted a vehicle");
+          player.sendMessage(IntavePlugin.prefix() + "传送至 " + player.getLocation().getBlockX() + " " + player.getLocation().getBlockY() + " " + player.getLocation().getBlockZ() + " " + " 因为 " + ChatColor.RED + " 你已下马");
         }
       });
     }
     if (user.receives(MessageChannel.DEBUG_MOUNTS)) {
-      player.sendMessage(IntavePlugin.prefix() + "Unmounting " + vehicle.entityName() + " for " + reason.toLowerCase() + " " + (positionReset ? "(with position reset)" : ""));
+      player.sendMessage(IntavePlugin.prefix() + "取消骑乘 " + vehicle.entityName() + "，原因：" + reason.toLowerCase() + (positionReset ? "（已重置位置）" : ""));
     }
     activeTick(VEHICLE_DETACHMENT);
     this.vehicle = null;

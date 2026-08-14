@@ -23,7 +23,7 @@ public class ClassicHeuristic<M extends CheckCustomMetadata> extends MetaCheckPa
 
   protected void flag(Player player, String details) {
     Violation violation = Violation.builderFor(Heuristics.class)
-      .forPlayer(player).withMessage("failed " + type.verboseName())
+      .forPlayer(player).withMessage("未通过 " + type.verboseName())
       .withDetails(details)
       .withVL(violationLevelIncrease)
       .withCustomThreshold("classic.thresholds")

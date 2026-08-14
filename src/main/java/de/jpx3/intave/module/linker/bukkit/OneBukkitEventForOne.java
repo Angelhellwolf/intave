@@ -38,7 +38,7 @@ public class OneBukkitEventForOne<T extends LISTENER, LISTENER> implements Subsc
     if (IntaveControl.DEBUG) {
       if (!warningIssued) {
         warningIssued = true;
-        IntaveLogger.logger().warning("Bukkit per-player event listener is still experimental and may not work as expected.");
+        IntaveLogger.logger().warning("Bukkit 单玩家事件监听器仍处于实验阶段，可能无法按预期工作。");
       }
     }
     // if event has player, then filter.

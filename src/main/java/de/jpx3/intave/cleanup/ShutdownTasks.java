@@ -29,7 +29,7 @@ public final class ShutdownTasks {
       try {
         task.run();
       } catch (Exception exception) {
-        System.out.println("[Intave] Shutdown task " + task + " failed to complete");
+        System.out.println("[Intave] 关闭任务 " + task + " 执行失败");
         exception.printStackTrace();
       }
     }

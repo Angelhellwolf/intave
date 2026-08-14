@@ -63,7 +63,7 @@ public final class CustomClientSupportService implements EventProcessor {
         User user = UserRepository.userOf(player);
         ConnectionMetadata connectionData = user.meta().connection();
         if (System.currentTimeMillis() - connectionData.lastCCCInfoMessageSent > 4000) {
-          IntaveLogger.logger().info(player.getName() + " has sent a custom client configuration (client has special Intave support)");
+          IntaveLogger.logger().info(player.getName() + " 已发送自定义客户端配置（客户端已适配 Intave）");
           connectionData.lastCCCInfoMessageSent = System.currentTimeMillis();
         }
         String messageContent = LabyModChannelHelper.readString(bytes, 32767);
@@ -75,7 +75,7 @@ public final class CustomClientSupportService implements EventProcessor {
       }
     } catch (RuntimeException exception) {
       exception.printStackTrace();
-      Synchronizer.synchronize(() -> player.kickPlayer("Invalid Intave client support payload packet"));
+      Synchronizer.synchronize(() -> player.kickPlayer("无效的 Intave 客户端支持数据包"));
     } finally {
       bytes.resetReaderIndex();
     }

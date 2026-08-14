@@ -155,8 +155,8 @@ public class PlayerTime extends MetaCheckPart<Timer, PlayerTime.PlayerTimeMeta> 
       }
       String balanceAsString = formatDouble(displayValue, 2);
       Violation violation = Violation.builderFor(Timer.class).forPlayer(player)
-        .withMessage("moved too frequently")
-        .withDetails(balanceAsString + " ticks ahead")
+        .withMessage("移动过于频繁")
+        .withDetails(balanceAsString + " tick 超前")
         .withVL(Math.min(Math.max(displayValue * 3f, 1), 5))
         .build();
       ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);
@@ -183,8 +183,8 @@ public class PlayerTime extends MetaCheckPart<Timer, PlayerTime.PlayerTimeMeta> 
       double displayValue = -diff / (50 * 1_000_000f);
       String balanceAsString = formatDouble(displayValue, 2);
       Violation violation = Violation.builderFor(Timer.class).forPlayer(player)
-        .withMessage("is halting game ticks")
-        .withDetails(balanceAsString + " ticks behind")
+        .withMessage("正在暂停游戏 tick")
+        .withDetails(balanceAsString + " tick 落后")
         .withVL(0)
         .build();
 	    Modules.violationProcessor().processViolation(violation);

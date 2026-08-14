@@ -116,7 +116,7 @@ public final class VanishFilter extends Filter {
             UUID infoId = playerInfo.getProfile().getUUID();
             boolean toBeRemoved = !shownPlayers.contains(infoId);
             if (toBeRemoved) {
-//              System.out.println("Hiding " + playerInfo.getProfile().getName() + " from " + player.getName());
+//              System.out.println("Hiding " + playerInfo.getProfile().getName() + " 从 " + player.getName());
             }
             return toBeRemoved;
           });
@@ -180,7 +180,7 @@ public final class VanishFilter extends Filter {
       if (newTabCompletions.size() != stuff.length) {
         packet.getStringArrays().writeSafely(0, newTabCompletions.toArray(new String[0]));
 //        Synchronizer.synchronize(() -> {
-//          player.sendMessage("Removed " + (stuff.length - newTabCompletions.size()) + " hidden players from tab complete");
+//          player.sendMessage("已移除 " + (stuff.length - newTabCompletions.size()) + " hidden players from tab complete");
 //        });
       }
 //      Synchronizer.synchronize(() -> {

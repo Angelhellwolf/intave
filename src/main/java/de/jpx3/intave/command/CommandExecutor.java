@@ -85,7 +85,7 @@ public final class CommandExecutor {
     this.allTypes = allTypes.toArray(new Class<?>[0]);
   }
 
-  private static final String NO_PERMISSION_MESSAGE = ChatColor.RED + "I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.";
+  private static final String NO_PERMISSION_MESSAGE = ChatColor.RED + "抱歉，你没有权限执行此命令。如有疑问请联系服务器管理员。";
 
   public CommandStage execute(CommandSender sender, String executedCommand) {
     String prefix = IntavePlugin.prefix();
@@ -116,7 +116,7 @@ public final class CommandExecutor {
       Collections.reverse(commandPath);
       commandPath.add(selectors[0]);
       String commandPathAsString = commandPath.stream().map(s -> s + " ").collect(Collectors.joining());
-      sender.sendMessage(prefix + "Usage: " + commandPathAsString + usage);
+      sender.sendMessage(prefix + "用法: " + commandPathAsString + usage);
       return null;
     }
     List<Object> parameterTypes = new ArrayList<>();
@@ -126,7 +126,7 @@ public final class CommandExecutor {
       if (sender instanceof Player) {
         parameterTypes.add(UserRepository.userOf((Player) sender));
       } else {
-        sender.sendMessage(prefix + ChatColor.RED + "This action requires you to be a player");
+        sender.sendMessage(prefix + ChatColor.RED + "此操作需要以玩家身份执行");
         return null;
       }
     }

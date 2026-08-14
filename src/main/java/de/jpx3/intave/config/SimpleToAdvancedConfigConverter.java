@@ -198,13 +198,13 @@ public final class SimpleToAdvancedConfigConverter {
             variableMode = false;
             placeholderMode = true;
           } else {
-            System.out.println("Invalid line format: " + line);
+            System.out.println("行格式无效：" + line);
             Thread.dumpStack();
           }
         } else {
           String[] split = line.split(" -> ");
           if (split.length != 2) {
-            System.out.println("Invalid line format: " + line);
+            System.out.println("行格式无效：" + line);
             Thread.dumpStack();
             continue;
           }
@@ -215,7 +215,7 @@ public final class SimpleToAdvancedConfigConverter {
           } else if (placeholderMode) {
             placeholderMap.put(key, value);
           } else {
-            System.out.println("Invalid line format: " + line);
+            System.out.println("行格式无效：" + line);
             Thread.dumpStack();
           }
         }

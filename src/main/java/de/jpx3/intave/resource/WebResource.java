@@ -68,17 +68,17 @@ final class WebResource implements Resource {
         }
         byte[] data = output.toByteArray();
         if (IntaveControl.DEBUG || debug) {
-          System.out.println("[debug] Read " + data.length + " bytes from " + url + " manually");
+          System.out.println("[debug] 已手动从 " + url + " 读取 " + data.length + " 字节");
         }
         return new ByteArrayInputStream(data);
       }
       if (IntaveControl.DEBUG || debug) {
-        System.out.println("[debug] Read " + inputStream.available() + " bytes from " + url);
+        System.out.println("[debug] 已从 " + url + " 读取 " + inputStream.available() + " 字节");
       }
       return inputStream;
     } catch (SocketTimeoutException timeout) {
       if (IntaveControl.DEBUG || debug) {
-        System.out.println("[debug] Timeout reading " + url);
+        System.out.println("[debug] 读取 " + url + " 超时");
       }
       if (fallback != null) {
         return fallback.read();
@@ -86,7 +86,7 @@ final class WebResource implements Resource {
       return new ByteArrayInputStream(new byte[0]);
     } catch (UnknownHostException host) {
       if (IntaveControl.DEBUG || debug) {
-        System.out.println("[debug] Unable to connect to " + url);
+        System.out.println("[debug] 无法连接到 " + url);
       }
       if (fallback != null) {
         return fallback.read();
@@ -94,7 +94,7 @@ final class WebResource implements Resource {
       return new ByteArrayInputStream(new byte[0]);
     } catch (Exception exception) {
       if (IntaveControl.DEBUG || debug) {
-        System.out.println("[debug] Unable to read " + url);
+        System.out.println("[debug] 无法读取 " + url);
         exception.printStackTrace();
       }
       if (fallback != null) {

@@ -43,7 +43,7 @@ public final class StandardClientRetriever extends ChannelInboundHandlerAdapter 
 
   @Override
   public void onCloseConnection(ClientboundDisconnect packet) {
-    System.out.println("Connection closed: " + packet.reason());
+    System.out.println("连接已关闭：" + packet.reason());
     session.close();
   }
 

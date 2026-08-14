@@ -102,7 +102,7 @@ public abstract class TickAlignedHistoryBlueprint<E extends TickAlignedMeta> ext
   public abstract void analyzeClicks(User user, E meta);
 
   public final void flag(User user, String message, int vl) {
-    String details = "pattern: " + buildHistoryString(user);
+    String details = "模式: " + buildHistoryString(user);
     Violation violation = Violation.builderFor(ClickPatterns.class)
       .forPlayer(user.player()).withDefaultThreshold()
       .withMessage(message).withDetails(details)

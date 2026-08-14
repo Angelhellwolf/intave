@@ -68,7 +68,7 @@ public class RotationExactHeuristic extends ClassicHeuristic<RotationExactHeuris
       float distanceToClosestPerfectYaw = MathHelper.distanceInDegrees(closestPerfectYaw, rotationYaw);
 
       if (distanceToPerfectYaw == 0 || distanceToClosestPerfectYaw == 0) {
-        flag(user.player(), "sent exact yaw rotation");
+        flag(user.player(), "发送精确 yaw 旋转");
         user.nerf(AttackNerfStrategy.CRITICALS, nerfId);
       }
     }
@@ -76,7 +76,7 @@ public class RotationExactHeuristic extends ClassicHeuristic<RotationExactHeuris
     float pitchSpeed = Math.abs(movementData.rotationPitch - movementData.lastRotationPitch);
     float distanceToPerfectPitch = Math.abs(movementData.rotationPitch - attackData.perfectPitch());
     if (pitchSpeed > 1.0 && distanceToPerfectPitch == 0) {
-      flag(player, "sent exact pitch rotation");
+      flag(player, "发送精确 pitch 旋转");
       user.nerf(AttackNerfStrategy.CRITICALS, nerfId);
     }
   }

@@ -71,7 +71,7 @@ public final class IntegrationTester implements Runnable {
         long end = System.currentTimeMillis();
         long duration = end - start;
         if (duration > 100 && IntaveControl.DEBUG_OUTPUT_FOR_TESTS) {
-          IntaveLogger.logger().warn("[debug] Before method of test " + fullTestName + " took " + duration + "ms!");
+          IntaveLogger.logger().warn("[debug] 测试 " + fullTestName + " 的前置方法耗时 " + duration + "ms！");
         }
       }
     } catch (Throwable t) {
@@ -87,11 +87,11 @@ public final class IntegrationTester implements Runnable {
       long end = System.currentTimeMillis();
       long duration = end - start;
       if (duration > 250 && IntaveControl.DEBUG_OUTPUT_FOR_TESTS) {
-        IntaveLogger.logger().warn("[debug] Test " + fullTestName + " took " + duration + "ms!");
+        IntaveLogger.logger().warn("[debug] 测试 " + fullTestName + " 耗时 " + duration + "ms！");
       }
     } catch (Throwable throwable) {
       Severity severity = annotation.severity();
-      String message = "Self-test " + fullTestName + " failed";
+      String message = "自检 " + fullTestName + " 失败";
 //      if (IntaveControl.DEBUG_OUTPUT_FOR_TESTS) {
 //        throwable.printStackTrace();
 //        while (throwable.getCause() != null) {
@@ -115,7 +115,7 @@ public final class IntegrationTester implements Runnable {
           long end = System.currentTimeMillis();
           long duration = end - start;
           if (duration > 100 && IntaveControl.DEBUG_OUTPUT_FOR_TESTS) {
-            IntaveLogger.logger().warn("[debug] After method of test " + fullTestName + " took " + duration + "ms!");
+            IntaveLogger.logger().warn("[debug] 测试 " + fullTestName + " 的后置方法耗时 " + duration + "ms！");
           }
         } catch (Exception exception) {
           exception.printStackTrace();

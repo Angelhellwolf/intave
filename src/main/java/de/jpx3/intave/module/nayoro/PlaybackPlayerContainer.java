@@ -215,7 +215,7 @@ final class PlaybackPlayerContainer extends SinkPlayerContainer {
 //    if (event.source() != id) {
 //      return;
 //    }
-    System.out.println("Attack: " + event.target());
+    System.out.println("攻击目标：" + event.target());
     lastAttackedEntityId = event.target();
     visitAny(event);
   }

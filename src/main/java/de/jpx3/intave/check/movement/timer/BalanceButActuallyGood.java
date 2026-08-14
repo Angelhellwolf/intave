@@ -66,7 +66,7 @@ public final class BalanceButActuallyGood extends MetaCheckPart<Timer, BalanceBu
 
     if (frequencyData.balance < 0) {
       Violation violation = Violation.builderFor(Timer.class).forPlayer(player)
-        .withMessage("moved too frequently")
+        .withMessage("移动过于频繁")
         .withVL(0.5)
         .build();
       ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);

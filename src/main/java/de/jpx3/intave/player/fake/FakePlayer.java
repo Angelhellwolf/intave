@@ -183,7 +183,7 @@ public final class FakePlayer extends FakePlayerBody {
         makeWalkingSound(this.movement.location);
       }
     } catch (Exception exception) {
-      System.out.println(exception.getClass().getSimpleName() + " occurred in tick #" + ticks + " of # " + identifier());
+      System.out.println(identifier() + " 的第 " + ticks + " tick 发生 " + exception.getClass().getSimpleName());
       exception.printStackTrace();
     }
   }

@@ -604,7 +604,7 @@ public final class DefaultSimulationEvaluator implements SimulationEvaluator {
           motionXTolerance = Math.max(motionXTolerance, 1);
 //          user.sendMessage("MotionX within limit: " + motionX + " | " + motionTolerance.motionXTarget());
         }/* else {
-          user.sendMessage(ChatColor.RED + "MotionX outside limit: " + motionX + " | " + motionTolerance.motionXTarget());
+          user.sendMessage(ChatColor.RED + "水平方向 X 轴移动超出限制：" + motionX + " | " + motionTolerance.motionXTarget());
         }*/
         if (motionTolerance.isMotionZWithinLimit(motionZ)) {
 //          user.sendMessage("MotionZ within limit: " + motionZ + " | " + motionTolerance.motionZTarget());

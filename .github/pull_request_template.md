@@ -1,16 +1,16 @@
-## Contact us!
-Before you request this PR, please get in touch on discord (@therichy).
-This will increase your PR merge success chance drastically.
-You can delete this section, it does not need to be in your PR description.
+## 请先联系我们！
+提交本 PR 前，请先在 Discord 联系 @therichy。
+这会大幅提高 PR 被合并的概率。
+你可以删除本节，它不必出现在最终 PR 描述中。
 
-## Describe your changes
+## 变更说明
 
-## What was your testing methodology?
+## 你的测试方法是什么？
 
-## What systems are affected by my changes?
+## 哪些系统会受本次变更影响？
 
-## Checklist before requesting a review
-- [ ] I have performed a self-review of my code.
-- [ ] I have added thorough tests if other critical systems rely on my changes.
-- [ ] I read the contribution guidelines and followed them.
-- [ ] No new class names contain "Utils", "Handler" or "Manager".
+## 请求审查前的检查清单
+- [ ] 我已完成代码自审。
+- [ ] 若其它关键系统依赖本次变更，我已补充充分测试。
+- [ ] 我已阅读并遵循贡献指南。
+- [ ] 新增类名不含 "Utils"、"Handler" 或 "Manager"。

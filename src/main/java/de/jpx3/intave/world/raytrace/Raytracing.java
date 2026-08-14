@@ -296,11 +296,11 @@ public final class Raytracing {
       if (raytrace == null || backup == null) {
 //        player.sendMessage(ChatColor.RED + "Raytrace: " + raytrace + " Backup: " + backup);
       } else if (raytrace.hitVec.distanceTo(backup.hitVec) > 0.0001) {
-        player.sendMessage(ChatColor.RED + "Difference: " + raytrace.hitVec.distanceTo(backup.hitVec));
+        player.sendMessage(ChatColor.RED + "差值: " + raytrace.hitVec.distanceTo(backup.hitVec));
       } else if (raytrace.sideHit != backup.sideHit) {
-        player.sendMessage(ChatColor.RED + "Side: " + raytrace.sideHit + " " + backup.sideHit);
+        player.sendMessage(ChatColor.RED + "面: " + raytrace.sideHit + " " + backup.sideHit);
       } else if (raytrace.getBlockPos() != null && backup.getBlockPos() != null && !raytrace.getBlockPos().equals(backup.getBlockPos())) {
-        player.sendMessage(ChatColor.RED + "Block: " + raytrace.getBlockPos() + " " + backup.getBlockPos());
+        player.sendMessage(ChatColor.RED + "方块: " + raytrace.getBlockPos() + " " + backup.getBlockPos());
       }*/
 
       return backup;

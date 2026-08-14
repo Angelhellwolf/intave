@@ -117,7 +117,7 @@ public final class DiagnosticsStage extends CommandStage {
     return singletonInstance;
   }
 
-  @SubCommand(selectors = "branchfreq", usage = "", description = "Output branch frequency data", permission = "intave.command.diagnostics.performance")
+  @SubCommand(selectors = "branchfreq", usage = "", description = "输出分支频率数据", permission = "intave.command.diagnostics.performance")
   public void branchfreq(User user) {
     Map<String, Long> branchFrequency = user.meta().movement().branchFrequency;
 //    sort
@@ -125,7 +125,7 @@ public final class DiagnosticsStage extends CommandStage {
     sortedEntries.sort((a, b) -> Long.compare(b.getValue(), a.getValue()));
 
     Player player = user.player();
-    player.sendMessage(ChatColor.GRAY + "Branch frequency distribution:");
+    player.sendMessage(ChatColor.GRAY + "分支频率分布:");
     for (Map.Entry<String, Long> entry : sortedEntries) {
       String branchIdentifier = entry.getKey();
       long count = entry.getValue();
@@ -133,7 +133,7 @@ public final class DiagnosticsStage extends CommandStage {
     }
   }
 
-  @SubCommand(selectors = "environment", usage = "", description = "Dumps environment infos to a players chat", permission = "intave.command.diagnostics.performance")
+  @SubCommand(selectors = "environment", usage = "", description = "将环境信息输出到聊天", permission = "intave.command.diagnostics.performance")
   public void environment(CommandSender sender) {
     Player player = null;
     String playerVersion = "";
@@ -142,18 +142,18 @@ public final class DiagnosticsStage extends CommandStage {
       User user = UserRepository.userOf(player);
       ProtocolMetadata protocol = user.meta().protocol();
       playerVersion = protocol.versionString() + "@" + protocol.protocolVersion();
-      sender.sendMessage(ChatColor.GRAY + "Player is " + ChatColor.WHITE + playerVersion);
+      sender.sendMessage(ChatColor.GRAY + "玩家版本 " + ChatColor.WHITE + playerVersion);
     } else {
-      sender.sendMessage(ChatColor.GRAY + "Run this command in-game to display client version");
+      sender.sendMessage(ChatColor.GRAY + "请在游戏内执行此命令以显示客户端版本");
     }
     String intaveVersion = IntavePlugin.fullVersion();
     String serverVersion = Bukkit.getName() + "@" + Bukkit.getVersion();
     String protocolLibVersion = ProtocolLibrary.getPlugin().getDescription().getVersion();
-    sender.sendMessage(ChatColor.GRAY + "Spigot is " + ChatColor.WHITE + serverVersion);
-    sender.sendMessage(ChatColor.GRAY + "ProtocolLib is " + ChatColor.WHITE + protocolLibVersion);
-    sender.sendMessage(ChatColor.GRAY + "Intave is " + ChatColor.WHITE + intaveVersion);
+    sender.sendMessage(ChatColor.GRAY + "服务端软件 Spigot 版本 " + ChatColor.WHITE + serverVersion);
+    sender.sendMessage(ChatColor.GRAY + "数据包组件 ProtocolLib 版本 " + ChatColor.WHITE + protocolLibVersion);
+    sender.sendMessage(ChatColor.GRAY + "反作弊插件 Intave 版本 " + ChatColor.WHITE + intaveVersion);
 
-    TextComponent message = new TextComponent("[Copy report message to chat]");
+    TextComponent message = new TextComponent("[点击复制报告到聊天栏]");
     message.setColor(net.md_5.bungee.api.ChatColor.GRAY);
     message.setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "Environment: `" + playerVersion + "`,`" + serverVersion + "`,`" + protocolLibVersion + "`,`" + intaveVersion + "`"));
 
@@ -166,15 +166,15 @@ public final class DiagnosticsStage extends CommandStage {
   @SubCommand(
     selectors = "nerfers",
     usage = "",
-    description = "Output active nerfers",
+    description = "输出活动削弱",
     permission = "intave.command.diagnostics.performance"
   )
   public void nerfers(User user) {
     List<PunishmentMetadata.AttackNerfer> attackNerfers = user.meta().punishment().activeNerfers();
     if (attackNerfers.isEmpty()) {
-      user.player().sendMessage(IntavePlugin.prefix() + ChatColor.RED + "No active nerfers");
+      user.player().sendMessage(IntavePlugin.prefix() + ChatColor.RED + "无活动削弱");
     } else {
-      user.player().sendMessage(IntavePlugin.prefix() + "Active nerfers: " + attackNerfers.stream().map(nerfer -> nerfer.strategy().typeName()).collect(Collectors.joining(", ")));
+      user.player().sendMessage(IntavePlugin.prefix() + "活动削弱: " + attackNerfers.stream().map(nerfer -> nerfer.strategy().typeName()).collect(Collectors.joining(", ")));
     }
   }
 
@@ -208,7 +208,7 @@ public final class DiagnosticsStage extends CommandStage {
       }
     }
     Player player = user.player();
-    player.sendMessage(ChatColor.GRAY + "Trustfactor distribution:");
+    player.sendMessage(ChatColor.GRAY + "信任等级分布:");
     for (TrustFactor value : TrustFactor.values()) {
       long count = trustfactorDistribution.getOrDefault(value, new AtomicLong()).get();
       player.sendMessage((count > 0 ? ChatColor.RED + "" + count : ChatColor.GRAY + "0") + ChatColor.GRAY + "x " + value.chatColor() + value.name());
@@ -218,27 +218,27 @@ public final class DiagnosticsStage extends CommandStage {
   @SubCommand(
     selectors = "nerf",
     usage = "",
-    description = "Output active nerfers",
+    description = "输出活动削弱",
     permission = "intave.command.diagnostics.performance"
   )
   public void nerf(User user, String type) {
     try {
       AttackNerfStrategy strategy = AttackNerfStrategy.byName(type);
       if (strategy == null) {
-        user.player().sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Invalid nerf type");
+        user.player().sendMessage(IntavePlugin.prefix() + ChatColor.RED + "无效削弱类型");
         return;
       }
       user.nerfPermanently(strategy, "command");
-      user.player().sendMessage(IntavePlugin.prefix() + "Nerf " + strategy.typeName() + " applied");
+      user.player().sendMessage(IntavePlugin.prefix() + "已应用削弱 " + strategy.typeName());
     } catch (Exception exception) {
-      user.player().sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Invalid nerf type");
+      user.player().sendMessage(IntavePlugin.prefix() + ChatColor.RED + "无效削弱类型");
     }
   }
 
   @SubCommand(
     selectors = "entities",
     usage = "",
-    description = "Output entity data",
+    description = "输出实体数据",
     permission = "intave.command.diagnostics.performance"
   )
   public void entityCommand(User user) {
@@ -248,14 +248,14 @@ public final class DiagnosticsStage extends CommandStage {
     int totalEntities = connection.entities().size();
     //    int tickedEntities = connection.tickedEntities().size();
     int tracedEntities = connection.tracedEntities().size();
-    player.sendMessage(IntavePlugin.prefix() + "Monitoring " + ChatColor.RED + totalEntities + IntavePlugin.defaultColor() + " entities, tracing " + ChatColor.RED + tracedEntities + IntavePlugin.defaultColor() + " entities");
+    player.sendMessage(IntavePlugin.prefix() + "正在监控 " + ChatColor.RED + totalEntities + IntavePlugin.defaultColor() + " 个实体，追踪 " + ChatColor.RED + tracedEntities + IntavePlugin.defaultColor() + " 个实体");
     player.sendMessage(IntavePlugin.prefix() + connection.tracedEntities().stream().map(entity -> entity.entityName() + "/" + entity.entityId()).collect(Collectors.toList()));
   }
 
   @SubCommand(
     selectors = "turtle",
     usage = "",
-    description = "Spawn a turtle",
+    description = "生成海龟",
     permission = "intave.command.diagnostics.performance"
   )
   public void turtleCommand(User user) {
@@ -265,31 +265,31 @@ public final class DiagnosticsStage extends CommandStage {
         Turtle turtle = player.getWorld().spawn(player.getLocation(), Turtle.class);
         turtle.setPassenger(player);
       });
-      player.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Turtle spawned");
+      player.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "已生成海龟");
     } else {
-      player.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Nah");
+      player.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "失败");
     }
   }
 
-  @SubCommand(selectors = "ntrace", usage = "", description = "Sample click/attack trace", permission = "intave.command.diagnostics.performance")
+  @SubCommand(selectors = "ntrace", usage = "", description = "采样点击/攻击追踪", permission = "intave.command.diagnostics.performance")
   public void ntraceCommand(User user) {
     Player player = user.player();
     Nayoro nayoro = Modules.nayoro();
     nayoro.pushSink(user, new EventSink() {
       @Override
       public void visit(de.jpx3.intave.module.nayoro.event.ClickEvent event) {
-        player.sendMessage("ClickEvent");
+        player.sendMessage("点击事件");
       }
 
       @Override
       public void visit(AttackEvent event) {
-        player.sendMessage("AttackEvent");
+        player.sendMessage("攻击事件");
       }
 
       @Override
       public void visit(BlockPlaceEvent event) {
         Synchronizer.synchronize(() -> {
-          player.sendMessage("BlockPlaceEvent{");
+          player.sendMessage("方块放置事件{");
           player.sendMessage("  " + event.placedBlock());
           player.sendMessage("  " + event.againstBlock());
           player.sendMessage("  " + event.direction());
@@ -311,7 +311,7 @@ public final class DiagnosticsStage extends CommandStage {
         return "ntrace/anonymous";
       }
     });
-    player.sendMessage(ChatColor.RED + "Added ntracing");
+    player.sendMessage(ChatColor.RED + "已添加实体追踪");
   }
 
   @SubCommand(
@@ -324,14 +324,14 @@ public final class DiagnosticsStage extends CommandStage {
     Player player = user.player();
     PlaytimeStorage storage = user.storageOf(PlaytimeStorage.class);
     if (storage.readTag() != 0) {
-      player.sendMessage("Removing storage-tag");
+      player.sendMessage("正在移除 storage-tag");
       storage.removeDebugTag();
       return;
     }
-    player.sendMessage("You are now in storage trace mode");
+    player.sendMessage("你已进入存储追踪模式");
     storage.setDebugTag();
     Synchronizer.synchronize(() -> {
-      player.sendMessage("Your storage-tag is " + storage.readTag());
+      player.sendMessage("你的 storage-tag 为 " + storage.readTag());
     });
   }
 
@@ -349,26 +349,26 @@ public final class DiagnosticsStage extends CommandStage {
     long minutesPlayed = storage.minutesPlayed();
     long minutesAfk = storage.minutesAfk();
     Synchronizer.synchronize(() -> {
-      player.sendMessage("The player " + targetPlayer.getName() + " has played for " + minutesPlayed + " minutes and was afk for " + minutesAfk + " minutes");
+      player.sendMessage("玩家 " + targetPlayer.getName() + " 已游玩 " + minutesPlayed + " 分钟，挂机 " + minutesAfk + " 分钟");
     });
   }
 
   @SubCommand(
     selectors = "etxtrace",
     usage = "",
-    description = "Sample click/attack trace",
+    description = "采样点击/攻击追踪",
     permission = "intave.command.diagnostics.performance"
   )
   public void etxTraceCommand(User user) {
     Player player = user.player();
-    player.sendMessage(ChatColor.DARK_PURPLE + "Toggled tracing entity trackings");
+    player.sendMessage(ChatColor.DARK_PURPLE + "已切换实体追踪调试");
     user.meta().connection().debugEntityTracing = !user.meta().connection().debugEntityTracing;
   }
 
   @SubCommand(
     selectors = {"platrace"},
     usage = "",
-    description = "Sample attack protocollib trace",
+    description = "采样攻击 ProtocolLib 追踪",
     permission = "intave.command.diagnostics.performance"
   )
   public void attackTraceCommand(User user) {
@@ -404,11 +404,11 @@ public final class DiagnosticsStage extends CommandStage {
 //      }
     } catch (Exception exception) {
       exception.printStackTrace();
-      user.player().sendMessage("Invalid protocollib version? Error: " + exception.getMessage());
+      user.player().sendMessage("数据包组件 ProtocolLib 版本可能无效，错误: " + exception.getMessage());
     }
   }
 
-  @SubCommand(selectors = "damage", usage = "", description = "Put your attack damage in chat", permission = "intave.command.diagnostics.performance")
+  @SubCommand(selectors = "damage", usage = "", description = "将攻击伤害输出到聊天", permission = "intave.command.diagnostics.performance")
   public void damageCommand(User user) {
     Player player = user.player();
     Bukkit.getPluginManager().registerEvents(new Listener() {
@@ -418,18 +418,18 @@ public final class DiagnosticsStage extends CommandStage {
           double baseDamage = event.getDamage(EntityDamageEvent.DamageModifier.BASE);
           double predictedDamage = DamageModify.attackDamageOf(player) + DamageModify.sharpnessDamageOf(player.getInventory().getItemInMainHand());
           boolean probablyCritical = Math.abs(baseDamage * 1.5 - predictedDamage) < 0.01;
-          player.sendMessage("Dealt " + event.getFinalDamage() + " damage" + (probablyCritical ? " (critical)" : ""));
+          player.sendMessage("造成 " + event.getFinalDamage() + " 伤害" + (probablyCritical ? "（暴击）" : ""));
         }
       }
     }, plugin);
   }
 
-  @SubCommand(selectors = "timings", usage = "", description = "Output timing data", permission = "intave.command.diagnostics.performance")
+  @SubCommand(selectors = "timings", usage = "", description = "输出计时数据", permission = "intave.command.diagnostics.performance")
   public void timingsCommand(User user, @Optional String[] specifier) {
     Player player = user.player();
     String fullSpecifier = specifier != null ? Arrays.stream(specifier).map(s -> s + " ").collect(Collectors.joining()).trim().toLowerCase(Locale.ROOT) : "";
 
-    player.sendMessage(ChatColor.RED + "Loading timings...");
+    player.sendMessage(ChatColor.RED + "正在加载计时...");
     List<Timing> timings = new ArrayList<>(Timings.timingPool());
     timings.sort(Timing::compareTo);
 
@@ -450,11 +450,11 @@ public final class DiagnosticsStage extends CommandStage {
   @SubCommand(
     selectors = "performance",
     usage = "",
-    description = "Output performance data",
+    description = "输出性能数据",
     permission = "intave.command.diagnostics.performance"
   )
   public void timingsCommand(CommandSender sender) {
-    sender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Currently unavailable");
+    sender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "当前不可用");
 
     //    sender.sendMessage(IntavePlugin.prefix() + "Service status");
     //    List<Timing> timings = new ArrayList<>(Timings.timingPool());
@@ -479,7 +479,7 @@ public final class DiagnosticsStage extends CommandStage {
   @SubCommand(
     selectors = "fireball",
     usage = "",
-    description = "Fireball catapult",
+    description = "火球弹射",
     permission = "intave.command.diagnostics.performance"
   )
   public void fireballCommand(User user) {
@@ -537,7 +537,7 @@ public final class DiagnosticsStage extends CommandStage {
   @SubCommand(
     selectors = "resistance",
     usage = "",
-    description = "Give everyone on the server resistance",
+    description = "给全服玩家抗性",
     permission = "intave.command.diagnostics.performance"
   )
   public void resistanceCommand(User user) {
@@ -552,13 +552,13 @@ public final class DiagnosticsStage extends CommandStage {
   @SubCommand(
     selectors = "teleportspam",
     usage = "",
-    description = "Spam teleport yourself",
+    description = "连续传送自己",
     permission = "intave.command.diagnostics.performance"
   )
   public void teleportSpam(User user) {
     Player player = user.player();
     MovementMetadata movement = user.meta().movement();
-    player.sendMessage(ChatColor.RED + "Logout to stop");
+    player.sendMessage(ChatColor.RED + "退出登录以停止");
 
     int[] id = {0};
     id[0] = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
@@ -589,7 +589,7 @@ public final class DiagnosticsStage extends CommandStage {
       player.teleport(player.getLocation().clone().add(moveX, moveY, moveZ));
 
       if (user.receives(MessageChannel.DEBUG_TELEPORT)) {
-        player.sendMessage(IntavePlugin.prefix() + "Teleport to " + player.getLocation().getBlockX() + " " + player.getLocation().getBlockY() + " " + player.getLocation().getBlockZ() + " " + " as " + ChatColor.RED + " it was command-requested");
+        player.sendMessage(IntavePlugin.prefix() + "传送至 " + player.getLocation().getBlockX() + " " + player.getLocation().getBlockY() + " " + player.getLocation().getBlockZ() + " " + " 原因: " + ChatColor.RED + " 命令请求");
       }
     }, 20, 3);
   }
@@ -601,7 +601,7 @@ public final class DiagnosticsStage extends CommandStage {
   )
   public void velocitySpam(User user) {
     Player player = user.player();
-    player.sendMessage(ChatColor.RED + "Logout to stop");
+    player.sendMessage(ChatColor.RED + "退出登录以停止");
 
     int[] id = {0};
     id[0] = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
@@ -620,12 +620,12 @@ public final class DiagnosticsStage extends CommandStage {
   @SubCommand(
     selectors = "flyingswitch",
     usage = "",
-    description = "Spam teleport yourself",
+    description = "连续传送自己",
     permission = "intave.command.diagnostics.performance"
   )
   public void flyingSwitch(User user) {
     Player player = user.player();
-    player.sendMessage(ChatColor.RED + "Logout to stop");
+    player.sendMessage(ChatColor.RED + "退出登录以停止");
 
     int[] id = {0};
     id[0] = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
@@ -635,14 +635,14 @@ public final class DiagnosticsStage extends CommandStage {
       }
       boolean canFly = player.getAllowFlight();
       Synchronizer.synchronizeDelayed(() -> player.setAllowFlight(!canFly), 40);
-      player.sendMessage(IntavePlugin.prefix() + "Flying will be " + ChatColor.RED + (!canFly ? "enabled" : "disabled") + ChatColor.GRAY + " in 2 seconds");
+      player.sendMessage(IntavePlugin.prefix() + "飞行将在 2 秒后" + ChatColor.RED + (!canFly ? "启用" : "关闭"));
     }, 20, 20 * 10);
   }
 
   @SubCommand(
     selectors = "walkspeed",
     usage = "",
-    description = "Set your walkspeed",
+    description = "设置行走速度",
     permission = "intave.command.diagnostics.performance"
   )
   public void walkSpeed(User user, @Optional Double speed, @Optional WalkSpeedMethod method) {
@@ -669,7 +669,7 @@ public final class DiagnosticsStage extends CommandStage {
   @SubCommand(
     selectors = "vehicleboost",
     usage = "",
-    description = "Boost your vehicle",
+    description = "加速你的载具",
     permission = "intave.command.diagnostics.performance"
   )
   public void boostVehicle(User user) {
@@ -686,14 +686,14 @@ public final class DiagnosticsStage extends CommandStage {
   @SubCommand(
     selectors = "simnofeedback",
     usage = "",
-    description = "Temporarily ignore feedback packets",
+    description = "临时忽略反馈包",
     permission = "intave.command.diagnostics.performance"
   )
   public void simulateNoFeedback(User user) {
     Player player = user.player();
     UUID userId = player.getUniqueId();
 
-    player.sendMessage(ChatColor.RED + "You will need to wait one minute to get feedback again.");
+    player.sendMessage(ChatColor.RED + "需等待一分钟后才能再次获取反馈。");
     PacketAdapter adapter = new PacketAdapter(IntavePlugin.singletonInstance(), PacketType.Play.Server.TRANSACTION, PacketType.Play.Server.PING) {
       final long timeout = System.currentTimeMillis() + 60000;
 
@@ -705,7 +705,7 @@ public final class DiagnosticsStage extends CommandStage {
 
           Player blayer = Bukkit.getPlayer(userId);
           if (blayer.isOnline()) {
-            blayer.sendMessage(IntavePlugin.prefix() + ChatColor.GREEN + "You can now get feedback again.");
+            blayer.sendMessage(IntavePlugin.prefix() + ChatColor.GREEN + "现在可以再次获取反馈。");
           }
           return;
         }
@@ -724,16 +724,16 @@ public final class DiagnosticsStage extends CommandStage {
     selectors = "resync",
     usage = "",
     permission = "intave.command.diagnostics.statistics",
-    description = "Output packet re-synchronizations"
+    description = "输出数据包重同步"
   )
   public void checkPacketResync(CommandSender sender) {
-    sender.sendMessage(IntavePlugin.prefix() + "Loading data..");
+    sender.sendMessage(IntavePlugin.prefix() + "正在加载数据..");
     Map<String, Long> packets = PacketSynchronizations.output();
     if (packets.isEmpty()) {
-      sender.sendMessage(ChatColor.GREEN + "No hard re-syncs on record");
+      sender.sendMessage(ChatColor.GREEN + "暂无硬重同步记录");
     } else {
       packets = sortHashMapByValues(packets);
-      packets.forEach((name, hardsResyncs) -> sender.sendMessage(ChatColor.RED + name.toLowerCase(Locale.ROOT) + IntavePlugin.defaultColor() + " packets hit a total of " + ChatColor.RED + hardsResyncs + IntavePlugin.defaultColor() + " hard re-syncs"));
+      packets.forEach((name, hardsResyncs) -> sender.sendMessage(ChatColor.RED + name.toLowerCase(Locale.ROOT) + IntavePlugin.defaultColor() + " 包共触发 " + ChatColor.RED + hardsResyncs + IntavePlugin.defaultColor() + " 次硬重同步"));
     }
   }
 
@@ -765,9 +765,9 @@ public final class DiagnosticsStage extends CommandStage {
     description = ""
   )
   public void resourceStatus(CommandSender sender) {
-    sender.sendMessage(IntavePlugin.prefix() + "Resources");
+    sender.sendMessage(IntavePlugin.prefix() + "资源");
     ResourceRegistry.registeredResources().forEach((identifier, resource) ->
-      sender.sendMessage(IntavePlugin.prefix() + " " + identifier.substring(0, 2) + " of " + HashAccess.readHashFromStream(resource.read()))
+      sender.sendMessage(IntavePlugin.prefix() + " " + identifier.substring(0, 2) + " -> " + HashAccess.readHashFromStream(resource.read()))
     );
   }
 
@@ -778,18 +778,18 @@ public final class DiagnosticsStage extends CommandStage {
     description = ""
   )
   public void cacheInvalidate(CommandSender sender) {
-    sender.sendMessage(IntavePlugin.prefix() + "Invalidating caches..");
+    sender.sendMessage(IntavePlugin.prefix() + "正在使缓存失效..");
     for (Resource value : ResourceRegistry.registeredResources().values()) {
       value.delete();
     }
-    sender.sendMessage(IntavePlugin.prefix() + "Done, please restart Intave");
+    sender.sendMessage(IntavePlugin.prefix() + "完成，请重启 Intave");
   }
 
   @SubCommand(
     selectors = "threaddump",
     usage = "",
     permission = "intave.command.diagnostics.statistics",
-    description = "Create and save thread dumps"
+    description = "创建并保存线程转储"
   )
   public void createThreadDump(CommandSender sender) {
     File dumpsFolder = new File(plugin.dataFolder(), "dumps");
@@ -835,11 +835,11 @@ public final class DiagnosticsStage extends CommandStage {
     } catch (FileNotFoundException exception) {
       exception.printStackTrace();
     }
-    sender.sendMessage(IntavePlugin.prefix() + ChatColor.GREEN + "Threaddump created");
-    sender.sendMessage(IntavePlugin.prefix() + "You can find it under " + threadDumpFile.getAbsolutePath());
+    sender.sendMessage(IntavePlugin.prefix() + ChatColor.GREEN + "线程转储已创建");
+    sender.sendMessage(IntavePlugin.prefix() + "文件位置: " + threadDumpFile.getAbsolutePath());
   }
 
-  @SubCommand(selectors = {"packetlog", "pl"}, usage = "[<target>]", permission = "intave.command.diagnostics.statistics", description = "Create and save packet logs")
+  @SubCommand(selectors = {"packetlog", "pl"}, usage = "[<target>]", permission = "intave.command.diagnostics.statistics", description = "创建并保存数据包日志")
   public void startPacketLog(CommandSender sender, Player target) {
     Synchronizer.synchronize(() -> {
       Modules.find(PacketLogging.class).togglePacketLogging(sender, target);
@@ -895,7 +895,7 @@ public final class DiagnosticsStage extends CommandStage {
       int responseCode = httpsURLConnection.getResponseCode();
 
       if (responseCode != 200) {
-        sender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Failed to upload");
+        sender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "上传失败");
         return;
       }
 
@@ -904,10 +904,10 @@ public final class DiagnosticsStage extends CommandStage {
         try {
           JsonObject jsonObject = new JsonParser().parse(str).getAsJsonObject();
           String url1 = jsonObject.getAsJsonObject("data").getAsJsonObject("file").getAsJsonObject("url").get("short").getAsString();
-          sender.sendMessage(IntavePlugin.prefix() + ChatColor.GREEN + "Uploaded to " + url1);
+          sender.sendMessage(IntavePlugin.prefix() + ChatColor.GREEN + "已上传至 " + url1);
         } catch (Exception exception) {
           exception.printStackTrace();
-          sender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Failed to upload");
+          sender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "上传失败");
           System.out.println(str);
         }
         //        System.out.println(str);
@@ -915,13 +915,13 @@ public final class DiagnosticsStage extends CommandStage {
 
     } catch (IOException exception) {
       exception.printStackTrace();
-      sender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Failed to upload");
+      sender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "上传失败");
     }
   }
 
-  @SubCommand(selectors = "statistics", usage = "", permission = "intave.command.diagnostics.statistics", description = "Output check statistics")
+  @SubCommand(selectors = "statistics", usage = "", permission = "intave.command.diagnostics.statistics", description = "输出检测统计")
   public void checkStatisticsCommand(CommandSender sender) {
-    sender.sendMessage(IntavePlugin.prefix() + "Loading check statistics...");
+    sender.sendMessage(IntavePlugin.prefix() + "正在加载检测统计...");
     List<Check> checks = new ArrayList<>(plugin.checks().checks());
     checks.sort(Comparator.comparing(check -> check.baseStatistics().totalFails()));
     boolean output = false;
@@ -934,25 +934,25 @@ public final class DiagnosticsStage extends CommandStage {
       }
       String violatedRate = MathHelper.formatDouble((((double) violations / (double) processed)) * 100d, 5);
       String checkFormat = ChatColor.RED + check.name();
-      String message = checkFormat + IntavePlugin.defaultColor() + ": " + violations + " detections in " + processed + " processes (" + violatedRate + "%)";
+      String message = checkFormat + IntavePlugin.defaultColor() + ": " + processed + " 次处理中检出 " + violations + " 次（" + violatedRate + "%）";
       sender.sendMessage(message);
       output = true;
     }
     if (!output) {
-      sender.sendMessage(IntavePlugin.prefix() + "No check statistics available");
+      sender.sendMessage(IntavePlugin.prefix() + "暂无检测统计");
     }
   }
 
   @SubCommand(
     selectors = "lootchest",
     usage = "",
-    description = "Open a loot chest",
+    description = "打开战利品箱",
     permission = "intave.command.diagnostics.performance"
   )
   public void onLootChest(User user) {
     ChestLootProvider provider = Modules.find(ChestLootProvider.class);
     if (!user.player().isOp()) {
-      user.player().sendMessage(IntavePlugin.prefix() + ChatColor.RED + "You need to be op to use this command");
+      user.player().sendMessage(IntavePlugin.prefix() + ChatColor.RED + "需要 OP 权限才能使用此命令");
       return;
     }
     provider.openLootChestCommand(user.player());
@@ -969,14 +969,14 @@ public final class DiagnosticsStage extends CommandStage {
 
     if (nayoro.recordingActiveFor(user)) {
       nayoro.disableRecordingFor(user);
-      user.player().sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Stopped recording");
+      user.player().sendMessage(IntavePlugin.prefix() + ChatColor.RED + "已停止录制");
     } else {
       if (classifier == null) {
-        user.player().sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Please specify a classifier");
+        user.player().sendMessage(IntavePlugin.prefix() + ChatColor.RED + "请指定分类标签");
         return;
       }
       nayoro.enableRecordingFor(user, Classifier.UNKNOWN, OperationalMode.LOCAL_STORAGE);
-      user.player().sendMessage(IntavePlugin.prefix() + ChatColor.GREEN + "Started recording");
+      user.player().sendMessage(IntavePlugin.prefix() + ChatColor.GREEN + "已开始录制");
     }
   }
 }

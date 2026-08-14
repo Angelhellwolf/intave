@@ -57,15 +57,15 @@ public final class ProxyMessenger {
     }
     if (spigotExpectingProxyConnections) {
       if (serverInOnlineMode) {
-        logger.info(ChatColor.RED + "Spigot expecting proxy connections in online mode?");
-        logger.info(ChatColor.RED + "Proxy connection offline");
+        logger.info(ChatColor.RED + "Spigot 是否期望代理在 online 模式下连接？");
+        logger.info(ChatColor.RED + "代理连接离线");
         return;
       } else {
-        logger.info("Proxy connection online");
+        logger.info("代理连接在线");
       }
     } else {
-      logger.info(ChatColor.RED + "Spigot is not in bungee mode");
-      logger.info(ChatColor.RED + "Proxy connection offline");
+      logger.info(ChatColor.RED + "Spigot 未启用 bungee 模式");
+      logger.info(ChatColor.RED + "代理连接离线");
       return;
     }
     openChannel();

@@ -87,7 +87,7 @@ public final class RotationSensitivityHeuristic extends ClassicHeuristic<Rotatio
       }
       if ((int) Math.round(heuristicMeta.sensitivityVL / 2d) % 50 == 0 && heuristicMeta.sensitivityVL > 0) {
         if (heuristicMeta.sensitivityVL >= 400) {
-          flag(player, "rotations are out of sync (gcd vl:" + heuristicMeta.sensitivityVL + ")");
+          flag(player, "视角不同步 (gcd vl:" + heuristicMeta.sensitivityVL + ")");
           heuristicMeta.sensitivityVL = 300;
         }
       }

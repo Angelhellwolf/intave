@@ -45,7 +45,7 @@ public final class DomainCache {
   }
 
   public List<String> serviceDomains() {
-    if (IntaveControl.AUTHENTICATION_DEBUG_MODE) {
+    if (IntaveControl.AUTHENTICATION_DEBUG_MODE || sortedServiceDomains.isEmpty()) {
       return Collections.singletonList(serviceDomain());
     }
     return sortedServiceDomains;

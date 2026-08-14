@@ -257,7 +257,7 @@ public final class InteractionEmulator implements EventProcessor {
     ) && !IGNORE_SET_IN_SELF.contains(placedBlockType);
     if (raytraceCollidesWithPosition) {
       if (IntaveControl.DEBUG_VARIANT_COMPILATION) {
-        System.out.println("[variant/debug] Failed to place block due to raytrace collision (replacing: " + replace + ")");
+        System.out.println("[variant/debug] 射线追踪发生碰撞，无法放置方块（替换目标：" + replace + "）");
       }
       // only failed, not critical failed, this should not be possible to abuse
       return EmulationResult.FAILED_NON_CRITICAL;
@@ -621,7 +621,7 @@ public final class InteractionEmulator implements EventProcessor {
             "BUCKET"
           );
 //          Synchronizer.synchronize(() -> {
-//            player.sendMessage(ChatColor.DARK_PURPLE + "OVERRIDE " + fullWaterVariantIndex);
+//            player.sendMessage(ChatColor.DARK_PURPLE + "覆盖 " + fullWaterVariantIndex);
 //          });
         }
         break;

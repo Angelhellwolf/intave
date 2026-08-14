@@ -201,7 +201,7 @@ public final class PlayerListService implements BukkitEventSubscriber {
     return grayList != null && (grayList.containsName(name) || grayList.containsId(id));
   }
 
-//  private static final String KICK_MESSAGE = ChatColor.RED + "You are on an anti-cheat blacklist and can't join this server";
+//  private static final String KICK_MESSAGE = ChatColor.RED + "你在反作弊黑名单中，无法加入本服务器";
 
   private void disconnect(Player player) {
     if (!enabled()) {

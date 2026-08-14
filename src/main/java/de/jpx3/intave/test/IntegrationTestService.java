@@ -141,7 +141,7 @@ public final class IntegrationTestService implements EventProcessor {
     if (IS_INTEGRATION_TEST_RUN) {
       ShutdownTasks.add(() -> {
         if (!testsWereRun) {
-          System.err.println("Tests were not run, but this is a test run.");
+          System.err.println("当前为测试运行，但集成测试并未执行。");
           System.exit(1);
         }
       });
@@ -170,13 +170,13 @@ public final class IntegrationTestService implements EventProcessor {
 
   public void performTests() {
     if (Bukkit.getWorlds().isEmpty()) {
-      IntaveLogger.logger().info("No worlds loaded, delaying integration tests");
+      IntaveLogger.logger().info("尚未加载世界，正在推迟集成测试");
       loadQueue.add(this::performTests);
       return;
     }
 
     if (IntaveControl.DEBUG_OUTPUT_FOR_TESTS) {
-      IntaveLogger.logger().info("Start integration testing..");
+      IntaveLogger.logger().info("开始执行集成测试……");
     }
     long start = System.currentTimeMillis();
     try {
@@ -202,12 +202,12 @@ public final class IntegrationTestService implements EventProcessor {
         throwable = throwable.getCause();
       }
       String exceptionName = throwable.getClass().getSimpleName();
-      IntaveLogger.logger().error("Reported " + resolveArticleOf(exceptionName) + " " + exceptionName + ": " + throwable.getMessage());
-      IntaveLogger.logger().error("You are hereby advised to report this fault to us before using this version of Intave.");
-      IntaveLogger.logger().error("If possible, include the following stacktrace in your report:");
+      IntaveLogger.logger().error("检测到 " + exceptionName + "：" + throwable.getMessage());
+      IntaveLogger.logger().error("建议在使用此版本的 Intave 前向我们报告该故障");
+      IntaveLogger.logger().error("如有可能，请在报告中附上以下堆栈信息：");
       throwable.printStackTrace();
       if (IS_INTEGRATION_TEST_RUN) {
-        IntaveLogger.logger().error("Shutting down server due to test failure");
+        IntaveLogger.logger().error("集成测试失败，正在关闭服务器");
         BackgroundExecutors.execute(() -> System.exit(1));
       }
       return;
@@ -216,12 +216,12 @@ public final class IntegrationTestService implements EventProcessor {
     }
     dontCheckThisEnvironmentAgain();
     if (IntaveControl.DEBUG_OUTPUT_FOR_TESTS) {
-      IntaveLogger.logger().info("No problems found after " + MathHelper.formatDouble((System.currentTimeMillis() - start) / 1000d, 1) + "s.");
+      IntaveLogger.logger().info("经过 " + MathHelper.formatDouble((System.currentTimeMillis() - start) / 1000d, 1) + " 秒测试后未发现问题");
     } else {
-      IntaveLogger.logger().info("All integration tests completed successfully.");
+      IntaveLogger.logger().info("所有集成测试均已成功完成");
     }
     if (IS_INTEGRATION_TEST_RUN) {
-      IntaveLogger.logger().info("Shutting down server due to test success");
+      IntaveLogger.logger().info("集成测试成功，正在关闭服务器");
       Synchronizer.synchronizeDelayed(Bukkit::shutdown, 10);
     }
   }
@@ -282,7 +282,7 @@ public final class IntegrationTestService implements EventProcessor {
     cleared.add(name);
     testsInInstance--;
     if (testsInInstance == 0 && IntaveControl.DEBUG_OUTPUT_FOR_TESTS) {
-      IntaveLogger.logger().info("[debug] All tests cleared by GC, no memory leaks detected");
+      IntaveLogger.logger().info("[debug] GC 已清理所有测试，未检测到内存泄漏");
       cleared.clear();
     }
   }

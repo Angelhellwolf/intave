@@ -101,7 +101,7 @@ public final class ItemCrashTracker extends Module {
       for (WrappedChatComponent chatComponent : wrappedChatComponents) {
         if (chatComponent.getJson().length() > 500) {
           event.setCancelled(true);
-          user.kick("Too many characters in sign update packet");
+          user.kick("告示牌更新数据包中的字符过多");
           return;
         }
       }
@@ -123,7 +123,7 @@ public final class ItemCrashTracker extends Module {
     }
 
     if (inventoryData.windowClickCounter++ > 500 && FaultKicks.INVENTORY_FAULTS) {
-      user.kick("Too many inventory interactions");
+      user.kick("背包交互次数过多");
       event.setCancelled(true);
     }
   }

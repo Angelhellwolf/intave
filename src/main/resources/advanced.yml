@@ -1,171 +1,171 @@
-# Before you change anything here:
+# 修改本文件前请注意：
 #
-# In the overwhelming majority of cases, changing stuff here will break things.
-# It is recommended not to change anything here unless you know exactly what you are doing.
-# When you experience false positives, report them to us, and we will fix them.
-# Before changing anything, please check the Intave console output for any warnings or instructions.
-# You can ban the following checks:
-#   - AttackRaytrace.reach at VL 200
-#   - Heuristics at VL 100
-# If you have any questions, contact us on discord.
+# 绝大多数情况下，修改这里会导致问题。
+# 除非你非常清楚自己在做什么，否则不建议改动。
+# 若出现误判，请向我们反馈，我们会修复。
+# 修改前请检查 Intave 控制台是否有警告或说明。
+# 以下检测可考虑封禁：
+#   - AttackRaytrace.reach 在 VL 200
+#   - Heuristics 在 VL 100
+# 有问题可在 Discord 联系我们。
 
 version: "14.0.0"
 state: 0
 
 check:
   physics:
-    # Severely nerfs the physics check
-    #   This option should not be necessary, and will allow players to cheat
-    #   FALSE POSITIVES -> REPORT THEM
+    # 大幅放宽物理检测
+    #   通常不需要开启，开启后玩家更容易作弊
+    #   误判请反馈
     high-tolerance: false
 
-    # Mitigation mode
-    #   Choose between AGGRESSIVE, CAREFUL, LENIENT, BARELY and SILENT
-    #   FALSE POSITIVES -> REPORT THEM
+    # 缓解模式
+    #   可选：AGGRESSIVE、CAREFUL、LENIENT、BARELY、SILENT
+    #   误判请反馈
     mitigation: BARELY
 
-    # Check for NoSlowdown cheats?
+    # 是否检测 NoSlowdown 类作弊？
     enforce-item-slowdown: true
 
-    # Disable tick leniency for velocity packets
+    # 关闭速度包的 tick 宽松处理
     no-speculative-velocity: true
 
-    # Disable bundling of Ping packets with their respective attach packets
+    # 关闭 Ping 包与对应 attach 包的捆绑
     no-bundling: false
 
     on-detection:
-      # Can help reduce item-related false positives
+      # 有助于减少物品相关误判
       reset-item-usage: true
-      # Can help reduce inventory-related false positives
-      # Set this value to "SILENT" to close inventory in silent mitigation mode
+      # 有助于减少背包相关误判
+      # 设为 "SILENT" 可在静默缓解模式下关闭背包
       close-inventory: true
-      # Can help reduce ghost-block related false positives
+      # 有助于减少幽灵方块相关误判
       refresh-nearby-blocks: true
 
-    # DO NOT BAN
+    # 请勿封禁
     thresholds:
-      100: "intave internals sendnotify &c{player}&7/{trust-color}&7 is moving incorrectly"
-      400: "intave internals sendnotify &c{player}&7/{trust-color}&7 is moving incorrectly #2"
+      100: "intave internals sendnotify &c{player}&7/{trust-color}&7 移动异常"
+      400: "intave internals sendnotify &c{player}&7/{trust-color}&7 移动异常 #2"
       500: "intave internals storelog {player} {check} {vl}"
       999:
         - $kick$
 
   timer:
-    # Enable if you want to halt outgoing packets if a player is not sending packets to us
-    # Very effective against blink in combat
+    # 若玩家不向服务器发包，是否暂停对其的出站包
+    # 对战斗中 Blink 非常有效
     reverse-blink: true
 
-    # The maximum ticks a player is allowed to exist behind server tick, aka. "blink", -1 to disable
-    # An aggressive setting would be 3 seconds = 60 ticks
+    # 允许玩家落后服务器 tick 的最大 tick 数（即 blink），-1 为禁用
+    # 较激进：3 秒 = 60 ticks
     blink-limit: -1
 
-    # Do you want to block pulse-blinking?
+    # 是否拦截脉冲式 blink？
     block-pulse-blink: true
 
     thresholds:
-      50: "intave internals sendnotify &c{player}&7/{trust-color}&7 is speeding up their game"
-      75: "intave internals sendnotify &c{player}&7/{trust-color}&7 is speeding up their game #2"
+      50: "intave internals sendnotify &c{player}&7/{trust-color}&7 正在加速游戏"
+      75: "intave internals sendnotify &c{player}&7/{trust-color}&7 正在加速游戏 #2"
       100:
-        - $ban$
+        - $kick$
 
   heuristics:
     enabled: true
 
-    # Sets the violation level increases for each classic check type.
-    # - The number must be an integer and -1 disables the checks
-    # - 0 keeps the check activated and combat nerfers will be applied but no violations are added
+    # 各经典检测类型的违规分增长
+    # - 必须为整数，-1 关闭该检测
+    # - 0 仍启用检测并应用战斗削弱，但不增加违规分
     classic:
-      # Attack Heuristics
+      # 攻击启发式
       attack-accuracy: 4
       attack-required: 3
       pre-attack: 4
 
-      # Rotation Heuristics
+      # 视角启发式
       rotation-accuracy: 4
       rotation-exact: 10
       rotation-snap: 5
       rotation-sensitivity: -1
       rotation-reset: 3
 
-      # Other
+      # 其他
       inventory-rotations: 2
       blocking: 0
       no-swing: 0
       swing-order: 3
-      sprint-toggles: 2 # prevents spamming sprint packets to apply more knockback on targets
-      tool-switch: 3 # prevents slot switches while breaking blocks
+      sprint-toggles: 2 # 防止刷疾跑包以对目标施加更大击退
+      tool-switch: 3 # 防止挖方块时切换物品栏
 
       thresholds:
         20:
           - "intave internals storelog {player} {check} {vl}"
-          - "intave internals sendnotify &e{player}&7 is attacking suspiciously #1"
+          - "intave internals sendnotify &e{player}&7 攻击行为可疑 #1"
 
         40:
-          - "intave internals sendnotify &e{player}&7 is attacking suspiciously #2"
+          - "intave internals sendnotify &e{player}&7 攻击行为可疑 #2"
 
         50:
           - "intave internals storelog {player} {check} {vl}"
-          - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been kicked for attacking suspiciously (on-premise classic heuristics)"
+          - "intave internals sendnotify &c{player}&7/{trust-color}&7 因攻击行为可疑被踢出（本地经典启发式）"
           - $kick$
 
     cloud:
       thresholds:
         50:
           - "intave internals storelog {player} {check} {vl}"
-          - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for attacking suspiciously (cloud heuristics)"
-          - $ban$
+          - "intave internals sendnotify &c{player}&7/{trust-color}&7 因攻击行为可疑被移出（云端启发式）"
+          - $kick$
 
   attackraytrace:
     enabled: true
     applicable-thresholds:
-      # BAN at high VL
+      # 高 VL 时踢出
       reach:
-        50: "intave internals sendnotify &c{player}&7/{trust-color}&7 is attacking suspiciously (reach)"
+        50: "intave internals sendnotify &c{player}&7/{trust-color}&7 攻击行为可疑（超距）"
         150:
           - "intave internals storelog {player} {check} {vl}"
-          - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for attacking suspiciously (reach)"
-          - $ban$
+          - "intave internals sendnotify &c{player}&7/{trust-color}&7 因攻击行为可疑被移出（超距）"
+          - $kick$
 
-      # BAN NOT NECESSARY
+      # 一般无需执行处罚
       hitbox:
-        50: "intave internals sendnotify &c{player}&7/{trust-color}&7 is attacking suspiciously (hitbox)"
-        100: "intave internals sendnotify &c{player}&7/{trust-color}&7 is attacking suspiciously #2 (hitbox)"
+        50: "intave internals sendnotify &c{player}&7/{trust-color}&7 攻击行为可疑（碰撞箱）"
+        100: "intave internals sendnotify &c{player}&7/{trust-color}&7 攻击行为可疑 #2（碰撞箱）"
 
-      # BAN NOT NECESSARY
+      # 一般无需封禁
       timeout:
-        50: "intave internals sendnotify &c{player}&7/{trust-color}&7 is attacking suspiciously (backtrack?)"
-        100: "intave internals sendnotify &c{player}&7/{trust-color}&7 is attacking suspiciously #2 (backtrack?)"
+        50: "intave internals sendnotify &c{player}&7/{trust-color}&7 攻击行为可疑（疑似 backtrack）"
+        100: "intave internals sendnotify &c{player}&7/{trust-color}&7 攻击行为可疑 #2（疑似 backtrack）"
 
   interactionraytrace:
     enabled: true
-    # BAN NOT NECESSARY
+    # 一般无需封禁
     thresholds:
-      50: "intave internals sendnotify &c{player}&7/{trust-color}&7 is interacting suspiciously"
-      100: "intave internals sendnotify &c{player}&7/{trust-color}&7 is interacting suspiciously #2"
+      50: "intave internals sendnotify &c{player}&7/{trust-color}&7 交互行为可疑"
+      100: "intave internals sendnotify &c{player}&7/{trust-color}&7 交互行为可疑 #2"
 
   clickpatterns:
     enabled: true
-    # DO NOT BAN
+    # 请勿执行封禁，只能踢出
     thresholds:
-      50: "intave internals sendnotify &c{player}&7/{trust-color}&7 is clicking statistically anomalously (auto-clicker)"
+      50: "intave internals sendnotify &c{player}&7/{trust-color}&7 点击统计异常（连点）"
       100:
-        - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for clicking statistically anomalously (auto-clicker)"
+        - "intave internals sendnotify &c{player}&7/{trust-color}&7 因点击统计异常被移出（连点）"
         - $kick$
 
   clickspeedlimiter:
     enabled: true
     max-cps: 20
     thresholds:
-      50: "intave internals sendnotify &c{player}&7/{trust-color}&7 is attacking too quickly"
+      50: "intave internals sendnotify &c{player}&7/{trust-color}&7 攻击过快"
       100:
-        - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for attacking too quickly"
+        - "intave internals sendnotify &c{player}&7/{trust-color}&7 因攻击过快被移出"
         - $kick$
 
   breakspeedlimiter:
     enabled: true
-    # BAN NOT NECESSARY
+    # 一般无需执行处罚
     thresholds:
-      100: "intave internals sendnotify &c{player}&7/{trust-color}&7 is breaking blocks too quickly"
+      100: "intave internals sendnotify &c{player}&7/{trust-color}&7 破坏方块过快"
 
   protocolscanner:
     enabled: true
@@ -173,71 +173,71 @@ check:
     check_sent_slot_twice_vl: 100
     packet-order-vl: 5
     thresholds:
-      50: "intave internals sendnotify &c{player}&7/{trust-color}&7 is sending invalid packets"
+      50: "intave internals sendnotify &c{player}&7/{trust-color}&7 发送无效数据包"
       100:
-        - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for sending invalid packets"
-        - $ban$
+        - "intave internals sendnotify &c{player}&7/{trust-color}&7 因发送无效数据包被移出"
+        - $kick$
 
   placementanalysis:
     enabled: true
     check_timings: false
 
-    # Set a limit for the cumulative rotation in a 5 second window
-    # This helps to prevent very strong high-rotation scaffold cheats
-    # In certain scenarios Intave will deduct up to 1250 combined degrees from this value
-    # 360 degrees = 1 full rotation
+    # 5 秒窗口内累计视角旋转上限
+    # 用于抑制高强度高旋转搭路类作弊
+    # 特定情况下 Intave 会从此值再扣减最多 1250 度
+    # 360 度 = 完整一圈
     rotation-limit: 3000
 
     cloud-thresholds:
-      # Executed if a player fails on-premise analysis
+      # 本地分析失败时执行
       on-premise:
         200:
           - "intave internals storelog {player} {check} {vl}"
-          - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for placing blocks suspiciously (scaffold)"
-          - $ban$
+          - "intave internals sendnotify &c{player}&7/{trust-color}&7 因可疑放置方块被移出（搭路）"
+          - $kick$
 
-      # Executed if a player fails cloud analysis
+      # 云端分析失败时执行
       cloud:
         200:
           - "intave internals storelog {player} {check} {vl}"
-          - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for placing blocks suspiciously (cloud heuristics)"
-          - $ban$
+          - "intave internals sendnotify &c{player}&7/{trust-color}&7 因可疑放置方块被移出（云端启发式）"
+          - $kick$
 
   inventoryclickanalysis:
     enabled: true
     high-tolerance: true
-    # DO NOT BAN
+    # 请勿执行封禁，只能踢出
     thresholds:
-      50: "intave internals sendnotify &c{player}&7/{trust-color}&7 is performing invalid item-operations"
+      50: "intave internals sendnotify &c{player}&7/{trust-color}&7 执行无效物品操作"
       100:
-        - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for clicking suspiciously on items"
+        - "intave internals sendnotify &c{player}&7/{trust-color}&7 因可疑物品点击被移出"
         - $kick$
 
 cloud:
-  # Should Intave connect to the cloud?
+  # 是否连接云端？
   enabled: false
 
   features:
-    # Should Intave use the cloud to store metadata?
+    # 是否用云端存储元数据？
     cloud-storage: true
-    # Should Intave use the cloud to acquire trustfactors?
+    # 是否用云端获取信任等级？
     cloud-trustfactor: true
-    # Should Intave use the cloud for additional cheat detection?
+    # 是否用云端做额外作弊检测？
     cloud-heuristics: true
-    # Should Intave use the cloud for log storage?
+    # 是否用云端存储日志？
     cloud-logs: true
 
 storage:
-  # Set to ignore the "intave internals storelog"    and auto-store suggested violations instead
+  # 忽略 "intave internals storelog"，改为自动存储建议违规
   auto-logs: false
 
-  # Should Intave try to transfer VLs when switching between servers?
+  # 跨服切换时是否尝试恢复 VL？
   recover-vl: true
 
 blacklist:
   apply: true
   message-in-chat: false
-  message: "&cYou are on an anti-cheat blacklist and can't join this server"
+  message: "&c你在反作弊黑名单中，无法加入本服务器"
 
 proxy:
   enable: false
@@ -246,16 +246,15 @@ clientwarning:
   enable: true
 
 compatibility:
-  # Position-feedback synchronization enforcement
-  # Disable for GuardSpigot compatibility.
-  # THIS OPTION PREVENTS RESPAWN FLY
+  # 位置反馈同步强制
+  # 若需兼容 GuardSpigot 可关闭
+  # 此选项可防止重生飞行
   position-feedback-sync-enforcement: true
 
-  # Enable if scoreboards are sometimes not visible
+  # 记分板有时不可见时开启
   ignore-scoreboard-packets: false
 
-  # Enabling will have no security impact, but may make
-  # Intave more visible to cheaters debugging network traffic
+  # 开启不影响安全性，但可能让调试网络流量的作弊者更容易发现 Intave
   no-transaction-obfuscation: false
 
 command:
@@ -264,19 +263,19 @@ command:
     "/alerts": "/intave verbose"
     "/cps": "/intave cps"
 
-  # Apply a fix that disables command hide and reroute features,
-  # but fixes a 1.12 bug that kicks players when they tab a command
+  # 修复：关闭命令隐藏与重定向，
+  # 但可修复 1.12 下 Tab 补全命令会踢人的问题
   fix-tab-kicks: false
 
 rejoin:
-  # DO NOT DISABLE IN PRODUCTION
+  # 生产环境请勿关闭
   delay: 3600
   refresh: true
-  message: "&cYou were removed recently, wait before connecting again"
+  message: "&c你刚被移出不久，请稍后再连接"
 
-# You should disable any of these options **ONLY**
-# when experiencing serious problems and **ONLY** after reporting the issue to us.
-# Leaving any of these disabled can result in severely reduced security and stability.
+# 仅在出现严重问题且已向我们反馈后，
+# 才应关闭下列选项。
+# 任意关闭都可能严重降低安全性与稳定性。
 fault-kicks:
   position-faults: true
   missing-position-update: true
@@ -287,31 +286,31 @@ fault-kicks:
   invalid-player-action: true
   inventory-faults: true
 
-# Remove some data from packets used to slightly improve cheats
+# 从部分数据包中移除可轻微增强作弊的数据
 filter:
   equipmentdata: false
   health: true
-  # Disable vanish if you have problems with weird proxy kicks
+  # 若代理踢人异常可关闭 vanish
   vanish: true
 
 logging:
-  # Save logs to a file?
+  # 是否将日志写入文件？
   file-log: true
 
-  # Show trustfactor changes in the console?
+  # 控制台是否显示信任等级变化？
   trustfactor: true
-  # Show client version on join in the console?
+  # 控制台是否显示加入时的客户端版本？
   client-version: true
-  # Show command executions in the console?
+  # 控制台是否显示命令执行？
   command-execution: true
-  # Show fault kicks in the console?
+  # 控制台是否显示故障踢出？
   fault-kicks: true
-  # Dump player log ids in the console?
+  # 控制台是否输出玩家日志 ID？
   cloud-log-ids: true
-  # Verbose mode (ALL, MITIGATED, SELECTED)
+  # 详细模式（ALL、MITIGATED、SELECTED）
   verbose-mode: MITIGATED
 
-  # debugging purposes, do not activate
+  # 调试用，请勿开启
   #feedback-dump: false
 
 analytics:
@@ -320,5 +319,5 @@ analytics:
 
 layout:
   verbose: "{prefix} &c{player}&7/{trust-color}&7 {message} {details} (+{vladded} -> {vl})"
-  notify: "{prefix} &c&lNotify&8: &7{text}"
+  notify: "{prefix} &c&l通知&8: &7{text}"
   prefix: "&8[&c&lIntave&8]&7 "

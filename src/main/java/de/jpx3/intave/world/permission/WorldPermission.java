@@ -29,14 +29,14 @@ public final class WorldPermission {
   ) {
     if (IntaveControl.DISALLOW_ALL_BLOCK_PLACEMENTS) {
 //      Synchronizer.synchronize(() -> {
-//        player.sendMessage(ChatColor.GRAY + "Place of " + MathHelper.formatPosition(new Location(world, blockX, blockY, blockZ)) + " type "+type+"/"+variant+" with "+(mainHand ?"main":"off")+"hand facing "+enumDirection+" is denied");
+//        player.sendMessage(ChatColor.GRAY + "放置 " + MathHelper.formatPosition(new Location(world, blockX, blockY, blockZ)) + " type "+type+"/"+variant+" with "+(mainHand ?"main":"off")+"hand facing "+enumDirection+" is denied");
 //      });
       return false;
     }
     boolean permission = blockPlacePermissionCheck.hasPermission(player, world, mainHand, blockX, blockY, blockZ, enumDirection, type, variant);
     if (IntaveControl.DEBUG_PLACE_AND_BREAK_PERMISSIONS) {
       Synchronizer.synchronize(() -> {
-        player.sendMessage(ChatColor.GRAY + "Place of " + MathHelper.formatPosition(new Location(world, blockX, blockY, blockZ)) + " is " + (permission ? "allowed" : "denied"));
+        player.sendMessage(ChatColor.GRAY + "放置 " + MathHelper.formatPosition(new Location(world, blockX, blockY, blockZ)) + " " + (permission ? "允许" : "拒绝"));
       });
     }
     return permission;
@@ -48,7 +48,7 @@ public final class WorldPermission {
     boolean permission = blockBreakPermissionCheck.hasPermission(player, block);
     if (IntaveControl.DEBUG_PLACE_AND_BREAK_PERMISSIONS) {
       Synchronizer.synchronize(() -> {
-        player.sendMessage(ChatColor.GRAY + "Break of " + MathHelper.formatPosition(block.getLocation()) + " is " + (permission ? "allowed" : "denied"));
+        player.sendMessage(ChatColor.GRAY + "破坏 " + MathHelper.formatPosition(block.getLocation()) + " " + (permission ? "允许" : "拒绝"));
       });
     }
     return permission;

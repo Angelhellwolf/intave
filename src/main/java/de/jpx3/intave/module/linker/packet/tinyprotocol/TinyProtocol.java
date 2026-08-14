@@ -342,8 +342,8 @@ public class TinyProtocol {
         try {
           channel.pipeline().addBefore("packet_handler", handlerName, interceptor);
         } catch (Exception exception) {
-          IntaveLogger.logger().warn("Failed to find packet_handler pipeline element for " + channel);
-          IntaveLogger.logger().warn("Netty broken?!");
+          IntaveLogger.logger().warn("在管线中找不到通道 " + channel + " 的 packet_handler 元素");
+          IntaveLogger.logger().warn("Netty 可能已损坏");
           exception.printStackTrace();
 //          System.out.println("Available channel: " + channel.pipeline().names());
 //          throw new IllegalStateException("Unable to find packet_handler", exception);
@@ -469,7 +469,7 @@ public class TinyProtocol {
       try {
         msg = onPacketOutAsync(player, ctx.channel(), msg);
       } catch (Exception exception) {
-        IntaveLogger.logger().printLine("[Intave] Exception in channel write handle");
+        IntaveLogger.logger().printLine("[Intave] 通道写入处理器发生异常");
         exception.printStackTrace();
       }
       if (msg != null) {

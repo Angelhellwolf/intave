@@ -219,7 +219,7 @@ public final class Nayoro extends Module {
     File sampleFile = new File(samplesFolder, user.player().getUniqueId() + ".sample");
     try {
       if (!sampleFile.exists()) {
-        user.player().sendMessage("§cNo sample found for you.");
+        user.player().sendMessage("§c找不到你的样本。");
         return;
       }
       int available = sampleFile.length() > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) sampleFile.length();
@@ -230,7 +230,7 @@ public final class Nayoro extends Module {
       Playback playback = new InstantPlayback(dataInput, Runnable::run, playbacks::remove);
       playbacks.add(playback);
       playback.start();
-      user.player().sendMessage(String.format("§aPlayback of length %d started.", available));
+      user.player().sendMessage(String.format("§a已开始回放长度为 %d 的样本。", available));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

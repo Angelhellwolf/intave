@@ -40,18 +40,18 @@ public final class MiscBukkitEvents extends Module {
     String currentVersion = IntavePlugin.fullVersion();
     IntaveVersion version = plugin.versions().versionInformation(currentVersion);
     if (version == null) {
-      sendPrefixedMessage(ChatColor.YELLOW + "This server is running an unlisted version of Intave (" + currentVersion + ")", player);
-      sendPrefixedMessage(ChatColor.YELLOW + "It is possible that bugs occur", player);
+      sendPrefixedMessage(ChatColor.YELLOW + "此服务器正在运行未收录的 Intave 版本（" + currentVersion + "）", player);
+      sendPrefixedMessage(ChatColor.YELLOW + "此版本可能存在未知问题", player);
     } else {
       if (version.typeClassifier() == IntaveVersion.Status.OUTDATED) {
         long duration = System.currentTimeMillis() - version.release();
         String durationAsString = DurationTranslator.translateHours(duration);
 
-        sendPrefixedMessage(ChatColor.RED + "This server is running an outdated version of Intave (" + durationAsString + " old)", player);
+        sendPrefixedMessage(ChatColor.RED + "此服务器正在运行过旧的 Intave 版本（已发布 " + durationAsString + "）", player);
         if (!Bukkit.getPluginManager().isPluginEnabled("IntaveBootstrap")) {
-          sendPrefixedMessage(ChatColor.RED + "Too lazy? Stay up-to-date automatically with IntaveBootstrap", player);
+          sendPrefixedMessage(ChatColor.RED + "可安装 IntaveBootstrap 自动保持最新版本", player);
         }
-        sendPrefixedMessage(ChatColor.RED + "We hope you understand why updating your *security* software might be important.", player);
+        sendPrefixedMessage(ChatColor.RED + "反作弊属于安全软件，请及时更新。", player);
       }
     }
   }
@@ -60,8 +60,8 @@ public final class MiscBukkitEvents extends Module {
   public void on(PlayerTeleportEvent teleport) {
     if (IntaveControl.DEBUG_TELEPORT_CAUSE_AND_CAUSER) {
       PluginInvocation pluginInvocation = Caller.pluginInfo(false);
-      String pluginClass = pluginInvocation == null ? "no other plugin" : pluginInvocation.className();
-      teleport.getPlayer().sendMessage("Teleport " + teleport.getCause() + " " + teleport.getTo() + " by " + pluginClass);
+      String pluginClass = pluginInvocation == null ? "无其他插件" : pluginInvocation.className();
+      teleport.getPlayer().sendMessage("传送 " + teleport.getCause() + " " + teleport.getTo() + " 由 " + pluginClass);
     }
   }
 
@@ -120,7 +120,7 @@ public final class MiscBukkitEvents extends Module {
         event.setCancelled(true);
       }
       if (user.receives(MessageChannel.DEBUG_ITEM_RESETS)) {
-        user.player().sendMessage(IntavePlugin.prefix() + " Cancelled your arrow shot to sync with the server");
+        user.player().sendMessage(IntavePlugin.prefix() + " 已取消本次射箭以与服务器状态同步");
       }
       inventory.blockNextArrow = false;
     }
@@ -143,15 +143,6 @@ public final class MiscBukkitEvents extends Module {
 //    System.out.println("RESET " + event.getPlayer() + " " + event.getCooledAttackStrength());
 ////    Thread.dumpStack();
 //  }
-
-  @BukkitEventSubscription
-  public void on(PlayerItemConsumeEvent consumption) {
-    User user = UserRepository.userOf(consumption.getPlayer());
-    InventoryMetadata inventory = user.meta().inventory();
-    if (System.currentTimeMillis() - inventory.lastFoodConsumptionBlockRequest < 800L) {
-      consumption.setCancelled(true);
-    }
-  }
 
   private void sendPrefixedMessage(String message, CommandSender target) {
     if (!Bukkit.isPrimaryThread()) {

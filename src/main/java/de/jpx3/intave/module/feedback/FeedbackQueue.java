@@ -104,6 +104,22 @@ public final class FeedbackQueue {
     }
   }
 
+  List<FeedbackRequest<?>> pollAcknowledged() {
+    writeLock.lock();
+    try {
+      List<FeedbackRequest<?>> acknowledged = null;
+      while (head != null && head.request.isAcknowledgedByClient()) {
+        if (acknowledged == null) {
+          acknowledged = new ArrayList<>();
+        }
+        acknowledged.add(poll());
+      }
+      return acknowledged == null ? Collections.emptyList() : acknowledged;
+    } finally {
+      writeLock.unlock();
+    }
+  }
+
   // can be a bit expensive, shouldn't be used too often though
   public synchronized List<FeedbackRequest<?>> pollUpTo(long globalKey) {
     writeLock.lock();

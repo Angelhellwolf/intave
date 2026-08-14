@@ -192,7 +192,7 @@ public class Inventory {
       } else if (isArmor(item)) {
         EquipmentSlot slot = EquipmentSlot.of(item.getType());
         if (slot == null) {
-          System.out.println("Unknown slot for " + item.getType().name());
+          System.out.println("无法识别物品 " + item.getType().name() + " 所在的槽位");
           return ItemCategory.OTHER;
         }
         return slot.category();

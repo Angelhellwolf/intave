@@ -92,7 +92,7 @@ public final class Analytics {
       long hour = System.currentTimeMillis() / 1000 / 60 / 60 % 24;
       plugin.uploader().scheduledUpload("analytics-" + hour, json.toString());
     } catch (IOException exception) {
-      System.out.println("[Intave] Unable to upload analytics data");
+      System.out.println("[Intave] 无法上传分析数据");
       exception.printStackTrace();
     }
   }

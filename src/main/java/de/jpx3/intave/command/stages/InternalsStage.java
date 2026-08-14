@@ -29,7 +29,7 @@ public final class InternalsStage extends CommandStage {
     selectors = "sendnotify",
     usage = "<message...>",
     permission = "intave.command.internals.sendnotify",
-    description = "Send notifications"
+    description = "发送通知"
   )
   public void internalCommand(CommandSender commandSender, String[] message) {
     String fullMessage = Arrays.stream(message).map(s -> s + " ").collect(Collectors.joining()).trim();
@@ -93,24 +93,24 @@ public final class InternalsStage extends CommandStage {
     selectors = "storelog",
     usage = "<player> <check> <vl>",
     permission = "intave.command.internals.storelog",
-    description = "Store the log of a player"
+    description = "存储玩家日志"
   )
   public void storeLog(CommandSender commandSender, Player target, String checkName, Double violationLevel) {
     User user = UserRepository.userOf(target);
     LongTermViolationStorage violationStorage = user.storageOf(LongTermViolationStorage.class);
     violationStorage.noteViolation(checkName, violationLevel.intValue());
     if (LongTermViolationStorage.USE_AUTO_STORAGE) {
-      commandSender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Auto storage is enabled. This command will not work.");
+      commandSender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "已启用自动存储，此命令无效。");
       return;
     }
-    commandSender.sendMessage(IntavePlugin.prefix() + ChatColor.RED +"Added history entry for "+ target.getName() + " " + IntavePlugin.defaultColor() + "reaching " + ChatColor.RED + violationLevel.intValue() + " VL " + IntavePlugin.defaultColor() + "on " + ChatColor.RED + checkName);
+    commandSender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "已为 " + target.getName() + " " + IntavePlugin.defaultColor() + "添加历史记录：在 " + ChatColor.RED + checkName + IntavePlugin.defaultColor() + " 达到 " + ChatColor.RED + violationLevel.intValue() + " VL");
   }
 
   @SubCommand(
     selectors = {"collectivekick", "kickip"},
     usage = "<player> <message>",
     permission = "intave.command.internals.collectivekick",
-    description = "Kicks all players with the same ip as the target player"
+    description = "踢出与目标相同 IP 的所有玩家"
   )
   public void collectiveKick(CommandSender commandSender, Player target, String[] messageParts) {
     String message = Arrays.stream(messageParts).map(s -> s + " ").collect(Collectors.joining()).trim();

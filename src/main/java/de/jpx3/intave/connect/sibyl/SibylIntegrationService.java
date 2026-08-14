@@ -80,7 +80,7 @@ public final class SibylIntegrationService implements BukkitEventSubscriber {
     }
     if (!Arrays.equals(decryptRSA(packet.encryptedVerifyToken()), verifyToken)) {
       if (IntaveControl.SIBYL_DEBUG) {
-        System.out.println("Sibyl: Invalid verify token for " + player.getName());
+        System.out.println("Sibyl：玩家 " + player.getName() + " 的验证令牌无效");
       }
       return;
     }
@@ -91,7 +91,7 @@ public final class SibylIntegrationService implements BukkitEventSubscriber {
       } catch (Exception exception) {
         exception.printStackTrace();
         Synchronizer.synchronize(() -> {
-          player.kickPlayer(ChatColor.RED + "Error authenticating");
+          player.kickPlayer(ChatColor.RED + "认证错误");
         });
       }
     }

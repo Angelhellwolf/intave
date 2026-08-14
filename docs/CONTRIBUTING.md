@@ -1,35 +1,35 @@
-# Contributing
+# 贡献指南
 
-## Welcome
-Do you hate your life? Do you have no friends? Do you enjoy misery?
+## 欢迎
+讨厌自己的生活？没有朋友？享受痛苦？
 
-If you answered "yes" thrice, welcome aboard!
-We are always looking for enthusiastic ~~idiots~~ contributors helping us in times
-of crisis, which is -- you already guessed it -- all the time!
+如果以上三问你都答「是」，欢迎上船！
+我们一直在找热情的~~傻瓜~~贡献者，在危机时刻帮我们一把——
+而你大概已经猜到了：危机是常态！
 
-## Contribution guidelines
+## 贡献准则
 
-Small and big contributions are always welcome.
-Just know that we put larger or movement-related contributions under
-high scrutiny and are not hesitant to reject them if they do not meet our standards (which are usually quite low but in this case not).
-Splitting up larger contributions into smaller ones increases the chances of them being accepted, so don't be afraid to do so.
-If you want to contribute, but are not sure how, feel free to ask us on [Discord](https://intave.ac/go/discord) or open an issue to discuss your idea.
+大小贡献都欢迎。
+请注意：较大或与移动相关的贡献会经过严格审查，
+若未达标准（通常我们标准不高，但在这事上例外）我们会果断拒绝。
+把大改动拆成小 PR 更容易被接受，别怕拆分。
+若想贡献但不知从何下手，可在 [Discord](https://intave.ac/go/discord) 提问，或开 issue 讨论想法。
 
-### 4-space indentation
-While we know that 4-space indentation is the standard in Java, we prefer 2-space indentation in our codebase.
-If you want to work with 4-space indentation, convert the file to tabs and set your tab width to 2 spaces.
-This way, you can work with 4-space indentation in your editor, 
-but the codebase remains consistent with 2-space indentation.
+### 缩进：2 空格（而非 4）
+我们知道 Java 常用 4 空格缩进，但本仓库偏好 2 空格。
+若你想用 4 空格工作，可将文件转为 Tab，并把 Tab 宽度设为 2 空格。
+这样编辑器里可以按 4 空格观感操作，
+仓库仍保持 2 空格一致风格。
 
-### Adding checks and sub-checks
-1. Do not create a completely new check (a class that extends the Check class) unless you consult with us beforehand.
-2. If you submit a heuristic sub-check (under ClickPatterns, Heuristics, PlacementAnalysis, etc.), describe in your PR why bypassing your check is difficult or tedious for cheat developers.
+### 添加检测与子检测
+1. 除非事先与我们沟通，否则不要新建完整检测（继承 Check 的类）。
+2. 若提交启发式子检测（ClickPatterns、Heuristics、PlacementAnalysis 等），请在 PR 中说明：为何对作弊开发者而言绕过你的检测困难或麻烦。
 
-## How to contribute
+## 如何贡献
 
-1. Fork the repository and create a new branch labelled `feature/your-feature-name` or `bugfix/your-bugfix-name`.
-2. Make your changes and commit them with clear and concise messages.
-3. Push your changes to your forked repository.
-4. Open a pull request to the main repository. 
-5. Wait for a maintainer to review your pull request. We may ask you to make some changes before we can merge it, so please be patient and responsive to feedback.
-6. Once your pull request is approved, it will be merged into the main branch.
+1. Fork 仓库，并创建分支，命名为 `feature/your-feature-name` 或 `bugfix/your-bugfix-name`。
+2. 完成修改，并用清晰简洁的说明提交 commit。
+3. 推送到你的 fork。
+4. 向主仓库发起 pull request。
+5. 等待维护者审查。合并前可能会要求你修改，请耐心并及时反馈。
+6. PR 通过后会合并到主分支。

@@ -44,7 +44,7 @@ public final class IntaveVersionList {
         contentLookup.put(version.version().toLowerCase(Locale.ROOT), version);
       }
     } catch (Exception e) {
-      IntaveLogger.logger().warn("Failed to load version list");
+      IntaveLogger.logger().warn("版本列表加载失败");
     }
   }
 

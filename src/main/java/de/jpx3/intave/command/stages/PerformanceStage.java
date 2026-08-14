@@ -31,13 +31,13 @@ public final class PerformanceStage extends CommandStage {
   @SubCommand(
     selectors = "timings",
     usage = "",
-    description = "Output timing data",
+    description = "输出计时数据",
     permission = "intave.command.diagnostics"
   )
   public void timingsCommand(User user, @Optional String[] specifier) {
     String fullSpecifier = specifier != null ? Arrays.stream(specifier).map(s -> s + " ").collect(Collectors.joining()).trim().toLowerCase(Locale.ROOT) : "";
     Player player = user.player();
-    player.sendMessage(ChatColor.RED + "Loading timings...");
+    player.sendMessage(ChatColor.RED + "正在加载计时...");
     List<Timing> timings = new ArrayList<>(Timings.timingPool());
     timings.sort(Timing::compareTo);
 
@@ -68,13 +68,13 @@ public final class PerformanceStage extends CommandStage {
   @SubCommand(
     selectors = "events",
     usage = "",
-    description = "Output timing data",
+    description = "输出计时数据",
     permission = "intave.command.diagnostics"
   )
   public void eventTimingsCommand(User user, @Optional String[] specifier) {
     String fullSpecifier = specifier != null ? Arrays.stream(specifier).map(s -> s + " ").collect(Collectors.joining()).trim().toLowerCase(Locale.ROOT) : "";
     Player player = user.player();
-    player.sendMessage(ChatColor.RED + "Loading timings...");
+    player.sendMessage(ChatColor.RED + "正在加载计时...");
 
     List<Timing> timings = new ArrayList<>(Timings.timingPool());
     timings.sort(Timing::compareTo);
@@ -103,14 +103,14 @@ public final class PerformanceStage extends CommandStage {
   @SubCommand(
     selectors = "packets",
     usage = "",
-    description = "Output timing data",
+    description = "输出计时数据",
     permission = "intave.command.diagnostics"
   )
   public void packetTimingsCommand(User user, @Optional String[] specifier) {
     String fullSpecifier = specifier != null ? Arrays.stream(specifier).map(s -> s + " ").collect(Collectors.joining()).trim().toLowerCase(Locale.ROOT) : "";
 
     Player player = user.player();
-    player.sendMessage(ChatColor.RED + "Loading timings...");
+    player.sendMessage(ChatColor.RED + "正在加载计时...");
 
     List<Timing> timings = new ArrayList<>(Timings.timingPool());
     timings.sort(Timing::compareTo);

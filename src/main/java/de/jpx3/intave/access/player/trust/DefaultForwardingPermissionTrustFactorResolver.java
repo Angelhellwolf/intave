@@ -34,6 +34,6 @@ public final class DefaultForwardingPermissionTrustFactorResolver implements Tru
 
   @Override
   public String toString() {
-    return "PermissionCheck, defaulting to " + forward.toString();
+    return "权限检查，未匹配时转交 " + forward.toString();
   }
 }

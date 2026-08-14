@@ -93,7 +93,7 @@ public final class IntaveLogger extends PluginLogger {
   }
 
   public void error(String message) {
-    String fullMessage = IntavePlugin.prefix() + ChatColor.DARK_RED + ChatColor.BOLD + "ERROR" + IntavePlugin.defaultColor() + ": " + ChatColor.RED + message;
+    String fullMessage = IntavePlugin.prefix() + ChatColor.DARK_RED + ChatColor.BOLD + "错误" + IntavePlugin.defaultColor() + "：" + ChatColor.RED + message;
     for (PrintStream outputStream : outputStreams) {
       outputStream.print(ChatColor.stripColor(fullMessage));
     }
@@ -106,7 +106,7 @@ public final class IntaveLogger extends PluginLogger {
   }
 
   public void warn(String message) {
-    String fullMessage = IntavePlugin.prefix() + ChatColor.YELLOW + ChatColor.BOLD + "WARNING" + IntavePlugin.defaultColor() + ": " + ChatColor.RED + message;
+    String fullMessage = IntavePlugin.prefix() + ChatColor.YELLOW + ChatColor.BOLD + "警告" + IntavePlugin.defaultColor() + "：" + ChatColor.RED + message;
     for (PrintStream outputStream : outputStreams) {
       outputStream.print(ChatColor.stripColor(fullMessage));
     }
@@ -125,14 +125,14 @@ public final class IntaveLogger extends PluginLogger {
   public void commandExecution(String command) {
     if (ConsoleOutput.COMMAND_EXECUTION_DEBUG) {
       command = ChatColor.stripColor(command);
-      printLine("[Intave] Issued server command /" + command);
+      printLine("[Intave] 已执行服务器命令 /" + command);
       logToFile("(EXE) " + command);
     }
   }
 
   @Deprecated
   public void exception(Throwable throwable) {
-    printLine("[Intave] Caught an " + throwable.getClass().getSimpleName() + " exception");
+    printLine("[Intave] 捕获到 " + throwable.getClass().getSimpleName() + " 异常");
     for (PrintStream outputStream : outputStreams) {
       throwable.printStackTrace(outputStream);
     }
@@ -260,7 +260,7 @@ public final class IntaveLogger extends PluginLogger {
 //      BackgroundExecutor.execute(() -> {
       if (originalFile.exists() && !archiveFile.exists()) {
         FileArchiver.archiveAndDeleteFile(originalFile, archiveFile);
-        info("Compressed \"" + originalFile + "\"");
+        info("已压缩 \"" + originalFile + "\"");
       }
 //      });
     }

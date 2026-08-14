@@ -44,10 +44,10 @@ public final class EntityMetadataReader extends EntityReader {
       }
       return rawObject.map(o -> BlockPosition.fromNative(o).toBlockPosition());
     } catch (Exception e) {
-      System.err.println("Failed to read bed position from entity metadata, returning empty");
-      System.err.println("Required index: " + index);
-      System.err.println("Target entityid: " + entityId());
-      System.err.println("Entity metadata: " + entryMap());
+      System.err.println("无法从实体元数据读取床位置，将返回空值");
+      System.err.println("所需索引：" + index);
+      System.err.println("目标实体 ID：" + entityId());
+      System.err.println("实体元数据：" + entryMap());
       e.printStackTrace();
       return Optional.empty();
     }

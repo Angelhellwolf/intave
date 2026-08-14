@@ -40,7 +40,7 @@ val gitCommitHash by lazy {
 val simpleName = "Intave"
 group = "de.jpx3"
 version = "$gitTag-$gitCommitHash"
-description = "Automated cheat detection and prevention"
+description = "自动检测并阻止作弊行为"
 
 /*
  * Dependencies

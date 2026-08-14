@@ -49,7 +49,7 @@ public final class IntaveAccessService {
     return new IntaveAccess() {
       @Override
       public void setTrustFactorResolver(TrustFactorResolver resolver) {
-        IntaveLogger.logger().info("Set trust factor resolver to " + resolver);
+        IntaveLogger.logger().info("已将信任系数解析器设置为 " + resolver);
         plugin.trustFactorService().setCustomTrustFactorResolver(resolver);
       }
 
@@ -58,7 +58,7 @@ public final class IntaveAccessService {
         if (defaultTrustFactor == null) {
           throw new NullPointerException("Default TrustFactor must not be null");
         }
-        IntaveLogger.logger().info("Setting default trust factor to " + defaultTrustFactor.coloredBaseName());
+        IntaveLogger.logger().info("正在将默认信任系数设置为 " + defaultTrustFactor.coloredBaseName());
         plugin.trustFactorService().setDefaultTrustFactor(defaultTrustFactor);
       }
 
@@ -74,7 +74,7 @@ public final class IntaveAccessService {
 
       @Override
       public void setStorageGateway(StorageGateway gateway) {
-        IntaveLogger.logger().info("Set storage gateway to " + gateway);
+        IntaveLogger.logger().info("已将存储网关设置为 " + gateway);
         Modules.storage().setStorageGateway(gateway);
       }
 

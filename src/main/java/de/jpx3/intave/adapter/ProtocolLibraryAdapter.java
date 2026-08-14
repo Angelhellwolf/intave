@@ -11,7 +11,7 @@ import org.bukkit.Bukkit;
 import java.util.Arrays;
 
 public final class ProtocolLibraryAdapter {
-  private static final String PROTOCOLLIB_OUTDATED = "Your version of ProtocolLib is outdated";
+  private static final String PROTOCOLLIB_OUTDATED = "ProtocolLib 版本过旧";
 
   @Deprecated
   public static MinecraftVersion serverVersion() {
@@ -28,43 +28,43 @@ public final class ProtocolLibraryAdapter {
     boolean byteBuddyExists = classExists("com.comphenix.net.bytebuddy.ByteBuddy");
 
     if (!specifiedEnumModifier) {
-      throw new InvalidDependencyException(PROTOCOLLIB_OUTDATED + " (missing generic enum conversion)");
+      throw new InvalidDependencyException(PROTOCOLLIB_OUTDATED + "（缺少通用枚举转换）");
     }
 
     try {
       Class<?> minecraftKeyClass = MinecraftReflection.getMinecraftKeyClass();
     } catch (Throwable throwable) {
-      throw new InvalidDependencyException(PROTOCOLLIB_OUTDATED + " (missing MinecraftKey class reference)");
+      throw new InvalidDependencyException(PROTOCOLLIB_OUTDATED + "（缺少 MinecraftKey 类引用）");
     }
 
     if (!methodExists(MinecraftVersion.class.getName(), "atOrAbove")) {
-      throw new InvalidDependencyException(PROTOCOLLIB_OUTDATED + " (atOrAbove check missing)");
+      throw new InvalidDependencyException(PROTOCOLLIB_OUTDATED + "（缺少 atOrAbove 检查）");
     }
 
     if (!methodExistsInClassHierarchy(PacketContainer.class.getName(), "getMinecraftKeys")) {
-      throw new InvalidDependencyException(PROTOCOLLIB_OUTDATED + " (missing minecraft key access)");
+      throw new InvalidDependencyException(PROTOCOLLIB_OUTDATED + "（缺少 MinecraftKey 访问能力）");
     }
 
     if (MinecraftVersions.VER1_14_0.atOrAbove()) {
       if (!methodExistsInClassHierarchy("com.comphenix.protocol.events.PacketContainer", "getMovingBlockPositions")) {
-        throw new InvalidDependencyException(PROTOCOLLIB_OUTDATED + " (missing moving-object-position packet access)");
+        throw new InvalidDependencyException(PROTOCOLLIB_OUTDATED + "（缺少移动对象位置数据包访问能力）");
       }
     }
 
     if (MinecraftVersions.VER1_17_0.atOrAbove()) {
       if (!methodExistsInClassHierarchy(PacketContainer.class.getName(), "getEnumEntityUseActions")) {
-        throw new InvalidDependencyException(PROTOCOLLIB_OUTDATED + " (missing enum entity use action access)");
+        throw new InvalidDependencyException(PROTOCOLLIB_OUTDATED + "（缺少实体交互动作枚举访问能力）");
       }
 
       if (MinecraftVersions.VER1_17_1.atOrAbove()) {
         if (!methodExistsInClassHierarchy(PacketContainer.class.getName(), "getIntLists")) {
-          throw new InvalidDependencyException(PROTOCOLLIB_OUTDATED + " (missing int list access)");
+          throw new InvalidDependencyException(PROTOCOLLIB_OUTDATED + "（缺少整数列表访问能力）");
         }
       }
     }
 
     if (!temporaryPlayer || !byteBuddyExists) {
-      IntaveLogger.logger().info("Consider updating ProtocolLib");
+      IntaveLogger.logger().info("建议更新 ProtocolLib");
     }
   }
 

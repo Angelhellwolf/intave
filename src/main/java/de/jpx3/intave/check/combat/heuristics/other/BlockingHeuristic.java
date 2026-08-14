@@ -99,7 +99,7 @@ public final class BlockingHeuristic extends ClassicHeuristic<BlockingHeuristic.
 
         int ticksBetweenBlockAndUnblock = meta.ticksBetweenBlockAndUnblock;
         if (ticksBetweenBlockAndUnblock == 0) {
-          String description = "unblocked too quickly (" + ticksBetweenBlockAndUnblock + ")";
+          String description = "取消格挡过快（" + ticksBetweenBlockAndUnblock + ")";
           flag(player, description);
           //dmc6
           user.nerf(AttackNerfStrategy.BLOCKING, "block:speed");
@@ -113,7 +113,7 @@ public final class BlockingHeuristic extends ClassicHeuristic<BlockingHeuristic.
       boolean sword = itemInHand != null && itemInHand.getType().name().endsWith("_SWORD");
 
       if (meta.releasedItemAfterClientTick) {
-        String description = "sent multiple blocking interactions per tick (" + (itemInHand == null ? "null" : itemInHand.getType()) + ")";
+        String description = "每 tick 发送多次格挡交互（" + (itemInHand == null ? "null" : itemInHand.getType()) + ")";
         flag(player, description);
         user.nerf(AttackNerfStrategy.BLOCKING, "block:multiple");
       }
@@ -130,7 +130,7 @@ public final class BlockingHeuristic extends ClassicHeuristic<BlockingHeuristic.
         if (clientTicksBetweenBlockingToggle == 0 && meta.acaBlockingVL < 20) {
           meta.acaBlockingVL++;
           if (meta.acaBlockingVL > 2) {
-            String description = "sent too few packets between block-toggle packets (vl: " + meta.acaBlockingVL + ")";
+            String description = "格挡切换包之间数据包过少 (vl: " + meta.acaBlockingVL + ")";
             flag(player, description);
             user.nerf(AttackNerfStrategy.BLOCKING, "block:packets");
           }
@@ -164,7 +164,7 @@ public final class BlockingHeuristic extends ClassicHeuristic<BlockingHeuristic.
     if (!movementData.receivedFlyingPacketIn(2) || clientData.protocolVersion() < VER_1_9) {
       if (meta.heldItemOperations > 0) {
         if (meta.blocksPlacedThisTick == 0 || meta.heldItemOperations > 2) {
-          String description = "sent too many item operations (operations: " + meta.heldItemOperations + ")";
+          String description = "物品操作过多 (operations: " + meta.heldItemOperations + ")";
           description += " (version " + user.meta().protocol().versionString() + ")";
           flag(player, description);
           meta.unsendPackets.clear();

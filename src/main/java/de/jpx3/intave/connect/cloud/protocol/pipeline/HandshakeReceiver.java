@@ -133,7 +133,7 @@ public final class HandshakeReceiver extends ChannelInboundHandlerAdapter implem
   public void exceptionCaught(ChannelHandlerContext channelHandlerContext, Throwable throwable) throws Exception {
 //    channelHandlerContext.fireExceptionCaught(throwable);
 //    throwable.printStackTrace();
-    IntaveLogger.logger().info("Exception caught in cloud connection " + channelHandlerContext.name() + ": " + throwable.getMessage());
+    IntaveLogger.logger().info("云端连接 " + channelHandlerContext.name() + " 捕获到异常：" + throwable.getMessage());
     channelHandlerContext.close();
   }
 }

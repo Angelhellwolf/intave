@@ -284,7 +284,7 @@ public final class MovementDispatcher extends Module {
 
     Player player = event.getPlayer();
     if (player.isDead() || event.isCancelled()) {
-      logging.logSystemMessage(UserRepository.userOf(player), () -> "MOVEMENT IGNORED: Player is dead or event is cancelled");
+      logging.logSystemMessage(UserRepository.userOf(player), () -> "MOVEMENT IGNORED: Player is dead 还是 event is cancelled");
       return;
     }
 
@@ -332,14 +332,14 @@ public final class MovementDispatcher extends Module {
     }
 
     if (reader.anyNaNOrInfiniteValue() && FaultKicks.POSITION_FAULTS) {
-      user.kick("NaN/infinite in server-bound movement packet");
+      user.kick("发往服务端的移动数据包包含无效数值");
       return;
     }
 
     if (hasMovement || movement.isInVehicle() || movement.inRespawnScreen) {
       movement.lastPositionUpdate = 0;
     } else if (++movement.lastPositionUpdate > 20 && FaultKicks.MISSING_POSITION_UPDATE && !user.justJoined() && !user.trustFactor().atLeast(TrustFactor.BYPASS)) {
-      user.kick("Missing position update " + movement.vehicle());
+      user.kick("缺少位置更新 " + movement.vehicle());
     }
 
     // fix only works for 1.8
@@ -350,7 +350,7 @@ public final class MovementDispatcher extends Module {
         movement.acceptSneakFaults = true;
       });
       if (movement.sprintSneakFaults > 1) {
-        user.kick("Repeated player action faults");
+        user.kick("玩家操作数据连续异常");
       }
     }
 
@@ -373,10 +373,10 @@ public final class MovementDispatcher extends Module {
         if (DEBUG_MOVEMENT_IGNORE) {
           double yawDifference = MathHelper.noAbsDistanceInDegrees(movement.lastRotationYaw, yaw);
           double pitchDifference = MathHelper.noAbsDistanceInDegrees(movement.lastRotationPitch, pitch);
-          System.out.println("[Intave] Click movement ignore distance: " + distance + " yaw: " + yawDifference + " pitch: " + pitchDifference);
-          IntavePlugin.singletonInstance().logTransmittor().addPlayerLog(player, "(DEBUG/MOVEMENTIGNORE) Click movement ignore distance: " + distance + " yaw: " + yawDifference + " pitch: " + pitchDifference);
+          System.out.println("[Intave] 已忽略点击移动，距离：" + distance + "，偏航角：" + yawDifference + "，俯仰角：" + pitchDifference);
+          IntavePlugin.singletonInstance().logTransmittor().addPlayerLog(player, "(DEBUG/MOVEMENTIGNORE) 已忽略点击移动，距离：" + distance + "，偏航角：" + yawDifference + "，俯仰角：" + pitchDifference);
         }
-        logging.logSystemMessage(user, () -> "MOVEMENT IGNORED: Click movement ignore distance: " + distance);
+        logging.logSystemMessage(user, () -> "已忽略移动：点击移动距离 " + distance);
 
         if (!MinecraftVersions.VER1_9_0.atOrAbove()) {
           event.setCancelled(true);
@@ -390,7 +390,7 @@ public final class MovementDispatcher extends Module {
     movement.awaitClickMovementSkip = false;
 
     if (user.receives(MessageChannel.DEBUG_POSITION)) {
-      ActionBar.sendActionBar(player, "intave:" + formatDouble(movement.positionY, 2) + " server:" + formatDouble(player.getLocation().getY(), 2));
+      ActionBar.sendActionBar(player, "Intave 位置：" + formatDouble(movement.positionY, 2) + "，服务器位置：" + formatDouble(player.getLocation().getY(), 2));
     }
 
     connectionData.receiveMovement();
@@ -421,12 +421,12 @@ public final class MovementDispatcher extends Module {
 
     if (movement.awaitTeleport || movement.awaitOutgoingTeleport) {
       if (DEBUG_MOVEMENT_IGNORE) {
-        System.out.println("[Intave] Teleport movement ignore " + movement.awaitTeleport + " " + movement.awaitOutgoingTeleport);
-        IntavePlugin.singletonInstance().logTransmittor().addPlayerLog(player, "(DEBUG/MOVEMENTIGNORE) Teleport movement ignore " + movement.awaitTeleport + " " + movement.awaitOutgoingTeleport);
+        System.out.println("[Intave] 已忽略传送期间的移动 " + movement.awaitTeleport + " " + movement.awaitOutgoingTeleport);
+        IntavePlugin.singletonInstance().logTransmittor().addPlayerLog(player, "(DEBUG/MOVEMENTIGNORE) 已忽略传送期间的移动 " + movement.awaitTeleport + " " + movement.awaitOutgoingTeleport);
       }
       event.setCancelled(true);
       movement.dropPostTickMotionProcessing = true;
-      logging.logSystemMessage(user, () -> "MOVEMENT IGNORED: Teleport movement ignore " + movement.awaitTeleport + " " + movement.awaitOutgoingTeleport);
+      logging.logSystemMessage(user, () -> "已忽略移动：等待传送 " + movement.awaitTeleport + " " + movement.awaitOutgoingTeleport);
       reader.release();
       return;
     }
@@ -435,15 +435,15 @@ public final class MovementDispatcher extends Module {
 
     if (distance > 50) {
       if (DEBUG_MOVEMENT_IGNORE) {
-        System.out.println("[Intave] Distance movement ignore: " + distance);
-        IntavePlugin.singletonInstance().logTransmittor().addPlayerLog(player, "(DEBUG/MOVEMENTIGNORE) Distance movement ignore: " + distance);
+        System.out.println("[Intave] 已忽略超距移动：" + distance);
+        IntavePlugin.singletonInstance().logTransmittor().addPlayerLog(player, "(DEBUG/MOVEMENTIGNORE) 已忽略超距移动：" + distance);
       }
-      logging.logSystemMessage(user, () -> "MOVEMENT REJECTED: Distance over limit: " + distance);
+      logging.logSystemMessage(user, () -> "已拒绝移动：距离超过限制：" + distance);
       movement.dropPostTickMotionProcessing = true;
       event.setCancelled(true);
       Modules.mitigate().movement().emulationSetBack(player, movement.mutableBaseMotionCopy(), 10, false);
-      String message = "sent unsafe position";
-      String details = "moved " + MathHelper.formatDouble(distance, 2) + " blocks";
+      String message = "发送不安全位置";
+      String details = "移动了 " + MathHelper.formatDouble(distance, 2) + " 格";
       Map<String, String> granulars = new HashMap<>();
       granulars.put("DIST", MathHelper.formatDouble(distance, 2));
       granulars.put("FROM", movement.verifiedLastPositionX + " " + movement.verifiedLastPositionY + " " + movement.verifiedLastPositionZ);
@@ -489,10 +489,10 @@ public final class MovementDispatcher extends Module {
 
     if (violationLevelData.isInActiveTeleportBundle) {
       if (DEBUG_MOVEMENT_IGNORE) {
-        System.out.println("[Intave] Teleport bundle movement ignore");
-        IntavePlugin.singletonInstance().logTransmittor().addPlayerLog(player, "(DEBUG/MOVEMENTIGNORE) Teleport bundle movement ignore");
+        System.out.println("[Intave] 已忽略传送数据包组中的移动");
+        IntavePlugin.singletonInstance().logTransmittor().addPlayerLog(player, "(DEBUG/MOVEMENTIGNORE) 已忽略传送数据包组中的移动");
       }
-      logging.logSystemMessage(user, () -> "MOVEMENT IGNORED: Teleport bundle movement ignore");
+      logging.logSystemMessage(user, () -> "已忽略移动：传送数据包组");
       movement.dropPostTickMotionProcessing = true;
       event.setCancelled(true);
       reader.release();
@@ -505,10 +505,10 @@ public final class MovementDispatcher extends Module {
       movement.sentOffsetMotion().isZero()
     ) {
       if (DEBUG_MOVEMENT_IGNORE) {
-        System.out.println("[Intave] Movement reset ignore");
-        IntavePlugin.singletonInstance().logTransmittor().addPlayerLog(player, "(DEBUG/MOVEMENTIGNORE) Movement reset ignore");
+        System.out.println("[Intave] 已忽略移动重置");
+        IntavePlugin.singletonInstance().logTransmittor().addPlayerLog(player, "(DEBUG/MOVEMENTIGNORE) 已忽略移动重置");
       }
-      logging.logSystemMessage(user, () -> "MOVEMENT IGNORED: Movement reset ignore");
+      logging.logSystemMessage(user, () -> "已忽略移动：移动重置");
       movement.canResetMotion = false;
       reader.release();
       return;
@@ -521,8 +521,12 @@ public final class MovementDispatcher extends Module {
         movement.recheckWebStateFromLastTick();
       }
 
-      // I have neither the time nor the energy for a proper fix
-      if (movement.sentOffsetMotion().length() > 0.5 && movement.ticksPast(VEHICLE_DETACHMENT) < 2) {
+      // 无外部速度时丢弃载具卸载造成的异常位移；服务端主动发射的速度必须保留给物理模拟。
+      if (shouldResetDismountMotion(
+        movement.sentOffsetMotion().length(),
+        movement.ticksPast(VEHICLE_DETACHMENT),
+        movement.ticksPast(RECEIVED_VELOCITY_PACKET)
+      )) {
         movement.setBaseMotion(Motion.newEmpty());
         movement.physicsResetMotionX = true;
         movement.physicsResetMotionZ = true;
@@ -530,7 +534,7 @@ public final class MovementDispatcher extends Module {
 
       physicsCheck.receiveMovement(user, hasMovement, hasRotation);
       if (!hasMovement && !hasRotation && !movement.treatThisFlyPacketAsMovePacket) {
-        logging.logSystemMessage(user, () -> "MOVEMENT IGNORED: No movement or rotation");
+        logging.logSystemMessage(user, () -> "移动已忽略：没有移动或视角变化");
       }
 
       boolean clientOnGround = vehicleMove ? player.isOnGround() : reader.onGround();
@@ -550,8 +554,8 @@ public final class MovementDispatcher extends Module {
       movement.canResetMotion = false;
     } else {
       if (DEBUG_MOVEMENT_IGNORE) {
-        System.out.println("[Intave] Basic reset movement ignore");
-        IntavePlugin.singletonInstance().logTransmittor().addPlayerLog(player, "(DEBUG/MOVEMENTIGNORE) Basic reset movement ignore");
+        System.out.println("[Intave] 已忽略基础移动重置");
+        IntavePlugin.singletonInstance().logTransmittor().addPlayerLog(player, "(DEBUG/MOVEMENTIGNORE) 已忽略基础移动重置");
       }
       movement.canResetMotion = true;
     }
@@ -606,7 +610,7 @@ public final class MovementDispatcher extends Module {
 
   private void releaseItem(User user) {
     if (user.receives(MessageChannel.DEBUG_ITEM_RESETS)) {
-      user.player().sendMessage(IntavePlugin.prefix() + "Applying item usage reset as requested");
+      user.player().sendMessage(IntavePlugin.prefix() + "正在按请求重置物品使用");
     }
     Player player = user.player();
     ProtocolManager protocolManager = ProtocolLibrary.getProtocolManager();
@@ -615,10 +619,9 @@ public final class MovementDispatcher extends Module {
       inventory.blockNextArrow = true;
       inventory.lastBlockArrowRequest = System.currentTimeMillis();
       if (user.receives(MessageChannel.DEBUG_ITEM_RESETS)) {
-        user.player().sendMessage(IntavePlugin.prefix() + "Requesting arrow block as player is also holding a bow on item usage reset");
+        user.player().sendMessage(IntavePlugin.prefix() + "重置物品使用时玩家仍持弓，请求拦截箭矢");
       }
     }
-    inventory.lastFoodConsumptionBlockRequest = System.currentTimeMillis();
     PacketContainer packet = protocolManager.createPacket(PacketType.Play.Client.BLOCK_DIG);
     packet.getBlockPositionModifier().write(0, new com.comphenix.protocol.wrappers.BlockPosition(0, 0, 0));
     packet.getDirections().write(0, EnumWrappers.Direction.DOWN);
@@ -628,7 +631,7 @@ public final class MovementDispatcher extends Module {
     updatePlayerHandItem(player);
     Synchronizer.synchronize(player::updateInventory);
     if (IntaveControl.DEBUG_ITEM_USAGE) {
-      player.sendMessage(ChatColor.DARK_PURPLE + "Release item");
+      player.sendMessage(ChatColor.DARK_PURPLE + "释放物品");
     }
   }
 
@@ -683,8 +686,8 @@ public final class MovementDispatcher extends Module {
         if (movement.artificialFallDistance > requiredFallDistance && !movement.onGround && claimsToBeOnGround) {
           Violation violation = Violation.builderFor(Physics.class)
             .forUser(user)
-            .withMessage("claimed to be on ground midair")
-            .withDetails("falling " + formatDouble(movement.artificialFallDistance, 2) + " blocks")
+            .withMessage("在空中声称在地面")
+            .withDetails("下落 " + formatDouble(movement.artificialFallDistance, 2) + " 格")
             .withVL(0.5)
             .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
             .build();
@@ -760,7 +763,7 @@ public final class MovementDispatcher extends Module {
       int strafeKey = (int) (packet.getFloat().read(0) / 0.98f);
       int forwardKey = (int) (packet.getFloat().read(1) / 0.98f);
       if ((Math.abs(strafeKey) > 1 || Math.abs(forwardKey) > 1) && FaultKicks.INVALID_KEY_INPUT) {
-        user.kick("Invalid key input");
+        user.kick("按键输入无效");
         return;
       }
       Boolean jumping = packet.getBooleans().read(0);
@@ -823,7 +826,7 @@ public final class MovementDispatcher extends Module {
       return;
     }
     de.jpx3.intave.share.BlockPosition sleepingBedPosition = reader.bedPosition();
-    user.sendMessage(IntavePlugin.prefix() + "Player is sleeping in bed at " + sleepingBedPosition);
+    user.sendMessage(IntavePlugin.prefix() + "玩家正在此位置的床上睡觉：" + sleepingBedPosition);
     user.packetTickFeedback(event, () -> {
       user.meta().movement().sleepingBedPosition = sleepingBedPosition;
     });
@@ -887,8 +890,8 @@ public final class MovementDispatcher extends Module {
       if (pendingVelocityPackets > 1 && user.meta().attack().wasRecentlyAttackedByEntity()) {
         Violation violation = Violation.builderFor(Physics.class)
           .forPlayer(player)
-          .withMessage("is queuing up velocity packets")
-          .withDetails("pending: " + pendingVelocityPackets)
+          .withMessage("正在积压速度包")
+          .withDetails("待处理: " + pendingVelocityPackets)
           .withVL(0.5)
           .build();
 
@@ -1145,7 +1148,7 @@ public final class MovementDispatcher extends Module {
         if (allowSprinting(user)) {
           movementData.setSprinting(true);
           if (IntaveControl.DEBUG_PLAYER_ACTIONS || user.receives(MessageChannel.DEBUG_PLAYER_ACTIONS)) {
-            user.player().sendMessage(ChatColor.WHITE + "Start sprinting " + meta.attack().attackPastTicks);
+            user.player().sendMessage(ChatColor.WHITE + "开始疾跑 " + meta.attack().attackPastTicks);
           }
         }
         break;
@@ -1153,7 +1156,7 @@ public final class MovementDispatcher extends Module {
         int ticksSprinting = movementData.ticks(SPRINTING);
         movementData.setSprinting(false);
         if (IntaveControl.DEBUG_PLAYER_ACTIONS || user.receives(MessageChannel.DEBUG_PLAYER_ACTIONS)) {
-          user.player().sendMessage(ChatColor.BLACK + "Stop sprinting after " + ticksSprinting + " " + meta.attack().attackPastTicks);
+          user.player().sendMessage(ChatColor.BLACK + "停止疾跑，持续 " + ticksSprinting + " " + meta.attack().attackPastTicks);
         }
         break;
       case PRESS_SHIFT_KEY:
@@ -1169,7 +1172,7 @@ public final class MovementDispatcher extends Module {
           if (protocol.serversideElytra()) {
             movementData.gliding = true;
             if (IntaveControl.DEBUG_ELYTRA) {
-              user.player().sendMessage(ChatColor.GREEN + "Activated elytra flying (START_FALL_FLYING)");
+              user.player().sendMessage(ChatColor.GREEN + "已激活鞘翅飞行 (START_FALL_FLYING)");
             }
           }
         }
@@ -1224,7 +1227,7 @@ public final class MovementDispatcher extends Module {
       movementData.setSneaking(true);
     }
     if (IntaveControl.DEBUG_PLAYER_ACTIONS || user.receives(MessageChannel.DEBUG_PLAYER_ACTIONS)) {
-      user.player().sendMessage(ChatColor.GREEN + "Start sneaking " + movementData.sneaking);
+      user.player().sendMessage(ChatColor.GREEN + "开始潜行 " + movementData.sneaking);
     }
   }
 
@@ -1235,11 +1238,21 @@ public final class MovementDispatcher extends Module {
 //    );
     movementData.setSneaking(false);
     if (IntaveControl.DEBUG_PLAYER_ACTIONS || user.receives(MessageChannel.DEBUG_PLAYER_ACTIONS)) {
-      user.player().sendMessage(ChatColor.RED + "Stop sneaking after " + movementData.ticks(SNEAKING));
+      user.player().sendMessage(ChatColor.RED + "停止潜行，持续 " + movementData.ticks(SNEAKING));
     }
   }
 
   private boolean allowSprinting(User user) {
     return !user.meta().inventory().inventoryOpen();
+  }
+
+  static boolean shouldResetDismountMotion(
+    double motionLength,
+    int ticksPastDetachment,
+    int ticksPastVelocityPacket
+  ) {
+    return motionLength > 0.5
+      && ticksPastDetachment < 2
+      && ticksPastVelocityPacket > 1;
   }
 }

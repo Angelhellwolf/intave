@@ -30,8 +30,8 @@ public final class ConnectionTracker extends Module {
         User user = UserRepository.userOf(player);
         long dur = System.currentTimeMillis() - lastKeepAliveResponse(user);
         if (dur > TIMEOUT_DURATION && FaultKicks.IGNORING_KEEP_ALIVE) {
-          IntaveLogger.logger().printLine("[Intave] " + player.getName() + " is not responding to keep-alive packets");
-          user.kick("Not responding to keep-alive packets");
+          IntaveLogger.logger().printLine("[Intave] " + player.getName() + " 未响应连接保活数据包");
+          user.kick("未响应连接保活数据包");
           if (IntaveControl.NETTY_DUMP_ON_TIMEOUT) {
             dumpNettyThreads();
           }
@@ -52,7 +52,7 @@ public final class ConnectionTracker extends Module {
           }
         }
 //        if (containsIntave) {
-        System.out.println("Thread:" + thread.getName());
+        System.out.println("线程：" + thread.getName());
         Exception exception = new Exception();
         exception.setStackTrace(stackTraceElements);
         exception.printStackTrace(System.out);
@@ -115,9 +115,9 @@ public final class ConnectionTracker extends Module {
       event.setCancelled(true);
       if (!user.justJoined() && FaultKicks.IGNORING_KEEP_ALIVE) {
         if (ConsoleOutput.FAULT_KICKS) {
-          IntaveLogger.logger().info(player.getName() + " sent keep-alive id " + id + ", but expected one of " + remainingPingPackets.keySet());
+          IntaveLogger.logger().info(player.getName() + " 发送了连接保活 ID " + id + "，但预期值应为 " + remainingPingPackets.keySet() + " 中的一项");
         }
-        user.kick("Unknown keep-alive identifier");
+        user.kick("连接保活标识符未知");
       }
       return;
     }

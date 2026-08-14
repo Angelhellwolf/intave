@@ -46,7 +46,7 @@ public final class IncomingMessageListener implements PluginMessageListener {
         try {
           int protocolVersion = inputByteBuf.readInt();
           if (protocolVersion < PROTOCOL_VERSION) {
-            plugin.logger().error("Warning: You are using an outdated version of IntaveProxySupport. This might cause issues");
+            plugin.logger().error("警告：当前 IntaveProxySupport 版本过旧，可能导致异常");
           }
           int packetId = inputByteBuf.readInt();
           IntavePacket constructedPacket = packetDeserializer.deserializeUsing(packetId, inputByteBuf);
@@ -59,12 +59,12 @@ public final class IncomingMessageListener implements PluginMessageListener {
               throw new RuntimeException();
             }
           } catch (RuntimeException ignored) {
-            plugin.logger().error("Incoming packet corrupted");
+            plugin.logger().error("传入数据包已损坏");
           }
         } catch (Exception exception) {
           exception.printStackTrace();
           User user = UserRepository.userOf(player);
-          user.kick("Something went wrong processing an incoming packet");
+          user.kick("处理代理传入数据包时发生错误");
         }
       });
     } catch (Exception exception) {

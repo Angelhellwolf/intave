@@ -1,11 +1,11 @@
-# Cheat Sheet
+# 速查表
 
-### BLOCK ACCESS
+### 方块访问（BLOCK ACCESS）
 
-- Requires a user
-- Super fast and threadsafe
-- Supports ghostblocks, custom blockshapes, custom type translations
-- Might have problems when accessing blocks far away from the player (!)
+- 需要 user
+- 极快且线程安全
+- 支持幽灵方块、自定义方块形状、自定义类型翻译
+- 访问远离玩家的方块时可能有问题（!）
 ```
 VolatileBlockAccess.typeAccess
 VolatileBlockAccess.variantIndexAccess
@@ -16,13 +16,13 @@ Fluids.fluitPresentAt()
 ```
 
 
-### TRANSACTIONS
+### 事务（TRANSACTIONS）
 
-- Requires a user
-- Should only be performed on the main thread
+- 需要 user
+- 应仅在主线程执行
 
 ```
 user.tickFeedback(() -> <callback>)
 ```
 
-// Feel free to add more sections here yourself!
+// 欢迎自行在此补充更多章节！

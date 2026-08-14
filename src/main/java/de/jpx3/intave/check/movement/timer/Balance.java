@@ -103,7 +103,7 @@ public final class Balance extends MetaCheckPart<Timer, Balance.BalanceMeta> {
       String balanceAsString = formatDouble(displayValue, 2);
       statisticApply(user, CheckStatistics::increaseFails);
       Violation violation = Violation.builderFor(Timer.class).forPlayer(player)
-        .withMessage("moved too frequently").withDetails(balanceAsString + " ticks ahead")
+        .withMessage("移动过于频繁").withDetails(balanceAsString + " tick 超前")
         .withVL(System.currentTimeMillis() - timerData.lastTimerFlag < 1000 || violationLevelOf(user) > 16 ? 0.5 : 1)
         .build();
       ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);

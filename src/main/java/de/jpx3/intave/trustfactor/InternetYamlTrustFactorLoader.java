@@ -15,7 +15,7 @@ final class InternetYamlTrustFactorLoader implements TrustFactorLoader {
     InputStreamReader reader = new InputStreamReader(trustfactor.read());
     YamlConfiguration configuration = YamlConfiguration.loadConfiguration(reader);
     if (configuration.getConfigurationSection("physics") == null) {
-      IntaveLogger.logger().error("Unable to download TXM file");
+      IntaveLogger.logger().error("无法下载 TXM 文件");
     }
     try {
       reader.close();

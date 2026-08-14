@@ -25,7 +25,7 @@ public final class PlayerArrayTranslator extends TypeTranslator<Player[]> {
     for (String playerName : playerNames) {
       Player player = Bukkit.getPlayer(playerName);
       if (!isOnline(player)) {
-        commandSender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Invalid argument \"" + playerName + "\": Unable to locate player");
+        commandSender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "无效参数 \"" + playerName + "\": 找不到该玩家");
         return null;
       }
       players.add(player);

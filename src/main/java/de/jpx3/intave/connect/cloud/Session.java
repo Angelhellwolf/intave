@@ -83,7 +83,7 @@ public final class Session {
         }
         channel = ((ChannelFuture) future).channel();
         channel.closeFuture().addListener(future2 -> {
-          IntaveLogger.logger().info("Cloud session closed");
+          IntaveLogger.logger().info("云端会话已关闭");
           shutdownSubscribers.forEach(subscriber -> subscriber.accept(this));
           group.shutdownGracefully();
           lazyReturn.accept(false);
@@ -91,7 +91,7 @@ public final class Session {
         lazyReturn.accept(true);
       }).await(10, SECONDS);
       if (!connected) {
-        IntaveLogger.logger().info("Unable to connect to cloud");
+        IntaveLogger.logger().info("无法连接到云端");
         lazyReturn.accept(false);
       }
     } catch (Exception e) {

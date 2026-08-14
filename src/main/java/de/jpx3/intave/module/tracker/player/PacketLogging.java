@@ -64,11 +64,11 @@ public class PacketLogging extends Module {
     UUID userId = target.getUniqueId();
     if (packetLoggers.containsKey(sender.getName())) {
       if (!packetLoggers.get(sender.getName()).equals(userId)) {
-        sender.sendMessage(IntavePlugin.prefix() + ChatColor.GREEN + "You currently can only packetlog one player at the time, contact us if you need to log multiple players at the same time.");
-        sender.sendMessage(IntavePlugin.prefix() + ChatColor.GREEN + "We will stop packetlogging for " + packetLoggers.get(sender.getName()));
+        sender.sendMessage(IntavePlugin.prefix() + ChatColor.GREEN + "当前一次只能记录一名玩家的数据包，如需同时记录多名请联系我们。");
+        sender.sendMessage(IntavePlugin.prefix() + ChatColor.GREEN + "将停止对 " + packetLoggers.get(sender.getName()) + " 的数据包记录");
         userId = packetLoggers.get(sender.getName());
       } else {
-        sender.sendMessage(IntavePlugin.prefix() + ChatColor.GREEN + "Packetlogging stopped");
+        sender.sendMessage(IntavePlugin.prefix() + ChatColor.GREEN + "已停止数据包记录");
       }
       PacketAdapter remove1 = adapterMap.remove(userId);
       ProtocolLibrary.getProtocolManager().removePacketListener(remove1);
@@ -133,8 +133,8 @@ public class PacketLogging extends Module {
     } catch (FileNotFoundException exception) {
       exception.printStackTrace();
     }
-    sender.sendMessage(IntavePlugin.prefix() + ChatColor.GREEN + "Packetlogging started for " + target.getName());
-    sender.sendMessage(IntavePlugin.prefix() + "You can find it under " + packetLogFile.getAbsolutePath());
+    sender.sendMessage(IntavePlugin.prefix() + ChatColor.GREEN + "已开始记录 " + target.getName() + " 的数据包");
+    sender.sendMessage(IntavePlugin.prefix() + "文件位置: " + packetLogFile.getAbsolutePath());
   }
 
   public void logSystemMessage(User target, Supplier<String> messageSupplier) {

@@ -55,20 +55,29 @@ final class UseItemBrancher extends MovementSearchBrancher {
       return UseItemRequirement.SKIP;
     }
     boolean skipUseItem = !protocol.sprintWhenHandActive() && inputBranch.isSprinting() && !protocol.viaVersionShieldBlockReplacement();
-    boolean requireUseItem = !protocol.combatUpdate()
+    // The activation packet can arrive in the same tick as an unslowed move.
+    // From the next tick onward, tracked food use is authoritative.
+    boolean requireTrackedFoodUse = protocol.combatUpdate()
+      && inventoryData.foodItem()
+      && inventoryData.handActive()
+      && !inventoryData.activatedItemThisTick;
+    boolean requireLegacyUseItem = !protocol.combatUpdate()
       && inventoryData.handActive()
       && inventoryData.pastHotBarSlotChange > 20
       && (inventoryData.heldItem() == null || inventoryData.heldItem().getType() != Material.BOW);
 
-    if (requireUseItem && movementData.ticksPast(ENTITY_USE) <= inventoryData.handActiveTicks) {
-      requireUseItem = false;
+    if (requireLegacyUseItem && movementData.ticksPast(ENTITY_USE) <= inventoryData.handActiveTicks) {
+      requireLegacyUseItem = false;
     }
+
+    boolean requireUseItem = requireTrackedFoodUse || requireLegacyUseItem;
 
     if (requireUseItem || input.user().sizeOf(movementData.pose()).height() <= 1) {
       skipUseItem = false;
     }
 
-    if ((requireUseItem || skipUseItem) && input.user().hasPlayer() && inventoryData.couldChargeCrossbow()) {
+    if (!requireTrackedFoodUse && (requireUseItem || skipUseItem)
+      && input.user().hasPlayer() && inventoryData.couldChargeCrossbow()) {
       requireUseItem = false;
       skipUseItem = false;
     }

@@ -190,7 +190,7 @@ public final class EntityTracker extends Module {
       return;
     }
     if (IntaveControl.DEBUG_MOUNTING) {
-      Bukkit.broadcastMessage("ATTACH " + passengerId + " to " + vehicleId);
+      Bukkit.broadcastMessage("已将乘客 " + passengerId + " 绑定到载具 " + vehicleId);
     }
     observer.tickFeedback(() -> {
       if (passenger != null) {
@@ -216,24 +216,23 @@ public final class EntityTracker extends Module {
       return;
     }
     if (IntaveControl.DEBUG_MOUNTING) {
-      Bukkit.broadcastMessage("DETACH " + passengerId + " from " + vehicleId);
+      Bukkit.broadcastMessage("已将乘客 " + passengerId + " 从载具 " + vehicleId + " 分离");
     }
-    Entity vehicle = passengerIsObserver ? observer.meta().movement().vehicle() : passenger.vehicle();
     observer.tickFeedback(() -> {
+      if (passengerIsObserver) {
+        connection.noteDismount(passengerId);
+        observer.meta().movement().dismountRidingEntity("Dismount", false);
+        return;
+      }
       if (passenger == null) {
         return;
       }
-      if (!passengerIsObserver) {
-        if (vehicle != null) {
-          vehicle.removePassenger(passenger);
-        }
-        passenger.unmountFromEntity();
+      Entity vehicle = passenger.vehicle();
+      if (vehicle != null) {
+        vehicle.removePassenger(passenger);
       }
+      passenger.unmountFromEntity();
       connection.noteDismount(passengerId);
-      if (passengerIsObserver) {
-        MovementMetadata movement = observer.meta().movement();
-        movement.dismountRidingEntity("Dismount");
-      }
     });
   }
 
@@ -398,7 +397,7 @@ public final class EntityTracker extends Module {
     }
     if (typeData == null) {
       if (IntaveControl.DEBUG) {
-        IntavePlugin.singletonInstance().logger().error("Cannot resolve entityType: " + entityId);
+        IntavePlugin.singletonInstance().logger().error("无法解析实体类型：" + entityId);
       }
       return null;
     }
@@ -444,7 +443,8 @@ public final class EntityTracker extends Module {
 
     Entity entity = connection.entityBy(entityId);//synchronizedEntityMap.get(entityId);
     if (entity != null && movementData.ridingEntity() == entity) {
-      movementData.dismountRidingEntity("Entity Destroy");
+      // 服务端已经通知客户端销毁载具，无需再用原地传送重置位置，否则会覆盖紧随其后的发射速度。
+      movementData.dismountRidingEntity("Entity Destroy", false);
     }
 
     if (entity != null && entity.duplicationId != 0) {
@@ -492,7 +492,7 @@ public final class EntityTracker extends Module {
           return;
         }
         EntityTypeData typeData = entity.typeData();
-        target.sendMessage(ChatColor.RED + typeData.name() + "/" + typeData.typeId() + " as " + entity.entityId());
+        target.sendMessage(ChatColor.RED + typeData.name() + "/" + typeData.typeId() + "，实体 ID：" + entity.entityId());
       });
     }
   }
@@ -854,8 +854,8 @@ public final class EntityTracker extends Module {
           return;
         }
         HitboxSize size = entityTypeData.size();
-        String sizeToString = size == null ? "null" : "w:" + size.width() + " h:" + size.height();
-        target.sendMessage(ChatColor.GREEN + entityTypeData.name() + "/" + entityTypeData.typeId() + " as " + entityId + " with " + sizeToString);
+        String sizeToString = size == null ? "空" : "宽：" + size.width() + " 高：" + size.height();
+        target.sendMessage(ChatColor.GREEN + entityTypeData.name() + "/" + entityTypeData.typeId() + "，实体 ID：" + entityId + "，尺寸：" + sizeToString);
       });
     }
 

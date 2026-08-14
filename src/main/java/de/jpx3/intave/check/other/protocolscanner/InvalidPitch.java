@@ -27,8 +27,8 @@ public final class InvalidPitch extends CheckPart<ProtocolScanner> {
     float rotationPitch = event.getPacket().getFloat().read(1);
     if (Math.abs(rotationPitch) > 90.000001f) {
       event.getPacket().getFloat().writeSafely(1, 0f);
-      String message = "sent invalid rotation";
-      String details = "pitch at " + MathHelper.formatDouble(rotationPitch, 4);
+      String message = "发送无效视角";
+      String details = "pitch 为 " + MathHelper.formatDouble(rotationPitch, 4);
       Violation violation = Violation.builderFor(ProtocolScanner.class)
         .forPlayer(player).withMessage(message).withDetails(details)
         .withVL(100)

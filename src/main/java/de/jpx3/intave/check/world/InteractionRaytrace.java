@@ -245,8 +245,8 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
               .forPlayer(player)
               .withVL(0)
               //            .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
-              .withMessage("performed erroneous block placement")
-              .withDetails("emulation failed for " + type + " with " + typeUsedInHand + " in hand, direction " + enumDirection + " at y " + blockPosition.getY())
+              .withMessage("执行错误的方块放置")
+              .withDetails("模拟失败: " + type + " with " + typeUsedInHand + " in hand, direction " + enumDirection + " at y " + blockPosition.getY())
               .build();
             Modules.violationProcessor().processViolation(violation);
           } else {
@@ -279,7 +279,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       //       if (user.receives(MessageChannel.DEBUG_PACKET_HOLD)) {
       //        if (resendLater) {
       //          Synchronizer.synchronize(() -> {
-      //            player.sendMessage("%PH " + ChatColor.RED + "Await attack at " + (System.currentTimeMillis() % 1000) + " since prelim ray failed");
+      //            player.sendMessage("%PH " + ChatColor.RED + "Await attack at " + (System.currentTimeMillis() % 1000) + "（初步射线失败）");
       //          });
       //        } else {
       //          Synchronizer.synchronize(() -> {
@@ -290,11 +290,11 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       if (user.receives(MessageChannel.DEBUG_PACKET_HOLD)) {
         if (!event.isCancelled()) {
           Synchronizer.synchronize(() -> {
-            player.sendMessage("%PH " + ChatColor.GREEN + "Allowing " + interaction.type().name() + " without hold at " + (System.currentTimeMillis() % 1000));
+            player.sendMessage("%PH " + ChatColor.GREEN + "允许 " + interaction.type().name() + " 无等待于 " + (System.currentTimeMillis() % 1000));
           });
         } else {
           Synchronizer.synchronize(() -> {
-            player.sendMessage("%PH " + ChatColor.RED + "Awaiting " + interaction.type().name() + " packet at " + (System.currentTimeMillis() % 1000) + ": prelim->"+ result);
+            player.sendMessage("%PH " + ChatColor.RED + "等待 " + interaction.type().name() + " 包于 " + (System.currentTimeMillis() % 1000) + ": prelim->"+ result);
           });
         }
       }
@@ -344,8 +344,8 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       Violation violation = Violation.builderFor(InteractionRaytrace.class)
         .forPlayer(player)
         .withVL(0)
-        .withMessage("performed invalid block break")
-        .withDetails("sword in creative mode")
+        .withMessage("执行无效方块破坏")
+        .withDetails("创造模式持剑")
         .build();
       Modules.violationProcessor().processViolation(violation);
       event.setCancelled(true);
@@ -393,7 +393,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     PreprocessResult preprocess = enforceRouting ? PreprocessResult.ENFORCE_ROUTING : preprocessInteraction(interaction);
 
     if (IntaveControl.DEBUG_INTERACTION) {
-      player.sendMessage("receiveBreak " + preprocess + " " + interactionMeta.remainingBlockStart);
+      player.sendMessage("接收破坏 " + preprocess + " " + interactionMeta.remainingBlockStart);
     }
 
     switch (preprocess) {
@@ -421,11 +421,11 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     if (user.receives(MessageChannel.DEBUG_PACKET_HOLD)) {
       if (!event.isCancelled()) {
         Synchronizer.synchronize(() -> {
-          player.sendMessage("%PH " + ChatColor.GREEN + "Allowing " + interaction.type().name() + " without hold at " + (System.currentTimeMillis() % 1000));
+          player.sendMessage("%PH " + ChatColor.GREEN + "允许 " + interaction.type().name() + " 无等待于 " + (System.currentTimeMillis() % 1000));
         });
       } else {
         Synchronizer.synchronize(() -> {
-          player.sendMessage("%PH " + ChatColor.RED + "Awaiting " + interaction.type().name() + " packet at " + (System.currentTimeMillis() % 1000) + ": prelim->"+ preprocess);
+          player.sendMessage("%PH " + ChatColor.RED + "等待 " + interaction.type().name() + " 包于 " + (System.currentTimeMillis() % 1000) + ": prelim->"+ preprocess);
         });
       }
     }
@@ -492,13 +492,13 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       interactionMeta.speculativeInteraction = null;
       if (isAnimation) {
         if (IntaveControl.DEBUG_INTERACTION) {
-          user.player().sendMessage(ChatColor.GREEN + "Speculative interaction succeeded, emulated: " + speculativeInteraction.hasBeenEmulated() + "/" + speculativeInteraction.wasPlacementEmulated());
+          user.player().sendMessage(ChatColor.GREEN + "推测交互成功，模拟: " + speculativeInteraction.hasBeenEmulated() + "/" + speculativeInteraction.wasPlacementEmulated());
         }
         // all ok, nothing to do
       } else {
         // placement but no animation, undo
         if (IntaveControl.DEBUG_INTERACTION) {
-          user.player().sendMessage(ChatColor.RED + "Speculative interaction failed was: " + debugMessage + ", emulated: " + speculativeInteraction.hasBeenEmulated() + "/" + speculativeInteraction.wasPlacementEmulated());
+          user.player().sendMessage(ChatColor.RED + "推测交互失败: " + debugMessage + "，模拟: " + speculativeInteraction.hasBeenEmulated() + "/" + speculativeInteraction.wasPlacementEmulated());
         }
         if (speculativeInteraction.hasBeenEmulated()) {
           interactionEmulator.undo(speculativeInteraction);
@@ -618,7 +618,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       return raytraceFailed ? PreprocessResult.FAILED_CRITICAL : PreprocessResult.OK;
     }
     if (IntaveControl.DEBUG_INTERACTION) {
-      player.sendMessage(ChatColor.GREEN + "No target block, preprocess succeeded");
+      player.sendMessage(ChatColor.GREEN + "无目标方块，预处理成功");
     }
     return PreprocessResult.OK;
   }
@@ -712,7 +712,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
 
     if (interaction.shouldSendPacket() && user.receives(MessageChannel.DEBUG_PACKET_HOLD)) {
       Synchronizer.synchronize(() -> {
-        player.sendMessage("%PH " + ChatColor.YELLOW + "Processing " + interaction.type().name() + " packet at " + (System.currentTimeMillis() % 1000));
+        player.sendMessage("%PH " + ChatColor.YELLOW + "处理 " + interaction.type().name() + " 包于 " + (System.currentTimeMillis() % 1000));
       });
     }
 
@@ -840,12 +840,14 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
         player.sendMessage(ChatColor.GOLD + "" + type + "/" + variant + "." + propertyString + " f" + fluid + " -> " + blockStateAccess.collisionShapeAt(block.getX(), block.getY(), block.getZ()) + "/" + blockStateAccess.outlineShapeAt(block.getX(), block.getY(), block.getZ()));
       }
       mustCancelPacket = false;
-      // As the interaction was not canceled for consumables, we have to do it now as the raytrace failed
-      if (usableItemInHand && interaction.type() == InteractionType.INTERACT) {
+      // Food consumption completes through PlayerItemConsumeEvent; releasing it here restarts its use timer.
+      if (usableItemInHand
+        && !ItemProperties.foodConsumable(player, interaction.itemTypeInHand())
+        && interaction.type() == InteractionType.INTERACT) {
         meta.inventory().releaseItemNextTick();
 
         if (user.receives(MessageChannel.DEBUG_ITEM_RESETS)) {
-          user.player().sendMessage(IntavePlugin.prefix() + "Requesting item usage reset as " + ChatColor.RED + "raytrace failed ");
+          user.player().sendMessage(IntavePlugin.prefix() + "请求重置物品使用，原因: " + ChatColor.RED + "射线检测失败 ");
         }
       }
 //      Synchronizer.synchronize(() -> {
@@ -968,7 +970,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     if (refreshBlockRatelimit.tryAcquire()) {
       Synchronizer.synchronize(() -> {
         if (IntaveControl.DEBUG_INTERACTION_REFRESHES) {
-          player.sendMessage("Refreshed blocks around " + targetLocation);
+          player.sendMessage("已刷新周围方块 " + targetLocation);
         }
         player.updateInventory();
         refreshBlock(player, targetLocation);
@@ -1027,7 +1029,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
         append = "but looking at " + blockName + " block";
         vl = longBreakDuration ? 20 : 5;
       } else if (raytraceEval.wrongBlockFace()) {
-        append = "invalid block face";
+        append = "无效方块面";
         vl = longBreakDuration ? 20 : 15;
       }
 //      float blockDamage = BlockInteractionAccess.blockDamage(player, user.meta().inventory().heldItem(), interaction.targetBlock());
@@ -1039,7 +1041,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
         double multiplier = trustFactorSetting("k-multiplier", player) / 100d;
         vl *= multiplier;
       }
-      message = "performed invalid break";
+      message = "执行无效破坏";
       details = typeName + " block, " + append;
       mustFlag = true;
     } else if (type == InteractionType.PLACE) {
@@ -1059,13 +1061,13 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
         vl = 2.5;
       } else if (interaction.targetDirectionIndex() != raycastResult.sideHit.getIndex()) {
         vl = impossibleFacing ? 5 : 2.5;
-        append = impossibleFacing ? "impossible block face" : "invalid block face";
+        append = impossibleFacing ? "不可能的方块面" : "无效方块面";
       }
       if (lookingAtBlock && !impossibleFacing) {
         double multiplier = trustFactorSetting("k-multiplier", player) / 100d;
         vl *= multiplier;
       }
-      message = "performed invalid placement";
+      message = "执行无效放置";
       details = typeName + " block on " + typeAgainstName + " block, " + append;
     } else {
       String typeAgainstName = shortenTypeName(targetLocationBlockType);

@@ -26,19 +26,19 @@ public final class CloudStage extends CommandStage {
   @SubCommand(
     selectors = "status",
     usage = "",
-    description = "Show version info"
+    description = "显示版本信息"
   )
   public void statusCommand(CommandSender commandSender) {
     Cloud cloud = IntavePlugin.singletonInstance().cloud();
     boolean enabled = cloud.isEnabled();
 
     if (!enabled) {
-      commandSender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Cloud connection is not enabled");
+      commandSender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "云端连接未启用");
       return;
     }
 
 //    commandSender.sendMessage(IntavePlugin.prefix() + ChatColor.GRAY + "Status");
-    commandSender.sendMessage(IntavePlugin.prefix() + ChatColor.GRAY + "Connection status");
+    commandSender.sendMessage(IntavePlugin.prefix() + ChatColor.GRAY + "连接状态");
 
     Map<Shard, Boolean> shardConnected = cloud.shardConnections();
     Map<Shard, Long> receivedBytes = cloud.receivedBytesPerShard();
@@ -46,22 +46,22 @@ public final class CloudStage extends CommandStage {
 
     // connected to at least one
     boolean connectedToAtLeastOne = shardConnected.values().stream().anyMatch(b -> b);
-    commandSender.sendMessage(ChatColor.GRAY + " Cloud is " + (connectedToAtLeastOne ? ChatColor.GREEN + "connected" : ChatColor.RED + "disconnected"));
+    commandSender.sendMessage(ChatColor.GRAY + " 云端" + (connectedToAtLeastOne ? ChatColor.GREEN + "已连接" : ChatColor.RED + "未连接"));
 
     for (Map.Entry<Shard, Boolean> entry : shardConnected.entrySet()) {
       Shard shard = entry.getKey();
       boolean connected = entry.getValue();
-      commandSender.sendMessage(ChatColor.GRAY + " Shard " + ChatColor.GREEN + shard.name() + ChatColor.GRAY + " is " + (connected ? ChatColor.GREEN + "CONNECTED" : ChatColor.RED + "DISCONNECTED") + ChatColor.GRAY + " (" + ChatColor.GREEN + formatBytes(receivedBytes.get(shard)) + ChatColor.GRAY + " received, " + ChatColor.GREEN + formatBytes(sentBytes.get(shard)) + ChatColor.GRAY + " sent)");
+      commandSender.sendMessage(ChatColor.GRAY + " 分片 " + ChatColor.GREEN + shard.name() + ChatColor.GRAY + " " + (connected ? ChatColor.GREEN + "已连接" : ChatColor.RED + "未连接") + ChatColor.GRAY + "（" + ChatColor.GREEN + formatBytes(receivedBytes.get(shard)) + ChatColor.GRAY + " 接收，" + ChatColor.GREEN + formatBytes(sentBytes.get(shard)) + ChatColor.GRAY + " 发送）");
     }
 
     if (connectedToAtLeastOne) {
 //      commandSender.sendMessage(" ");
       cloud.generalStatusInquiry(stringStringMap -> {
         if (stringStringMap == null || stringStringMap.isEmpty()) {
-          commandSender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "General status inquiry failed");
+          commandSender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "常规状态查询失败");
           return;
         }
-        commandSender.sendMessage(IntavePlugin.prefix() + ChatColor.GRAY + "Remote status (sent from cloud)");
+        commandSender.sendMessage(IntavePlugin.prefix() + ChatColor.GRAY + "远程状态（来自云端）");
         // sorted by key (alphabetical)
         stringStringMap.forEach((key, value) -> commandSender.sendMessage(ChatColor.GRAY +" " + key + ": " + ChatColor.RED +  ChatColor.translateAlternateColorCodes('&', value)));
       });
@@ -71,31 +71,31 @@ public final class CloudStage extends CommandStage {
 
   @SubCommand(
     selectors = "transmission",
-    description = "Show player transmission status"
+    description = "显示玩家传输状态"
   )
   public void transmissionCommand(CommandSender commandSender) {
     Cloud cloud = IntavePlugin.singletonInstance().cloud();
     boolean enabled = cloud.isEnabled();
 
     if (!enabled) {
-      commandSender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Cloud connection is not enabled");
+      commandSender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "云端连接未启用");
       return;
     }
 
     Nayoro nayoro = Modules.nayoro();
     for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-      String mainBase = IntavePlugin.prefix() + ChatColor.GRAY + "Player " + ChatColor.RED + onlinePlayer.getName() + ChatColor.GRAY;
+      String mainBase = IntavePlugin.prefix() + ChatColor.GRAY + "玩家 " + ChatColor.RED + onlinePlayer.getName() + ChatColor.GRAY;
       User user = UserRepository.userOf(onlinePlayer);
       if (nayoro.recordingActiveFor(user)) {
-        mainBase += " is " + ChatColor.GREEN + "transmitting";
+        mainBase += " " + ChatColor.GREEN + "正在传输";
       } else {
-        mainBase += " is " + ChatColor.RED + "not transmitting";
+        mainBase += " " + ChatColor.RED + "未传输";
       }
 
       if (nayoro.hasRecordSink(user)) {
-        mainBase += ChatColor.GRAY + " and " + ChatColor.GREEN + "recording";
+        mainBase += ChatColor.GRAY + " 且 " + ChatColor.GREEN + "正在录制";
       } else {
-        mainBase += ChatColor.GRAY + " and " + ChatColor.RED + "not recording";
+        mainBase += ChatColor.GRAY + " 且 " + ChatColor.RED + "未录制";
       }
 
       commandSender.sendMessage(mainBase);

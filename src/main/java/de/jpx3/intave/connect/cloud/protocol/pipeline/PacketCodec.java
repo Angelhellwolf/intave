@@ -30,7 +30,7 @@ public final class PacketCodec extends ByteToMessageCodec<Packet<?>> {
     if (protocol.packetIdsKnownFor(sending)) {
       int id = protocol.packetId(sending, packet.name());
       if (id == -1) {
-        System.out.println("Unknown id for " + packet.name());
+        System.out.println("无法识别数据包 " + packet.name() + " 的 ID");
         // do nothing
         return;
       }

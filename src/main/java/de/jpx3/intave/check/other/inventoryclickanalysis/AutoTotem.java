@@ -57,8 +57,8 @@ public final class AutoTotem extends MetaCheckPart<InventoryClickAnalysis, AutoT
           meta.sus = true;
           Violation violation = Violation.builderFor(InventoryClickAnalysis.class)
             .forPlayer(player)
-            .withMessage("might be using auto-totem")
-            .withDetails(timeSincePickup + "ms delay")
+            .withMessage("可能使用自动图腾")
+            .withDetails(timeSincePickup + " 毫秒延迟")
             .withVL(meta.vl).build();
           Modules.violationProcessor().processViolation(violation);
           Synchronizer.synchronizeDelayed(() -> {

@@ -17,7 +17,7 @@ public final class TaskTracker {
   public static void begun(int taskId) {
     runningTasks.add(taskId);
     if (runningTasks.size() > 64) {
-      IntaveLogger.logger().error("Intave is creating too many tasks, closing the last one to stay under 64");
+      IntaveLogger.logger().error("Intave 创建的任务过多，正在关闭最后一个任务以将任务数保持在 64 以下");
       Thread.dumpStack();
       Bukkit.getScheduler().cancelTask(taskId);
     }

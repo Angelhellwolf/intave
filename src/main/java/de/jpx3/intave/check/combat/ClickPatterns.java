@@ -59,7 +59,7 @@ public final class ClickPatterns extends Check {
       details += " " + specifics.trim();
     }
     Violation violation = Violation.builderFor(ClickPatterns.class)
-      .forPlayer(player).withMessage("clicks suspiciously").withDetails(details)
+      .forPlayer(player).withMessage("点击行为可疑").withDetails(details)
       .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES).withVL(vl).withDefaultThreshold().build();
     double vlAfter = Modules.violationProcessor().processViolation(violation).violationLevelAfter();
     if (vlAfter > 50) {

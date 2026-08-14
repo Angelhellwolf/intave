@@ -77,7 +77,7 @@ public final class TrustFactorService implements BukkitEventSubscriber {
     User user = UserRepository.userOf(player);
     user.setTrustFactor(defaultTrustFactor);
     if (IntaveControl.APPLY_GLOBAL_LOW_TRUSTFACTOR) {
-      trustfactorApply(player, TrustFactor.RED, "Global low trustfactor setting");
+      trustfactorApply(player, TrustFactor.RED, "全局低信任等级设置");
       return;
     }
     if (trustFactorResolver == null) {
@@ -93,8 +93,8 @@ public final class TrustFactorService implements BukkitEventSubscriber {
 
     if (user.trustFactor().atLeast(TrustFactor.BYPASS)) {
       String playerName = player.getName();
-      String message = source + " tried to assign trust factor " + trustFactor.coloredBaseName() + IntavePlugin.defaultColor() + " to " + ChatColor.RED + playerName + IntavePlugin.defaultColor() + " but BYPASS is active.";
-      String shortMessage = playerName + " now " + trustFactor.coloredBaseName();
+      String message = source + " 尝试将 " + ChatColor.RED + playerName + IntavePlugin.defaultColor() + " 的信任等级设为 " + trustFactor.coloredBaseName() + IntavePlugin.defaultColor() + "，但 BYPASS 已启用。";
+      String shortMessage = playerName + " 当前信任等级：" + trustFactor.coloredBaseName();
       DebugBroadcast.broadcast(
         player,
         MessageCategory.TRUSTSET,
@@ -103,7 +103,7 @@ public final class TrustFactorService implements BukkitEventSubscriber {
         shortMessage
       );
       if (ConsoleOutput.TRUSTFACTOR_DEBUG) {
-        String message2 = ChatColor.RED + player.getName() + IntavePlugin.defaultColor() + " was assigned a " + trustFactor.coloredBaseName() + IntavePlugin.defaultColor() + " trustfactor by " + source + " but BYPASS is active and kept.";
+        String message2 = ChatColor.RED + player.getName() + IntavePlugin.defaultColor() + " 已由 " + source + " 分配信任等级 " + trustFactor.coloredBaseName() + IntavePlugin.defaultColor() + "，但 BYPASS 已启用，已保留原等级。";
         IntaveLogger.logger().info(message2);
       }
       return;
@@ -112,8 +112,8 @@ public final class TrustFactorService implements BukkitEventSubscriber {
     user.setTrustFactor(trustFactor);
 
     String playerName = player.getName();
-    String message = source + " assigned trust factor " + trustFactor.coloredBaseName() + IntavePlugin.defaultColor() + " to " + ChatColor.RED + playerName;
-    String shortMessage = playerName + " now " + trustFactor.coloredBaseName();
+    String message = source + " 已将 " + ChatColor.RED + playerName + IntavePlugin.defaultColor() + " 的信任等级设为 " + trustFactor.coloredBaseName();
+    String shortMessage = playerName + " 当前信任等级：" + trustFactor.coloredBaseName();
     DebugBroadcast.broadcast(
       player,
       MessageCategory.TRUSTSET,
@@ -123,7 +123,7 @@ public final class TrustFactorService implements BukkitEventSubscriber {
     );
 
     if (ConsoleOutput.TRUSTFACTOR_DEBUG) {
-      String message2 = ChatColor.RED + player.getName() + IntavePlugin.defaultColor() + " was assigned a " + trustFactor.coloredBaseName() + IntavePlugin.defaultColor() + " trustfactor by " + source;
+      String message2 = ChatColor.RED + player.getName() + IntavePlugin.defaultColor() + " 已由 " + source + " 分配信任等级 " + trustFactor.coloredBaseName();
       IntaveLogger.logger().info(message2);
     }
 

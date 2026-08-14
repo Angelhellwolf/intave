@@ -120,7 +120,7 @@ public final class Snap extends PlayerCheckPart<PlacementAnalysis> {
 					Violation violation = Violation.builderFor(PlacementAnalysis.class)
 						.forPlayer(player)
 						.withCustomThreshold(PlacementAnalysis.legacyConfigurationLayout() ? "thresholds" : "cloud-thresholds.on-premise")
-						.withMessage(COMMON_FLAG_MESSAGE).withDetails("back snap")
+						.withMessage(COMMON_FLAG_MESSAGE).withDetails("回弹瞬转")
 						.appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
 						.withVL(0).build();
 					Modules.violationProcessor().processViolation(violation);
@@ -148,7 +148,7 @@ public final class Snap extends PlayerCheckPart<PlacementAnalysis> {
 		float yaw = location.getYaw();
 		float pitch = location.getPitch();
 		if (IntaveControl.SCAFFOLD_ACTION_DEBUG) {
-			player.sendMessage(ChatColor.DARK_PURPLE + " PLACE: " + yaw + " " + pitch);
+			player.sendMessage(ChatColor.DARK_PURPLE + " 放置：" + yaw + " " + pitch);
 		}
 
 		if (System.currentTimeMillis() - detectionTime < 2_500) {

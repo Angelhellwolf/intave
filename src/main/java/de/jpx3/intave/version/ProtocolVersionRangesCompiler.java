@@ -19,7 +19,7 @@ final class ProtocolVersionRangesCompiler {
         // format is "up to <number> is <version>"
         String[] split = line.split(" ");
         if (split.length != 5) {
-          System.out.println("Invalid line format: " + line + " at line " + i);
+          System.out.println("第 " + i + " 行格式无效：" + line);
           Thread.dumpStack();
           continue;
         }
@@ -31,14 +31,14 @@ final class ProtocolVersionRangesCompiler {
         // format is "<number> is <version>"
         String[] split = line.split(" is ");
         if (split.length != 2) {
-          System.out.println("Invalid line format: " + line + " at line " + i);
+          System.out.println("第 " + i + " 行格式无效：" + line);
           Thread.dumpStack();
           continue;
         }
         int protocolVersion = Integer.parseInt(split[0]);
         String version = split[1];
         if (protocolVersion <= lastEnd) {
-          System.out.println("Invalid line format: " + line + " at line " + i);
+          System.out.println("第 " + i + " 行格式无效：" + line);
           Thread.dumpStack();
           continue;
         }

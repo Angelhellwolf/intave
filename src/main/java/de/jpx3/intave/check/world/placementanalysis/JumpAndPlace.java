@@ -159,7 +159,7 @@ public final class JumpAndPlace extends PlayerCheckPart<PlacementAnalysis> {
 				Violation violation = Violation.builderFor(PlacementAnalysis.class)
 					.forPlayer(player).withDefaultThreshold()
 					.withMessage(COMMON_FLAG_MESSAGE)
-					.withDetails("sneaking seems to be automated (jump)")
+					.withDetails("潜行疑似自动化（跳跃）")
 					.appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
 					.withDefaultThreshold().withVL(Math.min(violationLevel / 1.5, 5)).build();
 				Modules.violationProcessor().processViolation(violation);

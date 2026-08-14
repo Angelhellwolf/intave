@@ -83,7 +83,7 @@ public final class BackgroundExecutors {
         if (service.isShutdown() || service.isTerminated()) {
           return;
         }
-        IntaveLogger.logger().error("Failed to execute background task " + runnable + " in " + typeName + " executor");
+        IntaveLogger.logger().error("后台任务 " + runnable + " 在 " + typeName + " 执行器中执行失败");
         throwable.printStackTrace();
       } finally {
         timings.stop();

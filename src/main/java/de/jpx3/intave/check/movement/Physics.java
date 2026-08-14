@@ -196,13 +196,13 @@ public final class Physics extends Check {
     try {
       simulation = simulationSearch.greedyFuzzyTickSearch(user, simulationEnvironment, simulator);
     } catch (IllegalStateException exception) {
-      user.kick("Exception while simulating movement");
+      user.kick("模拟玩家移动时发生异常");
       exception.printStackTrace();
       return;
     }
 
     if (simulation == Simulation.invalid()) {
-      user.kick("Invalid simulation result");
+      user.kick("移动模拟结果无效");
       return;
     }
 
@@ -290,7 +290,7 @@ public final class Physics extends Check {
         movementData.setPostTickMotionCandidates(candidates);
         afterBaseMotion = movementData.mutableBaseMotionCopy();
       } catch (Exception exception) {
-        user.kick("Exception while simulating after movement");
+        user.kick("处理移动后的模拟时发生异常");
         exception.printStackTrace();
         return;
       }
@@ -334,7 +334,7 @@ public final class Physics extends Check {
         );
         movementData.setPostTickMotionCandidates(candidates);
       } catch (Exception exception) {
-        user.kick("Exception while simulating after movement");
+        user.kick("处理移动后的模拟时发生异常");
         exception.printStackTrace();
         return;
       }
@@ -645,9 +645,9 @@ public final class Physics extends Check {
           String typeName = shortenTypeName(type);
           colliderName = prefix + typeName + " block";
         }
-        String message = "moved into " + colliderName.trim();
+        String message = "移动进入 " + colliderName.trim();
         boolean multipleBoxes = intersectionBoundingBoxesCurrent.size() > 1;
-        String details = (multipleBoxes ? intersectionBoundingBoxesCurrent.size() : "one") + " box" + (multipleBoxes ? "es" : "");
+        String details = (multipleBoxes ? intersectionBoundingBoxesCurrent.size() : "1") + " 个碰撞箱";
         if (!IntaveControl.IGNORE_CACHE_REFRESH_ON_SIMULATION_FAULT) {
           physicsReport = new PhysicsReport(user);
           blockStateAccess.invalidateAll();
@@ -741,7 +741,7 @@ public final class Physics extends Check {
 //        );
 //      }
 
-	    String message = "moved incorrectly";
+	    String message = "移动异常";
 //      String details = received + " actual: " + expected;
       String details = "";
 
@@ -1322,24 +1322,24 @@ public final class Physics extends Check {
 	  ViolationMetadata violationMetadata = user.meta().violationLevel();
 
     if ((Double.isNaN(violationMetadata.physicsOffset) || Double.isInfinite(violationMetadata.physicsOffset)) && FaultKicks.POSITION_FAULTS) {
-      user.kick("Intolerable position fault (sanity check #3)");
+      user.kick("位置数据异常（完整性检查 #3）");
     }
 
     if ((Double.isNaN(violationMetadata.physicsVL) || Double.isInfinite(violationMetadata.physicsVL)) && FaultKicks.POSITION_FAULTS) {
-      user.kick("Intolerable position fault (sanity check #4)");
+      user.kick("位置数据异常（完整性检查 #4）");
     }
 
     // check received motion NaN/Infinite
     if ((Double.isNaN(receivedMotionX) || Double.isInfinite(receivedMotionX)) && FaultKicks.POSITION_FAULTS) {
-      user.kick("Intolerable position fault (sanity check #5)");
+      user.kick("位置数据异常（完整性检查 #5）");
     }
 
     if ((Double.isNaN(receivedMotionY) || Double.isInfinite(receivedMotionY)) && FaultKicks.POSITION_FAULTS) {
-      user.kick("Intolerable position fault (sanity check #6)");
+      user.kick("位置数据异常（完整性检查 #6）");
     }
 
     if ((Double.isNaN(receivedMotionZ) || Double.isInfinite(receivedMotionZ)) && FaultKicks.POSITION_FAULTS) {
-      user.kick("Intolerable position fault (sanity check #7)");
+      user.kick("位置数据异常（完整性检查 #7）");
     }
   }
 

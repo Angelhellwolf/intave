@@ -16,6 +16,7 @@ import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserLocal;
 import de.jpx3.intave.user.UserRepository;
+import de.jpx3.intave.user.meta.MovementMetadata;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -48,17 +49,24 @@ public final class DesyncWatchdog extends Module {
       return;
     }
 
-    PositionBundle positionBundle = positionBundleOf(user);
     AtomicInteger violationCounter = this.violationCounter.get(user);
+    MovementMetadata movement = user.meta().movement();
+    if (movement.awaitTeleport || movement.awaitOutgoingTeleport) {
+      // 服务器传送包发出后，服务端位置可能暂时还未更新；等待确认期间不应判定为不同步。
+      violationCounter.set(0);
+      return;
+    }
+
+    PositionBundle positionBundle = positionBundleOf(user);
     if (positionBundle.anyDesynced()) {
       int currentVL = violationCounter.incrementAndGet();
       if (currentVL > 1) {
-        IntaveLogger.logger().warn("Server and Intave don't seem to agree on position for " + user.player().getName() + " (" + (currentVL-1) + "/3)");
+        IntaveLogger.logger().warn("服务器与 Intave 对玩家 " + user.player().getName() + " 的位置判断似乎不一致（" + (currentVL - 1) + "/3）");
       }
       if (currentVL > 3) {
         Violation violation = Violation.builderFor(Physics.class)
           .forPlayer(user.player())
-          .withMessage("apparently desynced, resetting")
+          .withMessage("疑似不同步，正在重置")
           .withDetails(
             "intave/verified: " + positionBundle.intaveAcceptedPosition() +
             ", intave/nocheck: " + positionBundle.prefilteredPendingPosition() +
@@ -78,7 +86,7 @@ public final class DesyncWatchdog extends Module {
               location.add(0, 1, 0);
             }
             if (user.receives(MessageChannel.DEBUG_TELEPORT)) {
-              player.sendMessage(IntavePlugin.prefix() + "You were instructed to teleport to " + MathHelper.formatPosition(location) + " due to desync.");
+              player.sendMessage(IntavePlugin.prefix() + "因不同步，你被要求传送至 " + MathHelper.formatPosition(location) + "。");
             }
             player.teleport(location);
           });

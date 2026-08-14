@@ -14,6 +14,6 @@ final class EmptyTrustFactorResolver implements TrustFactorResolver {
 
   @Override
   public String toString() {
-    return "Empty";
+    return "空解析器";
   }
 }

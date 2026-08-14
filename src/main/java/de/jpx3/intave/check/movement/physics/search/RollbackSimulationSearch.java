@@ -50,18 +50,18 @@ public final class RollbackSimulationSearch implements SimulationSearch {
 
 		Set<Simulation> simulations = delegate.exhaustiveTickSearch(user, rollbackEnvironment, simulator);
 		if (simulations.isEmpty()) {
-			user.sendMessage("Exhaustive did not yield any simulations");
+			user.sendMessage("穷举搜索未找到任何模拟结果");
 			storeRollbackEnvironment(movement, firstSimulation);
 			return firstSimulation;
 		}
 
 		if (simulations.size() == 1) {
-			user.sendMessage("Exhaustive yielded 1 simulation, skipping search. " + simulations.iterator().next().actualMotion());
+			user.sendMessage("穷举搜索仅找到 1 个模拟结果，跳过后续搜索。" + simulations.iterator().next().actualMotion());
 			storeRollbackEnvironment(movement, firstSimulation);
 			return firstSimulation;
 		}
 
-		user.sendMessage("Exhaustive yielded " + simulations.size() + " simulations, searching for best rollback simulation");
+		user.sendMessage("穷举搜索找到 " + simulations.size() + " 个模拟结果，正在寻找最佳回滚模拟");
 
 		Simulation bestSimulation = firstSimulation;
 		Set<Motion> bestOffsetMotions = new HashSet<>();
@@ -89,7 +89,7 @@ public final class RollbackSimulationSearch implements SimulationSearch {
 			}
 		}
 		if (!bestOffsetMotions.isEmpty()) {
-			user.player().sendMessage("Rollbacked ("+bestOffsetMotions.size()+") simulation search: " + bestSimulation.offsetDifference() + " vs " + firstSimulation.offsetDifference());
+			user.player().sendMessage("回滚模拟搜索（" + bestOffsetMotions.size() + "）：" + bestSimulation.offsetDifference() + " 对比 " + firstSimulation.offsetDifference());
 		}
 		if (bestOffsetMotions.size() == 1) {
 			storeRollbackEnvironment(movement, firstSimulation);

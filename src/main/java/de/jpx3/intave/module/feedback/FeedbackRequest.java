@@ -16,6 +16,7 @@ public class FeedbackRequest<T> {
   private final int options;
 
   private boolean preThreadInjectionPassed = false;
+  private volatile boolean acknowledgedByClient;
 
   FeedbackRequest(
     FeedbackCallback<T> callback,
@@ -46,7 +47,7 @@ public class FeedbackRequest<T> {
       }
     } catch (Exception e) {
       if (IntaveControl.DEBUG) {
-        IntaveLogger.logger().error("Error while acknowledging " + callback + " for " + player);
+        IntaveLogger.logger().error("确认玩家 " + player + " 的回调 " + callback + " 时出错");
         e.printStackTrace();
       }
     }
@@ -90,5 +91,13 @@ public class FeedbackRequest<T> {
 
   public int options() {
     return options;
+  }
+
+  void markAcknowledgedByClient() {
+    acknowledgedByClient = true;
+  }
+
+  boolean isAcknowledgedByClient() {
+    return acknowledgedByClient;
   }
 }

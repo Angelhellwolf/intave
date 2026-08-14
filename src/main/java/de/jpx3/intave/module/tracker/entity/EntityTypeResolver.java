@@ -94,7 +94,7 @@ public final class EntityTypeResolver {
           HitboxSize boundaries = hitboxBoundariesByDeadEntityType(deadEntityType);
           return new EntityTypeData(name, boundaries, deadEntityType == 1 ? 41 : -1, false, 2);
         } catch (FieldAccessException exception) {
-          IntaveLogger.logger().info("Can't access type data of " + entityId);
+          IntaveLogger.logger().info("无法访问实体 " + entityId + " 的类型数据");
           exception.printStackTrace();
         }
         return new EntityTypeData("Invalid", HitboxSize.zero(), -2, false, 3);

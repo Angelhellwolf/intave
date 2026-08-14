@@ -88,7 +88,7 @@ public final class BlockRotation extends PlayerCheckPart<PlacementAnalysis> {
 			if (vl++ > 3) {
 				int pitch = (int) movement.rotationPitch;
 				int ticksPerBlock = (int) (average / 50d);
-				String details = "pitch of " + pitch + " placing blocks in " + ticksPerBlock + " t/b";
+				String details = "pitch 为 " + pitch + " 放置方块于 " + ticksPerBlock + " t/b";
 				Violation violation = Violation.builderFor(PlacementAnalysis.class)
 					.forPlayer(player).withMessage(COMMON_FLAG_MESSAGE).withDetails(details)
 					.appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)

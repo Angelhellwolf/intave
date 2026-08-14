@@ -32,7 +32,7 @@ public final class PatchyLoadingInjector {
           FileOutputStream fileOutputStream = new FileOutputStream(dumpFile);
           fileOutputStream.write(classBytes);
           fileOutputStream.close();
-          System.out.println("Dumped class bytes to " + dumpFile.getAbsolutePath());
+          System.out.println("已将类字节码转储到 " + dumpFile.getAbsolutePath());
         } catch (IOException exception2) {
           exception2.printStackTrace();
         }
@@ -45,7 +45,7 @@ public final class PatchyLoadingInjector {
     className = className.replace('.', '/') + ".class";
     InputStream stream = classLoader.getResourceAsStream(className);
     if (stream == null) {
-      IntaveLogger.logger().printLine("Unable to resolve class bytes for class " + className + ". Performing manual load attempt..");
+      IntaveLogger.logger().printLine("无法解析类 " + className + " 的字节码，正在尝试手动加载……");
       String path;
       try {
         path = PatchyLoadingInjector.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath();

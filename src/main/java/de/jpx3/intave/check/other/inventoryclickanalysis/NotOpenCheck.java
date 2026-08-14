@@ -62,8 +62,8 @@ public final class NotOpenCheck extends CheckPart<InventoryClickAnalysis> {
       if (user.meta().protocol().supportsInventoryAchievementPacket()) {
         Violation violation = Violation.builderFor(InventoryClickAnalysis.class)
           .forPlayer(player)
-          .withMessage("clicked in closed inventory")
-          .withDetails("slot " + reader.slot() + " in inventory " + reader.containerId())
+          .withMessage("在已关闭背包中点击")
+          .withDetails("槽位 " + reader.slot() + "，背包 " + reader.containerId())
           .withVL(5).build();
         Modules.violationProcessor().processViolation(violation);
         Synchronizer.synchronize(player::closeInventory);

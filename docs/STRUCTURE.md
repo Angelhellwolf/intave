@@ -1,33 +1,33 @@
-# General overview of code structure
+# 代码结构总览
 
-## Checks
-Checks provide a skeletal architecture for both detection algorithms and detection clusters.<br>
-They are constrained to the `intave/check` package and have to extend the Check class.<br>
-They are the only place where the actual detection logic is implemented.<br>
-Each check has a class and an equally-named subpackage with check-parts or required components.
+## 检测（Checks）
+检测为检测算法与检测簇提供骨架结构。<br>
+它们位于 `intave/check` 包，且必须继承 Check 类。<br>
+真正的检测逻辑只应实现于此。<br>
+每个检测有一个类，以及同名子包存放检测部件或所需组件。
 
-So for example the `intave/check/Physics` check has a `intave/check/physics/` subpackage.<br>
+例如：`intave/check/Physics` 检测对应 `intave/check/physics/` 子包。<br>
 
-## Dynamic active modules
-DA modules are loaded in specific order, are constrained to the `intave/modules/` package,
-and have to extend the `/intave/modules/Module` class.<br>
+## 动态活动模块（Dynamic active modules）
+DA 模块按特定顺序加载，位于 `intave/modules/` 包，
+且必须继承 `/intave/modules/Module` 类。<br>
 
-They are cast into groups which classify their purpose.<br>
-For example, `intave/module/dispatch/` contains all dispatch modules, `intave/module/tracker/` all tracker modules.<br>
+它们按用途分组。<br>
+例如 `intave/module/dispatch/` 为分发模块，`intave/module/tracker/` 为追踪模块。<br>
 
-## Static passive modules
-Static modules are modules that have a reserved package name and are always loaded.<br>
-Think of them as libraries providing a service that are always available.<br>
+## 静态被动模块（Static passive modules）
+静态模块拥有保留包名，且始终加载。<br>
+可将其视为始终可用的库式服务。<br>
 
-Examples of static modules are:
+静态模块示例：
 - `intave/block/*/`
 - `intave/klass/*/`
 - `intave/resource/`
 - `intave/packet/*/`
 
-Usually, they have one endpoint class that is used to access the module.<br>
-For example, the `intave/resource/Resources` class is used to access all resources.<br>
+通常有一个入口类用于访问该模块。<br>
+例如通过 `intave/resource/Resources` 访问全部资源。<br>
 
-## Services of high order
-High order services are old modules that are not yet converted to the new module system.<br>
-They are annotated with `@HighOrderService` and ar edirectly loaded by the main IntavePlugin class.<br>
+## 高阶服务（Services of high order）
+高阶服务是尚未迁移到新模块系统的旧模块。<br>
+它们标注 `@HighOrderService`，并由主类 `IntavePlugin` 直接加载。<br>

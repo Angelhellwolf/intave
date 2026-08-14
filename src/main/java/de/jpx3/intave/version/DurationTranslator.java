@@ -5,10 +5,10 @@ import java.util.concurrent.TimeUnit;
 public final class DurationTranslator {
   public static String translateMinutes(long duration) {
     if (duration < 0) {
-      return "invalid";
+      return "无效";
     }
     if (duration == 0) {
-      return "0 minutes";
+      return "0 分钟";
     }
     int minutes = (int) (duration / (1000 * 60));
     int hours = minutes / 60;
@@ -16,23 +16,23 @@ public final class DurationTranslator {
     String firstType = stringifyType(TimeUnit.HOURS, hours);
     String secondType = stringifyType(TimeUnit.MINUTES, minutes);
     if (secondType.isEmpty()) {
-      secondType = "0 minutes";
+      secondType = "0 分钟";
     }
     String output;
     if (hours >= 24) {
       output = firstType;
     } else {
-      output = firstType + (firstType.isEmpty() ? "" : " and ") + secondType;
+      output = firstType + (firstType.isEmpty() ? "" : " ") + secondType;
     }
     if (output.trim().isEmpty()) {
-      output = "a few minutes";
+      output = "几分钟";
     }
     return output;
   }
 
   public static String translateHours(long duration) {
     if (duration <= 0) {
-      return "invalid";
+      return "无效";
     }
     int hours = (int) (duration / (1000 * 60 * 60));
     int days = hours / 24;
@@ -40,16 +40,16 @@ public final class DurationTranslator {
     String firstType = stringifyType(TimeUnit.DAYS, days);
     String secondType = stringifyType(TimeUnit.HOURS, hours);
     if (secondType.isEmpty()) {
-      secondType = "0 hours";
+      secondType = "0 小时";
     }
     String output;
     if (days >= 7) {
       output = firstType;
     } else {
-      output = firstType + (firstType.isEmpty() ? "" : " and ") + secondType;
+      output = firstType + (firstType.isEmpty() ? "" : " ") + secondType;
     }
     if (output.trim().isEmpty()) {
-      output = "a few hours";
+      output = "几小时";
     }
     return output;
   }
@@ -58,7 +58,16 @@ public final class DurationTranslator {
     if (conv == 0) {
       return "";
     }
-    String name = unit.name().toLowerCase();
-    return (conv == 1 ? "one" : conv) + " " + name.substring(0, name.length() - (conv == 1 ? 1 : 0));
+    String unitName;
+    if (unit == TimeUnit.DAYS) {
+      unitName = "天";
+    } else if (unit == TimeUnit.HOURS) {
+      unitName = "小时";
+    } else if (unit == TimeUnit.MINUTES) {
+      unitName = "分钟";
+    } else {
+      unitName = unit.name().toLowerCase();
+    }
+    return conv + " " + unitName;
   }
 }

@@ -58,7 +58,7 @@ public final class AccuracyLongTermHeuristic extends ClassicHeuristic<AccuracyLo
 //        Synchronizer.synchronize(() -> player.sendMessage(String.valueOf(failRate)));
         if (heuristicMeta.attacks > 80) {
           if (failRate >= 0 && failRate < 3) {
-            flag(player, "player maintains high attack accuracy (failRate: " + MathHelper.formatDouble(failRate, 2) + "%)");
+            flag(player, "保持高攻击精度（失败率: " + MathHelper.formatDouble(failRate, 2) + "%)");
           }
           heuristicMeta.attacks = 0;
           heuristicMeta.swings = 0;

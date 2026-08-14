@@ -112,7 +112,7 @@ public final class ChunkAccessPatcher extends Module {
             iterator.forEachRemaining(newQueue::add);
           } catch (Throwable ignored) {
             if (!failedDSIFirstPatch) {
-              IntaveLogger.logger().info("Using alternative patch for unload queue for " + unloadQueueFieldClassName);
+              IntaveLogger.logger().info("正在为卸载队列 " + unloadQueueFieldClassName + " 使用备用补丁");
               failedDSIFirstPatch = true;
             }
             LongSet queue = (LongSet) unloadQueue;
@@ -134,7 +134,7 @@ public final class ChunkAccessPatcher extends Module {
         iterator.forEachRemaining(newQueue::add);
       }
     } catch (Exception | Error exception) {
-      IntaveLogger.logger().info(String.format("Failed to patch chunk unload queue of \"%s\" with \"%s\": %s", world.getName(), patchName, exception.getMessage()));
+      IntaveLogger.logger().info(String.format("无法使用补丁 \"%2$s\" 修补世界 \"%1$s\" 的区块卸载队列：%3$s", world.getName(), patchName, exception.getMessage()));
       exception.printStackTrace();
     }
   }

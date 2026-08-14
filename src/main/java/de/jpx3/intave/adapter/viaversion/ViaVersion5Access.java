@@ -54,7 +54,7 @@ public final class ViaVersion5Access implements ViaVersionAccess {
         }
         if (fix121PlacementField.getBoolean(config)) {
           fix121PlacementField.set(config, false);
-          IntaveLogger.logger().info("Disabled ViaVersion 1.21 placement rotation fix");
+          IntaveLogger.logger().info("已禁用 ViaVersion 1.21 方块放置旋转修复");
         }
 //        fix121PlacementField.set(config, false);
       } catch (Throwable x) {}

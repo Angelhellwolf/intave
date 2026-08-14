@@ -23,7 +23,7 @@ public final class IntaveThreadFactory implements ThreadFactory {
     thread.setDaemon(false);
     thread.setPriority(defaultPriority);
     thread.setUncaughtExceptionHandler((threadx, exception) -> {
-      IntaveLogger.logger().printLine("Thread " + threadx.getName() + " has encountered an " + exception);
+      IntaveLogger.logger().printLine("线程 " + threadx.getName() + " 遇到异常：" + exception);
       exception.printStackTrace();
     });
     return thread;

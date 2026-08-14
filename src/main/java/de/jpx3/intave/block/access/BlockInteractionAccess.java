@@ -70,7 +70,7 @@ public final class BlockInteractionAccess {
       }
       Object block = BlockAccess.global().nativeVariantBy(material.getId());
       if (block == null) {
-        IntaveLogger.logger().printLine("No block found for id " + material.getId());
+        IntaveLogger.logger().printLine("找不到 ID 为 " + material.getId() + " 的方块");
         continue;
       }
       if (hasInteractMethod(block.getClass())) {

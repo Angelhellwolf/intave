@@ -1,36 +1,36 @@
-# Selected config
-#   THIS     - use this config, disregard advanced.yml if it exists
-#   ADVANCED - use advanced.yml, disregard the rest of this file.
-#              The advanced.yml file will be generated when first selected,
-#              with the placeholders from this file
-#   ONLINE/[config-name] (planned) - use the cloud config
+# 配置选择
+#   THIS     - 使用本文件配置，忽略 advanced.yml（若存在）
+#   ADVANCED - 使用 advanced.yml，忽略本文件其余内容。
+#              首次选择 ADVANCED 时会生成 advanced.yml，
+#              并填入本文件中的占位内容
+#   ONLINE/[config-name]（计划中）- 使用云端配置
 config: THIS
 
 prefix: "&8[&c&lIntave&8]&7 "
 
 kick-commands:
-  - "intave internals kickip {player} &cYou have been kicked, as an account with your ip address was removed from the game"
-  - "kick {player} &cYou have been removed from the game based on data that was collected by the anti-cheat ({log-id})"
+  - "intave internals kickip {player} &c你已被踢出：与你相同 IP 的账号已被移出游戏"
+  - "kick {player} &c你已被反作弊移出游戏（日志 ID: {log-id}）"
 
 ban-commands:
-  - "intave internals kickip {player} &cYou have been kicked, as an account with your ip address was removed from the game"
-  - "ban {player} Cheating / {log-id}"
+  - "intave internals kickip {player} &c你已被踢出：与你相同 IP 的账号已被移出游戏"
+  - "kick {player} &c你已被反作弊移出游戏（日志 ID: {log-id}）"
 
-# Movement setback sensitivity
-#   Choose between AGGRESSIVE, CAREFUL, LENIENT, BARELY and SILENT
-#   FALSE POSITIVES? -> REPORT THEM
+# 移动回弹灵敏度
+#   可选：AGGRESSIVE、CAREFUL、LENIENT、BARELY、SILENT
+#   出现误判？请向官方反馈
 physics-mm: BARELY
 
-# Rejoin delay after issued kick (in seconds)
+# 踢出后重新加入延迟（秒）
 rejoin-delay: 3600
 
-# Cloud privacy control
-#   HIGHEST_PRIVACY - only the most critical data is sent (player UUID and usage data)
-#   BEST_DETECTION  - also share IP address for long-term cross-account analysis & detection
+# 云端隐私控制
+#   HIGHEST_PRIVACY - 仅发送最关键数据（玩家 UUID 与使用数据）
+#   BEST_DETECTION  - 同时共享 IP，用于长期跨账号分析与检测
 #
-# BEST_DETECTION requires you to update your server's privacy policy or let players know
-#                the first time they join, as it is considered personal data under GDPR.
+# BEST_DETECTION 需要你更新服务器隐私政策，或在玩家首次加入时告知，
+#                因其在 GDPR 下属于个人数据。
 privacy: HIGHEST_PRIVACY
 
 verbose: "{prefix} &c{player}&7/{trust-color}&7 {message} {details} (+{vladded} -> {vl})"
-notify: "{prefix} &c&lInfo&8: &7{text}"
+notify: "{prefix} &c&l提示&8: &7{text}"

@@ -207,7 +207,7 @@ public final class SibylAuthentication implements BukkitEventSubscriber {
 
   private void setAuthState(Player player, SibylAuthenticationState state) {
     if (SIBYL_DEBUG) {
-      player.sendMessage("Sibyl -> " + state + "/" + state.ordinal());
+      player.sendMessage("云端认证状态（Sibyl）-> " + state + "/" + state.ordinal());
     }
     authStates.put(player.getUniqueId(), state);
   }

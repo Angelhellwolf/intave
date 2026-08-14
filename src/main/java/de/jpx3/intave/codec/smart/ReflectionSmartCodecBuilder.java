@@ -75,7 +75,7 @@ public final class ReflectionSmartCodecBuilder<I, O, T> {
 			try {
 				return (F) field.get(value);
 			} catch (IllegalAccessException exception) {
-				throw new IllegalStateException("Cannot read field " + name + " from " + type.getName(), exception);
+				throw new IllegalStateException("Cannot read field " + name + " 从 " + type.getName(), exception);
 			}
 		};
 	}

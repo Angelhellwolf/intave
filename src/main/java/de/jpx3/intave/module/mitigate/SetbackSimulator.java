@@ -131,7 +131,7 @@ public final class SetbackSimulator extends Module {
 
     violationLevelData.isInActiveTeleportBundle = true;
     if (IntaveControl.DEBUG_EMULATION) {
-      player.sendMessage(ChatColor.DARK_PURPLE + "[E+] " + motion  + " (" + ticks + " ticks, "+(!isOriginal ? "not ["+originalMotion+"] " : "")+" original)");
+      player.sendMessage(ChatColor.DARK_PURPLE + "[E+] " + motion + "（" + ticks + " 游戏刻，" + (!isOriginal ? "并非 [" + originalMotion + "] " : "") + "原始速度）");
     }
 
     proceedEmulationTick(player.getWorld(), player, motion, ticks, ticks, delay, cancellable);
@@ -294,7 +294,7 @@ public final class SetbackSimulator extends Module {
       }
 
       if (IntaveControl.DEBUG_EMULATION) {
-        player.sendMessage(ChatColor.DARK_PURPLE + "[E-] (" + ticks + " ticks remaining)");
+        player.sendMessage(ChatColor.DARK_PURPLE + "[E-]（剩余 " + ticks + " 游戏刻）");
       }
     } else {
       // teleport
@@ -514,7 +514,7 @@ public final class SetbackSimulator extends Module {
         }
 
         if (user.receives(MessageChannel.DEBUG_TELEPORT)) {
-          player.sendMessage(IntavePlugin.prefix() + "Teleport to " + player.getLocation().getBlockX() + " " + player.getLocation().getBlockY() + " " + player.getLocation().getBlockZ() + " " + " per " + ChatColor.RED + " setback policy");
+          player.sendMessage(IntavePlugin.prefix() + "传送至 " + player.getLocation().getBlockX() + " " + player.getLocation().getBlockY() + " " + player.getLocation().getBlockZ() + " " + " 依据 " + ChatColor.RED + " 回弹策略");
         }
       } catch (IllegalAccessException exception) {
         throw new IntaveInternalException(exception);
@@ -529,9 +529,9 @@ public final class SetbackSimulator extends Module {
         if (IntaveControl.DEBUG_INTAVE_TELEPORT_EVENT_CANCELS && cancel) {
           PluginInvocation pluginInvocation = Caller.pluginInfo(false);
           if (pluginInvocation == null) {
-            IntaveLogger.logger().printLine("[Intave] Intave's teleport event was cancelled anonymously");
+            IntaveLogger.logger().printLine("[Intave] Intave 传送事件被未知来源取消");
           } else {
-            IntaveLogger.logger().printLine("[Intave] " + pluginInvocation.pluginName() + " cancelled Intave's teleport event (" + pluginInvocation.className() + ": " + pluginInvocation.methodName() + ")");
+            IntaveLogger.logger().printLine("[Intave] " + pluginInvocation.pluginName() + " 取消了 Intave 传送事件（" + pluginInvocation.className() + "：" + pluginInvocation.methodName() + "）");
           }
         }
         super.setCancelled(cancel);

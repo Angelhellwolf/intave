@@ -78,7 +78,7 @@ public final class AbilityMetadata {
 
   private void setupDefaultGameMode(GameMode gameMode) {
     if (gameMode == null) {
-      IntaveLogger.logger().warn("Player " + player.getName() + " has no game mode set, this is quite dangerous and may lead to unexpected behaviour.");
+      IntaveLogger.logger().warn("玩家 " + player.getName() + " 未设置游戏模式，这可能导致意外行为");
     }
     int gameModeValue = gameMode == null ? -1 : gameMode.getValue();
     this.gameMode = Arrays.stream(AbilityTracker.GameMode.values())
@@ -122,7 +122,7 @@ public final class AbilityMetadata {
       });
       clearAttributeCaches();
     } catch (Exception e) {
-      IntaveLogger.logger().error("Unable to setup attribute " + name + " for player " + player.getName());
+      IntaveLogger.logger().error("无法为玩家 " + player.getName() + " 设置属性 " + name);
       e.printStackTrace();
     }
   }

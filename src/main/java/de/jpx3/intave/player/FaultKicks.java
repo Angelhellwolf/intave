@@ -34,7 +34,7 @@ public final class FaultKicks {
     if (CONSOLE_OUTPUT.isEmpty()) {
       return;
     }
-    IntaveLogger.logger().info("Disabled fault kicks for " + describeListSelection(CONSOLE_OUTPUT) + " (not recommended)");
+    IntaveLogger.logger().info("已对 " + describeListSelection(CONSOLE_OUTPUT) + " 禁用故障踢出（不建议）");
     CONSOLE_OUTPUT.clear();
   }
 

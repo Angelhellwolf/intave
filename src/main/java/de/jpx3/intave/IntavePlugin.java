@@ -180,13 +180,13 @@ public final class IntavePlugin extends JavaPlugin {
 
   @Override
   public void onEnable() {
-    logger.info("Please stand by..");
+    logger.info("请稍候..");
 
     // stage 4
     Modules.proceedBoot(BootSegment.STAGE_4);
 
     if (AgentAccessor.agentAvailable()) {
-      logger.info("Using agent :{~-~}:");
+      logger.info("正在使用 agent :{~-~}:");
     }
 
     DrillResolver.serverInit();
@@ -309,7 +309,7 @@ public final class IntavePlugin extends JavaPlugin {
       try {
         versions.setup();
       } catch (Exception | Error exception) {
-        logger.error("Something went wrong checking version");
+        logger.error("检查版本时出错");
         exception.printStackTrace();
       }
 
@@ -345,11 +345,11 @@ public final class IntavePlugin extends JavaPlugin {
       getCommand("intave").setExecutor(new CommandForwarder());
 
       if (IntaveControl.DISABLE_BLOCK_CACHING_ENTIRELY) {
-        logger().info("This version does not cache block-accesses");
+        logger().info("此版本不缓存方块访问");
       }
 
       if (IntaveControl.DEBUG_VARIANT_COMPILATION) {
-        logger().info("This version outputs debug information for block-variant compilation");
+        logger().info("此版本输出方块变体编译调试信息");
       }
 
       // stage 9
@@ -365,14 +365,14 @@ public final class IntavePlugin extends JavaPlugin {
       try {
         cloud.connectMasterShard();
       } catch (Exception exception) {
-        logger.info("Unable to connect to cloud: " + exception.getMessage());
+        logger.info("无法连接云端: " + exception.getMessage());
       }
     } catch (Exception exception) {
-      logger.error("Unable to boot: " + exception.getMessage());
+      logger.error("无法启动: " + exception.getMessage());
       exception.printStackTrace();
 
       invalidateCaches();
-      bootFailure("Internal error occurred");
+      bootFailure("发生内部错误");
       performShutdown();
       return;
     }
@@ -398,30 +398,30 @@ public final class IntavePlugin extends JavaPlugin {
 //      logger.warn(ChatColor.RED + "Upgrading Java has incredible performance benefits");
 //      logger.warn(ChatColor.RED + "We strongly recommend updating Java now");
 //      logger.warn(ChatColor.RED + "Support for older versions of Java might eventually be dropped");
-      logger.info(ChatColor.RED + "Your version of Java is seriously outdated, consider updating");
+      logger.info(ChatColor.RED + "你的 Java 版本严重过时，请考虑升级");
     }
 
     if (IntaveControl.NETTY_DUMP_ON_TIMEOUT) {
-      logger.info(ChatColor.YELLOW + "This version will dump netty threads when a player times out");
+      logger.info(ChatColor.YELLOW + "此版本会在玩家超时时转储 netty 线程");
     }
 
     if (IntaveControl.USE_DEBUG_LOCATE_RESOURCE) {
-      logger.info(ChatColor.YELLOW + "This version will use the Intave/locate file for class mappings");
+      logger.info(ChatColor.YELLOW + "此版本将使用 Intave/locate 文件做类映射");
     }
 
     if (IntaveControl.LATENCY_PING_AS_XP_LEVEL) {
-      logger.info(ChatColor.YELLOW + "This version sets the latency ping as the player's xp level");
+      logger.info(ChatColor.YELLOW + "此版本将延迟 ping 设为玩家经验等级");
     }
 
     if (IntaveControl.APPLY_GLOBAL_LOW_TRUSTFACTOR) {
-      logger.info(ChatColor.YELLOW + "This version assigns only the red trustfactor for debugging");
+      logger.info(ChatColor.YELLOW + "此版本仅为调试分配红色信任等级");
     }
 
     Plugin viaBackwards = Bukkit.getPluginManager().getPlugin("ViaBackwards");
     if (viaBackwards != null) {
       if (!viaBackwards.getConfig().getBoolean("handle-pings-as-inv-acknowledgements", false)) {
-        logger.warn("ViaBackwards is misconfigured, causing false-positives and fault kicks");
-        logger.warn("Go to plugins/ViaBackwards/config.yml and set \"handle-pings-as-inv-acknowledgements\" to TRUE");
+        logger.warn("ViaBackwards 配置错误，会导致误判与故障踢出");
+        logger.warn("请到 plugins/ViaBackwards/config.yml 将 \"handle-pings-as-inv-acknowledgements\" 设为 TRUE");
       }
     }
 
@@ -429,7 +429,7 @@ public final class IntavePlugin extends JavaPlugin {
     displayVersionInformation();
     successfullyBooted = true;
     randomExitMessages = Resources.localServiceCacheResource("exitmessages", "exitmessages", TimeUnit.DAYS.toMillis(7)).readLines();
-    logger.info("Intave booted successfully");
+    logger.info("Intave 启动成功");
 
     Synchronizer.synchronize(() -> {
       // stage 11
@@ -442,7 +442,7 @@ public final class IntavePlugin extends JavaPlugin {
   public void createDataFolder() {
     File dataFolder = dataFolder();
     if (!(dataFolder.exists() || dataFolder.mkdirs())) {
-      logger.error("Failed to create Intave folder " + dataFolder.getAbsolutePath());
+      logger.error("创建 Intave 文件夹失败 " + dataFolder.getAbsolutePath());
     }
   }
 
@@ -456,7 +456,7 @@ public final class IntavePlugin extends JavaPlugin {
       loggerField.setAccessible(true);
       loggerField.set(this, logger());
     } catch (Exception exception) {
-      logger.error("[Intave] Failed to inject logger to bukkit");
+      logger.error("[Intave] 无法将日志记录器注入 Bukkit");
     }
   }
 
@@ -465,7 +465,7 @@ public final class IntavePlugin extends JavaPlugin {
       try {
         de.jpx3.classloader.ClassLoader.setupEnvironment(Files.createTempDirectory("intave-debug").toFile());
       } catch (IOException exception) {
-        logger.error("[Intave] Failed to create temporary directory for classloader");
+        logger.error("[Intave] 无法为类加载器创建临时目录");
         exception.printStackTrace();
       }
     }
@@ -474,7 +474,7 @@ public final class IntavePlugin extends JavaPlugin {
   public void displayVersionInformation() {
     IntaveVersion version = versions.versionInformation(fullVersion());
     if (version == null) {
-      logger().info(ChatColor.YELLOW + "This version of Intave is not listed in the official version index");
+      logger().info(ChatColor.YELLOW + "此 Intave 版本未列入官方版本索引");
     } else {
       long duration = System.currentTimeMillis() - version.release();
       String durationAsString = DurationTranslator.translateHours(duration);
@@ -482,21 +482,21 @@ public final class IntavePlugin extends JavaPlugin {
       String infoMessage = "";
       switch (version.typeClassifier()) {
         case LATEST:
-          infoMessage = "Running the latest version of Intave (" + durationAsString + " old)";
+          infoMessage = "正在运行最新版 Intave（" + durationAsString + " 前）";
           break;
         case STABLE:
-          infoMessage = "Running a stable version of Intave (" + durationAsString + " old)";
+          infoMessage = "正在运行稳定版 Intave（" + durationAsString + " 前）";
           break;
         case OUTDATED:
-          infoMessage = "A newer version of Intave is available (this version is " + durationAsString + " old)";
+          infoMessage = "有更新的 Intave 可用（当前版本 " + durationAsString + " 前）";
           break;
         case TEST:
-          infoMessage = "Running a test version of Intave";
+          infoMessage = "正在运行测试版 Intave";
           break;
         case DISABLED:
         case INVALID:
-          logger().error("Unable to boot: This version has been deactivated");
-          bootFailure("Version deactivated");
+          logger().error("无法启动：此版本已停用");
+          bootFailure("版本已停用");
           performShutdown();
           throw new IntaveInternalException("Escape exception");
       }
@@ -618,7 +618,7 @@ public final class IntavePlugin extends JavaPlugin {
 
   public void bootFailure(String reason) {
     getCommand("intave").setExecutor((commandSender, command, s, strings) -> {
-      commandSender.sendMessage(prefix() + ChatColor.RED + "Intave couldn't boot properly: " + reason);
+      commandSender.sendMessage(prefix() + ChatColor.RED + "插件 Intave 未能正常启动: " + reason);
       return false;
     });
   }
@@ -629,7 +629,7 @@ public final class IntavePlugin extends JavaPlugin {
   }
 
   public void performShutdown() {
-    logger.info("Stopping Intave");
+    logger.info("正在停止 Intave");
     try {
       configService.shutdown();
     } catch (Exception ignored) {
@@ -641,14 +641,14 @@ public final class IntavePlugin extends JavaPlugin {
     if (successfullyBooted) {
       logger.info(randomExitMessage());
     }
-    logger.info("Intave offline");
+    logger.info("Intave 已离线");
     logger.shutdown();
   }
 
   private List<String> randomExitMessages = new ArrayList<>();
 
   private String randomExitMessage() {
-    return randomExitMessages.isEmpty() ? "No jokes? :(" : randomExitMessages.get(ThreadLocalRandom.current().nextInt(randomExitMessages.size()));
+    return randomExitMessages.isEmpty() ? "没有笑话？:(" : randomExitMessages.get(ThreadLocalRandom.current().nextInt(randomExitMessages.size()));
   }
 
   private void deleteIntegrityCache() {

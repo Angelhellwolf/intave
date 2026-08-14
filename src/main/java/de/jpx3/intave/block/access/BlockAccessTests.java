@@ -41,6 +41,8 @@ public final class BlockAccessTests extends IntegrationTests {
 
     for (Material value : Material.values()) {
       if (value.isBlock() && !blacklistedMaterials.contains(value)) {
+        // Legacy servers may retain a stale tile entity when replacing one container block with another.
+        block.setType(Material.AIR, false);
         block.setType(value, false);
         if (block.getType() == Material.OBSIDIAN) {
           // oh yes that happens

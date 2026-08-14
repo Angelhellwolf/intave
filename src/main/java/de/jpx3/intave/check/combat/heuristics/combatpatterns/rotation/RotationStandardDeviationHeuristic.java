@@ -82,7 +82,7 @@ public final class RotationStandardDeviationHeuristic extends ClassicHeuristic<R
 
     if (standardDeviation < 1.0) {
       if (heuristicMeta.rotationBalanceYaw++ >= 2) {
-        String description = "standard deviation (yaw) (" + MathHelper.formatDouble(standardDeviation, 4) + ")";
+        String description = "标准差 (yaw) (" + MathHelper.formatDouble(standardDeviation, 4) + ")";
         flag(player, description);
         heuristicMeta.rotationBalanceYaw--;
         user.nerf(AttackNerfStrategy.DMG_LIGHT, nerfId);
@@ -99,7 +99,7 @@ public final class RotationStandardDeviationHeuristic extends ClassicHeuristic<R
 
     if (standardDeviation < 3.0) {
       if (heuristicMeta.rotationBalancePitch++ >= 4) {
-        String description = "standard deviation (pitch) (" + standardDeviation + ")";
+        String description = "标准差 (pitch) (" + standardDeviation + ")";
         flag(player, description);
         heuristicMeta.rotationBalancePitch -= 2;
         user.nerf(AttackNerfStrategy.HT_LIGHT, nerfId);

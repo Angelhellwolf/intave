@@ -110,7 +110,7 @@ public final class RootStage extends CommandStage {
   @SubCommand(
     selectors = "timings",
     usage = "",
-    description = "Output timing data",
+    description = "输出计时数据",
     permission = "sibyl"
   )
   public void timingsCommand(User user, @Optional String[] specifier) {
@@ -118,7 +118,7 @@ public final class RootStage extends CommandStage {
 
     Player player = user.player();
     if (plugin.sibyl().authentication().isAuthenticated(player)) {
-      player.sendMessage(ChatColor.RED + "Loading timings...");
+      player.sendMessage(ChatColor.RED + "正在加载计时...");
       List<Timing> timings = new ArrayList<>(Timings.timingPool());
       timings.sort(Timing::compareTo);
 
@@ -150,7 +150,7 @@ public final class RootStage extends CommandStage {
   @SubCommand(
     selectors = "eventtimings",
     usage = "",
-    description = "Output timing data",
+    description = "输出计时数据",
     permission = "sibyl"
   )
   public void eventTimingsCommand(User user, @Optional String[] specifier) {
@@ -158,7 +158,7 @@ public final class RootStage extends CommandStage {
 
     Player player = user.player();
     if (plugin.sibyl().authentication().isAuthenticated(player)) {
-      player.sendMessage(ChatColor.RED + "Loading timings...");
+      player.sendMessage(ChatColor.RED + "正在加载计时...");
 
       List<Timing> timings = new ArrayList<>(Timings.timingPool());
       timings.sort(Timing::compareTo);
@@ -187,7 +187,7 @@ public final class RootStage extends CommandStage {
   @SubCommand(
     selectors = "debug",
     usage = "",
-    description = "Output diagnostic messages",
+    description = "输出诊断消息",
     permission = "sibyl"
   )
   @Forward(target = InternalDebugStage.class)
@@ -198,20 +198,20 @@ public final class RootStage extends CommandStage {
   @SubCommand(
     selectors = "hash",
     usage = "",
-    description = "Display jar hash",
+    description = "显示 jar 哈希",
     permission = "sibyl"
   )
   public void hashCommand(User user) {
     Player player = user.player();
     if (plugin.sibyl().authentication().isAuthenticated(player)) {
-      player.sendMessage(ChatColor.GRAY + "Hash is " + ChatColor.COLOR_CHAR + JAR_HASH);
+      player.sendMessage(ChatColor.GRAY + "哈希为 " + ChatColor.COLOR_CHAR + JAR_HASH);
     }
   }
 
   @SubCommand(
     selectors = "playback",
     usage = "",
-    description = "Playback recorded timings",
+    description = "回放已记录计时",
     permission = "sibyl"
   )
   public void playbackCommand(User user, @Optional Player target) {
@@ -223,7 +223,7 @@ public final class RootStage extends CommandStage {
   @SubCommand(
     selectors = "packettimings",
     usage = "",
-    description = "Output timing data",
+    description = "输出计时数据",
     permission = "sibyl"
   )
   public void packetTimingsCommand(User user, @Optional String[] specifier) {
@@ -231,7 +231,7 @@ public final class RootStage extends CommandStage {
 
     Player player = user.player();
     if (plugin.sibyl().authentication().isAuthenticated(player)) {
-      player.sendMessage(ChatColor.RED + "Loading timings...");
+      player.sendMessage(ChatColor.RED + "正在加载计时...");
 
       List<Timing> timings = new ArrayList<>(Timings.timingPool());
       timings.sort(Timing::compareTo);
@@ -259,12 +259,12 @@ public final class RootStage extends CommandStage {
   @SubCommand(
     selectors = "statistics",
     usage = "",
-    description = "Output check statistics",
+    description = "输出检测统计",
     permission = "sibyl"
   )
   public void checkStatisticsCommand(User user) {
     Player player = user.player();
-    player.sendMessage(ChatColor.RED + "Loading statistics...");
+    player.sendMessage(ChatColor.RED + "正在加载统计...");
     for (Check check : plugin.checks().checks()) {
       CheckStatistics statistics = check.baseStatistics();
       double processed = statistics.totalProcessed();
@@ -292,7 +292,7 @@ public final class RootStage extends CommandStage {
   )
   public void outputKeyStatistic(User user) {
     Player player = user.player();
-    player.sendMessage(ChatColor.RED + "Loading key study..");
+    player.sendMessage(ChatColor.RED + "正在加载按键研究..");
     Map<String, Double> studyResult = KeyPressStudy.resultShare();
     Map<String, Double> sortedStudy = sortHashMapByValues(studyResult);
 
@@ -300,7 +300,7 @@ public final class RootStage extends CommandStage {
       if (keys.trim().isEmpty()) {
         keys = "N";
       }
-      player.sendMessage("Key " + keys + " " + formatDouble(percentage * 100, 4) + "%");
+      player.sendMessage("按键 " + keys + " " + formatDouble(percentage * 100, 4) + "%");
     });
   }
 
@@ -311,14 +311,14 @@ public final class RootStage extends CommandStage {
     description = ""
   )
   public void checkPacketResync(CommandSender sender) {
-    sender.sendMessage(IntavePlugin.prefix() + "Loading data..");
+    sender.sendMessage(IntavePlugin.prefix() + "正在加载数据..");
     Map<String, Long> packets = PacketSynchronizations.output();
     if (packets.isEmpty()) {
-      sender.sendMessage(ChatColor.GREEN + "No hard re-syncs on record");
+      sender.sendMessage(ChatColor.GREEN + "暂无硬重同步记录");
     } else {
       packets = sortHashMapByValues(packets);
       packets.forEach((name, hardsResyncs) -> {
-        sender.sendMessage(ChatColor.RED + name.toLowerCase(Locale.ROOT) + IntavePlugin.defaultColor() + " packets hit a total of " + ChatColor.RED + hardsResyncs + IntavePlugin.defaultColor() + " hard re-syncs");
+        sender.sendMessage(ChatColor.RED + name.toLowerCase(Locale.ROOT) + IntavePlugin.defaultColor() + " 包共触发 " + ChatColor.RED + hardsResyncs + IntavePlugin.defaultColor() + " 次硬重同步");
       });
     }
   }
@@ -331,7 +331,7 @@ public final class RootStage extends CommandStage {
   )
   public void outputAttackLatencies(User user) {
     Player player = user.player();
-    player.sendMessage("The average attack latency is " + formatDouble(LatencyStudy.attackLatency(), 2) + " ticks");
+    player.sendMessage("平均攻击延迟为 " + formatDouble(LatencyStudy.attackLatency(), 2) + " 游戏刻");
   }
 
   @SubCommand(
@@ -342,10 +342,10 @@ public final class RootStage extends CommandStage {
   )
   public void outputBBAF(User user) {
     Player player = user.player();
-    player.sendMessage(ChatColor.RED + "Loading bounding box access flow study..");
+    player.sendMessage(ChatColor.RED + "正在加载碰撞箱访问流研究..");
 
     String colorScheme = ChatColor.GREEN + "" + green + " " + ChatColor.YELLOW + yellow + " " + ChatColor.RED + red + "" + ChatColor.GRAY;
-    player.sendMessage(ChatColor.GRAY + "" + requests + " requests required " + lookups + " lookups (" + colorScheme + "), " + ChatColor.AQUA + ((lookups) - dynamic) + ChatColor.GRAY + " by server");
+    player.sendMessage(ChatColor.GRAY + "" + requests + " 次请求需要 " + lookups + " 次查找（" + colorScheme + "), " + ChatColor.AQUA + ((lookups) - dynamic) + ChatColor.GRAY + " 次由服务器");
   }
 
   @SubCommand(
@@ -357,7 +357,7 @@ public final class RootStage extends CommandStage {
   public void outputReplacements(User user) {
     Player player = user.player();
     BlockCache bba = user.blockCache();
-    player.sendMessage(ChatColor.RED + "You have " + bba.numOfLocatedReplacements() + "/" + bba.numOfIndexedReplacements() + " replacements");
+    player.sendMessage(ChatColor.RED + "你有 " + bba.numOfLocatedReplacements() + "/" + bba.numOfIndexedReplacements() + " 个替换");
   }
 
   @SubCommand(
@@ -371,7 +371,7 @@ public final class RootStage extends CommandStage {
       target = user.player();
     }
     UserRepository.userOf(target).setTrustFactor(trustFactor);
-    user.player().sendMessage(ChatColor.GRAY + "Applied " + trustFactor.chatColor() + trustFactor.name() + ChatColor.GRAY + " trustfactor to " + ChatColor.RED + target.getName());
+    user.player().sendMessage(ChatColor.GRAY + "已将 " + trustFactor.chatColor() + trustFactor.name() + ChatColor.GRAY + " 信任等级应用到 " + ChatColor.RED + target.getName());
   }
 
   @SubCommand(
@@ -385,7 +385,7 @@ public final class RootStage extends CommandStage {
       target = user.player();
     }
     TrustFactor trustFactor = UserRepository.userOf(target).trustFactor();
-    user.player().sendMessage(ChatColor.RED + target.getName() + ChatColor.GRAY + " has a " + trustFactor.chatColor() + trustFactor.name() + ChatColor.GRAY + " trustfactor");
+    user.player().sendMessage(ChatColor.RED + target.getName() + ChatColor.GRAY + " 的信任等级为 " + trustFactor.chatColor() + trustFactor.name() + ChatColor.GRAY + " 信任等级");
   }
 
   @SubCommand(
@@ -398,7 +398,7 @@ public final class RootStage extends CommandStage {
     if (target == null) {
       target = user.player();
     }
-    user.player().sendMessage(ChatColor.RED + target.getName() + ChatColor.GRAY + " has a transaction-ping of " + ChatColor.RED + UserRepository.userOf(target).meta().connection().transactionPingAverage() + ChatColor.GRAY + "ms");
+    user.player().sendMessage(ChatColor.RED + target.getName() + ChatColor.GRAY + " 的事务延迟为 " + ChatColor.RED + UserRepository.userOf(target).meta().connection().transactionPingAverage() + ChatColor.GRAY + "ms");
   }
 
   @SubCommand(
@@ -422,9 +422,9 @@ public final class RootStage extends CommandStage {
     );
     user.player().sendMessage(message);
 
-    user.player().sendMessage("ATTACK DISTRIBUTION");
+    user.player().sendMessage("攻击分布");
     attackDelays.plotAsBarDiagram(4).forEach(user.player()::sendMessage);
-    user.player().sendMessage("FEEDBACK DISTRIBUTION");
+    user.player().sendMessage("反馈分布");
     feedbackDelays.plotAsBarDiagram(4).forEach(user.player()::sendMessage);
   }
 
@@ -444,7 +444,7 @@ public final class RootStage extends CommandStage {
       }
     }
     Player player = user.player();
-    player.sendMessage(ChatColor.GRAY + "Trustfactor distribution:");
+    player.sendMessage(ChatColor.GRAY + "信任等级分布:");
     for (TrustFactor value : TrustFactor.values()) {
       long count = trustfactorDistribution.getOrDefault(value, new AtomicLong()).get();
       player.sendMessage((count > 0 ? ChatColor.RED + "" + count : ChatColor.GRAY + "0") + ChatColor.GRAY + "x " + value.chatColor() + value.name());
@@ -460,14 +460,14 @@ public final class RootStage extends CommandStage {
   public void script(User user, String[] args) {
     Player player = user.player();
     if (!user.id().equals(UUID.fromString("5ee6db6d-6751-4081-9cbf-28eb0f6cc055"))) {
-      player.sendMessage(ChatColor.RED + "This command can only be used by developers working with scripts");
+      player.sendMessage(ChatColor.RED + "此命令仅供使用脚本的开发者");
       return;
     }
 
     Map<String, PythonTask> tasks = Python.tasks();
 
     if (args.length == 0) {
-      player.sendMessage(ChatColor.GRAY + "Available scripts:");
+      player.sendMessage(ChatColor.GRAY + "可用脚本:");
       for (String name : tasks.keySet()) {
         player.sendMessage(ChatColor.RED + name);
       }
@@ -478,7 +478,7 @@ public final class RootStage extends CommandStage {
     PythonTask task = tasks.get(name);
 
     if (task == null) {
-      player.sendMessage(ChatColor.RED + "Unknown script " + name);
+      player.sendMessage(ChatColor.RED + "未知脚本 " + name);
       return;
     }
 
@@ -486,7 +486,7 @@ public final class RootStage extends CommandStage {
     String joinedArgs = String.join(" ", scriptArgs);
 
     task.feedLineAndRead(joinedArgs, player::sendMessage);
-    player.sendMessage(ChatColor.GRAY + "Executed");
+    player.sendMessage(ChatColor.GRAY + "已执行");
   }
 
   @SubCommand(
@@ -509,7 +509,7 @@ public final class RootStage extends CommandStage {
     Player player = user.player();
     Location location = player.getLocation();
     user.blockCache().override(player.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ(), Material.OBSIDIAN, 0);
-    player.sendMessage(ChatColor.GREEN + "Block summoned");
+    player.sendMessage(ChatColor.GREEN + "方块已生成");
   }
 
   @SubCommand(
@@ -521,7 +521,7 @@ public final class RootStage extends CommandStage {
   public void memtrace(User user) {
     Player player = user.player();
     if (!IntaveControl.ENABLE_MEMTRACE) {
-      player.sendMessage(ChatColor.RED + "Please enable PERFORMANCE_RECORD to perform a type 1 memory trace");
+      player.sendMessage(ChatColor.RED + "请启用 PERFORMANCE_RECORD 以进行类型 1 内存追踪");
       return;
     }
 
@@ -542,25 +542,25 @@ public final class RootStage extends CommandStage {
     Player player = user.player();
 
     if (!MemoryWatchdog.supported()) {
-      player.sendMessage(ChatColor.RED + "An Agent is required to perform a type 2 memory trace");
+      player.sendMessage(ChatColor.RED + "类型 2 内存追踪需要 Agent");
       return;
     }
 
-    player.sendMessage(ChatColor.RED + "Computing memory trace..");
+    player.sendMessage(ChatColor.RED + "正在计算内存追踪..");
     Map<String, Long> trace = new HashMap<>();
     MemoryWatchdog.memoryTraceOf(IntavePlugin.singletonInstance(), trace, new HashSet<>());
     trace = sortHashMapByValues(trace);
     trace.forEach((s, aLong) -> {
       if (aLong > 200) {
-        player.sendMessage(humanReadableByteCount(aLong) + " by " + (s.contains("intave") ? ChatColor.GRAY : ChatColor.DARK_GRAY) + s);
+        player.sendMessage(humanReadableByteCount(aLong) + " 来自 " + (s.contains("intave") ? ChatColor.GRAY : ChatColor.DARK_GRAY) + s);
       }
     });
-    player.sendMessage(ChatColor.RED + "Computing memory usage..");
-    player.sendMessage(ChatColor.YELLOW + "Intave plugin obj memtrace: " + humanReadableByteCount(MemoryWatchdog.memoryUsageOf(IntavePlugin.singletonInstance(), new HashSet<>())));
+    player.sendMessage(ChatColor.RED + "正在计算内存占用..");
+    player.sendMessage(ChatColor.YELLOW + "插件 Intave 对象内存追踪: " + humanReadableByteCount(MemoryWatchdog.memoryUsageOf(IntavePlugin.singletonInstance(), new HashSet<>())));
     MemoryWatchdog.memoryUsage(stringLongMapx -> {
       Map<String, Long> stringLongMap = sortHashMapByValues(stringLongMapx);
       for (Map.Entry<String, Long> stringLongEntry : stringLongMap.entrySet()) {
-        player.sendMessage(stringLongEntry.getKey() + " requires " + humanReadableByteCount(stringLongEntry.getValue()));
+        player.sendMessage(stringLongEntry.getKey() + " 需要 " + humanReadableByteCount(stringLongEntry.getValue()));
       }
     });
   }

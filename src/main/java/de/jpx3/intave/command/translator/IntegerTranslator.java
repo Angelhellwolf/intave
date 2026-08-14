@@ -18,7 +18,7 @@ public final class IntegerTranslator extends TypeTranslator<Integer> {
     try {
       return Integer.parseInt(element);
     } catch (Exception exception) {
-      commandSender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Invalid argument " + element + ": Must be valid integer");
+      commandSender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "无效参数 " + element + ": 必须是有效整数");
       return null;
     }
   }

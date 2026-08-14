@@ -7,7 +7,7 @@ import java.util.List;
 
 public final class Libraries {
   public static void setupLibraries() {
-    IntaveLogger.logger().info("Loading libraries...");
+    IntaveLogger.logger().info("正在加载依赖库……");
 
     // slf4j
     loadLibrary(fromMavenGradle("org.slf4j", "slf4j-api", "1.7.30"));
@@ -48,7 +48,7 @@ public final class Libraries {
       library.pushToClasspath();
       return;
     }
-    IntaveLogger.logger().info("Downloading library " + library.name() + library.suffix() + " to cache");
+    IntaveLogger.logger().info("正在将依赖库 " + library.name() + library.suffix() + " 下载到缓存");
     library.downloadToCache();
     library.pushToClasspath();
   }

@@ -56,7 +56,7 @@ public final class DebugBroadcast {
             String color = configuration.colorOf(category).toString();
             String prefix = configuration.prefixSelector().formatPrefix(severity, category.name());
             String theMessage = configuration.detailOf(category).select(fullMessage, shortMessage);
-            String completeMessage = ChatColor.RED + "(insecure) " + color + prefix + " " + theMessage;
+            String completeMessage = ChatColor.RED + "（不安全）" + color + prefix + " " + theMessage;
             receiver.sendMessage(completeMessage);
           }
         }

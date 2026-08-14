@@ -47,6 +47,6 @@ class ProtocolVersionRange implements Comparable<ProtocolVersionRange> {
 
   @Override
   public String toString() {
-    return "version " + version + " from " + from + " to " + to;
+    return "version " + version + " 从 " + from + " to " + to;
   }
 }

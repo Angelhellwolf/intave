@@ -21,7 +21,7 @@ public final class ViaVersion2Access implements ViaVersionAccess {
     } catch (Exception exception) {
       throw new IllegalStateException("Invalid ViaVersion linkage", exception);
     }
-    IntaveLogger.logger().info("You are running a very old, outdated version of ViaVersion");
+    IntaveLogger.logger().info("当前 ViaVersion 版本过旧，请尽快更新");
   }
 
   @Override

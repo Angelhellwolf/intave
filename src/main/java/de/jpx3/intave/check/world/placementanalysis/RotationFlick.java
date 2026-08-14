@@ -151,7 +151,7 @@ public class RotationFlick extends PlayerCheckPart<PlacementAnalysis> {
 					Violation violation = Violation.builderFor(PlacementAnalysis.class)
 						.forPlayer(player).withDefaultThreshold()
 						.withMessage(COMMON_FLAG_MESSAGE)
-						.withDetails("exhibits micro pitch adjustments")
+						.withDetails("出现微 pitch 调整")
 						.appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
 						.withCustomThreshold(PlacementAnalysis.legacyConfigurationLayout() ? "thresholds" : "cloud-thresholds.on-premise")
 						.withVL(10).build();

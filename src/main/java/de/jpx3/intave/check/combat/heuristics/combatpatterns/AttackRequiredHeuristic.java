@@ -121,7 +121,7 @@ public final class AttackRequiredHeuristic extends ClassicHeuristic<AttackRequir
         if (timeToLastFlag < 20_000 && timeToLastFlag > 1500) {
           int vl = (meta.vl += 200) / 200;
           if (vl >= 2) {
-            flag(player, "missed attack packet vl:" + vl);
+            flag(player, "缺少攻击包 vl:" + vl);
           }
         }
         meta.lastFlag = System.currentTimeMillis();

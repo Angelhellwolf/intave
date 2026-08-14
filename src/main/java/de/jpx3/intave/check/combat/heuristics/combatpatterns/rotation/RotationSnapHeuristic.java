@@ -176,7 +176,7 @@ public final class RotationSnapHeuristic extends ClassicHeuristic<RotationSnapHe
 
     if (snapDetected) {
       double valueOfSnap = meta.yawMotions[0];
-      String description = "rotation snap ["
+      String description = "视角瞬转 ["
         + MathHelper.formatDouble(meta.yawMotions[1], 2)
         + "/" + MathHelper.formatDouble(meta.yawMotions[0], 2)
         + "/" + MathHelper.formatDouble(yawMotion, 2) + "]";
@@ -230,7 +230,7 @@ public final class RotationSnapHeuristic extends ClassicHeuristic<RotationSnapHe
     }
 
     if (liteFlag) {
-      String description = "rotation snap scaffold [" + MathHelper.formatDouble(meta.yawMotions[0], 2) + "]";
+      String description = "搭路视角瞬转 [" + MathHelper.formatDouble(meta.yawMotions[0], 2) + "]";
       int addedViolationLevel = 30;
       handleConfidence(user, addedViolationLevel, description);
     }

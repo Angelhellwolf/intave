@@ -62,6 +62,7 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 		MovementSearchBranchers.afterTick(),
 		MovementSearchBranch::blank
 	);
+	private static final int ITEM_USAGE_RESET_FAILURE_THRESHOLD = 3;
 
 	private final boolean itemUsageReset;
 	private final boolean detectNoSlowdown;
@@ -69,6 +70,15 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 	public ThreeTickSimulationSearch(boolean itemUsageReset, boolean detectNoSlowdown) {
 		this.itemUsageReset = itemUsageReset;
 		this.detectNoSlowdown = detectNoSlowdown;
+	}
+
+	static int nextHandItemSimulationFailCount(int currentCount, boolean ignoredSlowdown) {
+		return ignoredSlowdown ? currentCount + 1 : 0;
+	}
+
+	/** Food slowdown is enforced by the search and must not be interrupted by state recovery. */
+	static boolean shouldResetItemUsage(int failureCount, boolean usingFood) {
+		return !usingFood && failureCount == ITEM_USAGE_RESET_FAILURE_THRESHOLD;
 	}
 
 	@Override
@@ -385,18 +395,25 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 
 		boolean movementSuggestsHandIsActive = configuration.isHandActive();
 		boolean packetsSuggestsHandIsActive = inventoryData.handActive();
+		boolean ignoredSlowdown = false;
 		if (packetsSuggestsHandIsActive && !movementSuggestsHandIsActive) {
 			boolean releaseHandConditions = Hypot.fast(movementData.offsetMotionX(), movementData.offsetMotionZ()) > 0.3 || movementData.ticksPast(TELEPORT) >= 2;
 			boolean itemIsBow = ItemProperties.isBow(meta.inventory().activeItemType()) || ItemProperties.isBow(meta.inventory().offhandItemType());
 			boolean viaVersionBlockReplacement = meta.protocol().viaVersionShieldBlockReplacement();
-			boolean ignoredSlowdown = releaseHandConditions && (!itemIsBow || (inventoryData.handActiveTicks > 3 && !viaVersionBlockReplacement)) && itemUsageReset;
+			ignoredSlowdown = detectNoSlowdown && releaseHandConditions
+				&& (!itemIsBow || (inventoryData.handActiveTicks > 3 && !viaVersionBlockReplacement))
+				&& itemUsageReset;
+		}
 
-			if (ignoredSlowdown && movementData.handItemSimulationFails++ > 1) {
-				meta.inventory().releaseItemNextTick();
+		movementData.handItemSimulationFails = nextHandItemSimulationFailCount(
+			movementData.handItemSimulationFails,
+			ignoredSlowdown
+		);
+		if (shouldResetItemUsage(movementData.handItemSimulationFails, inventoryData.foodItem())) {
+			meta.inventory().releaseItemNextTick();
 
-				if (user.receives(MessageChannel.DEBUG_ITEM_RESETS)) {
-					user.player().sendMessage(IntavePlugin.prefix() + "Requesting item usage reset as " + ChatColor.RED + "movement/state discrepancy ");
-				}
+			if (user.receives(MessageChannel.DEBUG_ITEM_RESETS)) {
+				user.player().sendMessage(IntavePlugin.prefix() + "请求重置物品使用，原因：" + ChatColor.RED + "移动与状态不一致");
 			}
 		}
 	}

@@ -44,7 +44,7 @@ public final class MovementDebugTracker extends Module implements PluginMessageL
       ByteBuf byteBuf = Unpooled.wrappedBuffer(bytes);
       int length = byteBuf.readInt();
       if (length > 100 || length < 0) {
-        user.kick("Too many debug parameters " + length);
+        user.kick("移动调试参数过多：" + length);
       }
 
       int maxReads = 10;
@@ -52,7 +52,7 @@ public final class MovementDebugTracker extends Module implements PluginMessageL
         int nameLength = byteBuf.readInt();
 
         if (nameLength > 100 || nameLength < 0) {
-          user.kick("Invalid movement debug name length: " + nameLength);
+          user.kick("移动调试参数名称长度无效：" + nameLength);
         }
 
         // read chars
@@ -97,7 +97,7 @@ public final class MovementDebugTracker extends Module implements PluginMessageL
         String subCommand = command.substring(PREFIX.length());
         String[] split = subCommand.split(":");
         if (split.length != 2) {
-          System.out.println("Invalid command format: " + command);
+          System.out.println("命令格式无效：" + command);
           cancellable.setCancelled(true);
           return;
         }

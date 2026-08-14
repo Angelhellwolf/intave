@@ -328,7 +328,7 @@ public final class CombatMitigator extends Module {
     }
 
     if (user.receives(MessageChannel.DEBUG_NERFS)) {
-      user.player().sendMessage(ChatColor.RED + "[Intave] " + ChatColor.GRAY + "Applied " + attackNerfer.name() + " combat nerfer " + (attackNerfer.expiry() == Long.MAX_VALUE ? "permanently" : "for " + MathHelper.formatDouble((attackNerfer.expiry() - System.currentTimeMillis()) / 1000d, 2) + "s"));
+      user.player().sendMessage(ChatColor.RED + "[Intave] " + ChatColor.GRAY + "已应用 " + attackNerfer.name() + " 战斗削弱" + (attackNerfer.expiry() == Long.MAX_VALUE ? "，永久生效" : "，持续 " + MathHelper.formatDouble((attackNerfer.expiry() - System.currentTimeMillis()) / 1000d, 2) + " 秒"));
     }
 
     Player player = user.player();
@@ -336,23 +336,23 @@ public final class CombatMitigator extends Module {
 
     String durationText;
     if (expiry == Long.MAX_VALUE) {
-      durationText = "permanently";
+      durationText = "永久";
     } else {
-      durationText = "for " + MathHelper.formatDouble((expiry - System.currentTimeMillis()) / 1000d, 2) + "s";
+      durationText = MathHelper.formatDouble((expiry - System.currentTimeMillis()) / 1000d, 2) + " 秒";
     }
 
     if (IntaveControl.DEBUG_CMS) {
-      user.player().sendMessage(ChatColor.RED + "[Intave] " + ChatColor.GRAY + "Applied " + attackNerfer.name() + " combat nerfer " + durationText);
+      user.player().sendMessage(ChatColor.RED + "[Intave] " + ChatColor.GRAY + "已应用 " + attackNerfer.name() + " 战斗削弱 " + durationText);
     }
 
-    String message = ChatColor.RED + "[CM] Applied " + attackNerfer.name() + " combat nerfer on " + player.getName() + " (dmc" + checkId + ") " + durationText;
+    String message = ChatColor.RED + "[CM] 已对 " + player.getName() + " 应用 " + attackNerfer.name() + " 战斗削弱 (dmc" + checkId + ") " + durationText;
 
     if (IntaveControl.DEBUG_HEURISTICS && !plugin.sibyl().isAuthenticated(player)) {
       player.sendMessage(message);
     }
 
     if (attackNerfer.strategy().showToUsers() && !attackNerfer.hidden() && !hide) {
-      String kMessage = IntavePlugin.prefix() + " Issued " + attackNerfer.strategy().description() + " on " + ChatColor.RED + player.getName() + ChatColor.GRAY + "/" + user.trustFactor().coloredBaseName() + ChatColor.GRAY + " " + durationText;
+      String kMessage = IntavePlugin.prefix() + " 已对 " + ChatColor.RED + player.getName() + ChatColor.GRAY + "/" + user.trustFactor().coloredBaseName() + ChatColor.GRAY + " 应用 " + attackNerfer.strategy().description() + " " + durationText;
       for (Player player1 : MessageChannelSubscriptions.receiverOf(MessageChannel.COMBAT_MODIFIERS)) {
         User user1 = UserRepository.userOf(player1);
         if (user1.receives(MessageChannel.COMBAT_MODIFIERS)) {

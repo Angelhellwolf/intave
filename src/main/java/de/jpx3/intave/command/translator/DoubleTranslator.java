@@ -17,12 +17,12 @@ public final class DoubleTranslator extends TypeTranslator<Double> {
     try {
       double value = Double.parseDouble(element);
       if (value == Double.POSITIVE_INFINITY || value == Double.NEGATIVE_INFINITY || Double.isNaN(value)) {
-        commandSender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Invalid argument " + element + ": Must be valid double");
+        commandSender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "无效参数 " + element + ": 必须是有效小数");
         return null;
       }
       return value;
     } catch (Exception exception) {
-      commandSender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Invalid argument " + element + ": Must be valid number");
+      commandSender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "无效参数 " + element + ": 必须是有效数字");
       return null;
     }
   }

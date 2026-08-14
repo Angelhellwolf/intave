@@ -76,7 +76,7 @@ public final class Facing extends CheckPart<PlacementAnalysis> {
 				.forPlayer(player)
 				.withMessage(COMMON_FLAG_MESSAGE)
 				.appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
-				.withDetails("repeated placement faults")
+				.withDetails("重复放置故障")
 				.withVL(0)
 				.build();
 //      ViolationContext context = Modules.violationProcessor().processViolation(violation);

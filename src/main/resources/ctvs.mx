@@ -10,4 +10,4 @@ notify -> layout.notify
 
 +Placeholders
 kick-commands -> $kick$
-ban-commands -> $ban$
+ban-commands -> $kick$

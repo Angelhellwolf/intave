@@ -158,7 +158,7 @@ public final class SneakAndPlace extends PlayerCheckPart<PlacementAnalysis> {
 				Violation violation = Violation.builderFor(PlacementAnalysis.class)
 					.forPlayer(player).withDefaultThreshold()
 					.withMessage(COMMON_FLAG_MESSAGE)
-					.withDetails("sneaking seems to be automated (sneak)")
+					.withDetails("潜行疑似自动化（潜行）")
 					.appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
 					.withCustomThreshold(PlacementAnalysis.legacyConfigurationLayout() ? "thresholds" : "cloud-thresholds.on-premise")
 					.withVL(Math.min(violationLevel / 1.5, 5)).build();

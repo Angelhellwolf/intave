@@ -56,7 +56,7 @@ final class LocateFileCompiler {
         methodLocations.addAll(methodCompile(className, methodLines));
       } catch (Exception exception) {
         // we don't want to exit the compilation process if it fails
-        IntaveLogger.logger().error("Unable to compile line " + i + ": " + line);
+        IntaveLogger.logger().error("无法编译第 " + i + " 行：" + line);
         exception.printStackTrace();
       }
     }

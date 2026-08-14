@@ -19,8 +19,8 @@ public class Python {
     path = pythonByPath();
     available = isPythonInstalled();
     if (!available) {
-      IntaveLogger.logger().error("Unable to find Python installation.");
-      IntaveLogger.logger().error("For improved functionality, please install Python 3.8.5 or higher.");
+      IntaveLogger.logger().error("找不到 Python 安装");
+      IntaveLogger.logger().error("为获得更完整的功能，请安装 Python 3.8.5 或更高版本");
       return;
     }
 
@@ -34,8 +34,8 @@ public class Python {
 
     // print info
     if (uninstalled.size() > 0) {
-      IntaveLogger.logger().error("Missing python libraries, please install them with the following command:");
-      IntaveLogger.logger().error("Run '"+path+" -m pip install --upgrade pip && "+path+" -m pip install " + String.join(" ", uninstalled) + "'");
+      IntaveLogger.logger().error("缺少 Python 库，请使用以下命令安装：");
+      IntaveLogger.logger().error("请运行 '" + path + " -m pip install --upgrade pip && " + path + " -m pip install " + String.join(" ", uninstalled) + "'");
       available = false;
     }
   }

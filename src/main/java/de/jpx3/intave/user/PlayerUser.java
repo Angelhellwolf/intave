@@ -159,17 +159,17 @@ final class PlayerUser implements User {
     LogTransmittor logTransmittor = IntavePlugin.singletonInstance().logTransmittor();
     ProtocolMetadata clientData = meta().protocol();
     if (hasDisabledLogs()) {
-      logTransmittor.addPlayerLog(player, "[SYSTEM] Disabled logs");
+      logTransmittor.addPlayerLog(player, "[SYSTEM] 日志已禁用");
     }
-    logTransmittor.addPlayerLog(player, "(JOIN) " + player.getName() + " joined game "+IntavePlugin.gameId()+" with version " + clientData.versionString() + "/" + clientData.protocolVersion() + " and locale " + clientData.locale());
+    logTransmittor.addPlayerLog(player, "(JOIN) 玩家 " + player.getName() + " 加入游戏 " + IntavePlugin.gameId() + "，客户端版本 " + clientData.versionString() + "/" + clientData.protocolVersion() + "，语言 " + clientData.locale());
     if (!ConsoleOutput.CLIENT_VERSION_DEBUG) {
       return;
     }
-    String string = player.getName() + " joined with version " + clientData.versionString() + "/" + clientData.protocolVersion();
+    String string = player.getName() + " 使用客户端版本 " + clientData.versionString() + "/" + clientData.protocolVersion() + " 加入服务器";
     if (clientData.outdatedClient()) {
-      string += " (behind)";
+      string += "（低于服务器版本）";
     }
-    string += " and locale " + clientData.locale();
+    string += "，语言：" + clientData.locale();
     IntaveLogger.logger().info(string);
   }
 
@@ -530,9 +530,9 @@ final class PlayerUser implements User {
     ConnectionMetadata connectionData = metadata.connection();
     if (!justJoined() && connectionData.lastReceivedTransactionNum > 100 && connectionData.feedbackFaults++ > 10 && FaultKicks.FEEDBACK_FAULTS) {
       if (ConsoleOutput.FAULT_KICKS) {
-        IntaveLogger.logger().info(player().getName() + " will be removed for repeated feedback faults");
+        IntaveLogger.logger().info("玩家 " + player().getName() + " 将因反馈确认连续异常而被移出服务器");
       }
-      kick("Repeated feedback faults");
+      kick("反馈确认连续异常");
     }
   }
 
@@ -543,8 +543,8 @@ final class PlayerUser implements User {
     }
     disconnectQueued = true;
     if (ConsoleOutput.FAULT_KICKS) {
-      IntaveLogger.logger().info("Queuing manual disconnect of player " + player().getName() + " for " + reason.toLowerCase());
-      IntaveLogger.logger().info("This measure is a security-constraint necessity, but feel free to contact us if this happens too often");
+      IntaveLogger.logger().info("正在将玩家 " + player().getName() + " 加入手动断开队列，原因：" + reason.toLowerCase());
+      IntaveLogger.logger().info("此操作是安全约束所必需；如果频繁发生，请联系我们");
     }
     Synchronizer.synchronize(() -> {
       Player player = player();

@@ -42,7 +42,7 @@ public final class Searcher<I, T> {
 				brancher.branch(input, t, newResult);
 			}
 			if (newResult.isEmpty()) {
-				IntaveLogger.logger().warn("Brancher " + brancher + " produced no results for input " + input + " and result " + result);
+				IntaveLogger.logger().warn("分支器 " + brancher + " 未针对输入 " + input + " 和结果 " + result + " 生成任何结果");
 			}
 			deduplicated.clear();
 			deduplicated.addAll(newResult);

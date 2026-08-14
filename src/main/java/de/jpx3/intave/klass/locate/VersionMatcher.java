@@ -42,10 +42,10 @@ public interface VersionMatcher {
       MinecraftVersion from = new MinecraftVersion(split[0].substring(1));
       MinecraftVersion to = new MinecraftVersion(split[1].substring(0, split[1].length() - 1));
       if (from.getMajor() < 26 && from.getMajor() > 1) {
-        IntaveLogger.logger().warn("Version range with major version " + from.getMajor() + " is likely a mistake: " + input);
+        IntaveLogger.logger().warn("主版本号为 " + from.getMajor() + " 的版本范围可能有误：" + input);
       }
       if (to.getMajor() < 26 && to.getMajor() > 1) {
-        IntaveLogger.logger().warn("Version range with major version " + to.getMajor() + " is likely a mistake: " + input);
+        IntaveLogger.logger().warn("主版本号为 " + to.getMajor() + " 的版本范围可能有误：" + input);
       }
       return between(from, to);
     } else {

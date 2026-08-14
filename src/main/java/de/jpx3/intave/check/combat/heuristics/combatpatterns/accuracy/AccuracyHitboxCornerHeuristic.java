@@ -94,7 +94,7 @@ public final class AccuracyHitboxCornerHeuristic extends ClassicHeuristic<Accura
 
       if (failRate < 5 && (yawSpeedAverage > 10 || distanceAverage > 10)) {
         heuristicMeta.vl++;
-        String description = "maintains high attack accuracy whilst aiming at hitbox corners " +
+        String description = "瞄准碰撞箱角落时仍保持高攻击精度 " +
           "(fail:" + MathHelper.formatDouble(failRate, 2)
           + "%, r:" + MathHelper.formatDouble(yawSpeedAverage, 2)
           + ", d:" + MathHelper.formatDouble(distanceAverage, 2)

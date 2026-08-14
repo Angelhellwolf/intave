@@ -102,7 +102,7 @@ public final class Library {
       }
 
       if (!matchingHash) {
-        System.out.println("No matching hash found for " + name + " " + version + " in " + repository);
+        System.out.println("在仓库 " + repository + " 中找不到 " + name + " " + version + " 对应的哈希值");
         inputStream.close();
         fileStream.close();
         file.delete();

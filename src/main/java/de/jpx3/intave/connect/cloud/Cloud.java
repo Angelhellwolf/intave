@@ -77,7 +77,7 @@ public final class Cloud {
       openSession(shardCache.masterShard());
       ShutdownTasks.add(this::disable);
     } else {
-      IntaveLogger.logger().info("Cloud is disabled");
+      IntaveLogger.logger().info("云端功能已禁用");
     }
   }
 
@@ -100,7 +100,7 @@ public final class Cloud {
         session.subscribeToStarted(unused -> {
           reconnectAttempts.remove(shard);
           if (lastAttemptFailed) {
-            IntaveLogger.logger().info("Successfully reconnected to " + shard);
+            IntaveLogger.logger().info("已成功重新连接到 " + shard);
             lastAttemptFailed = false;
             for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
               IntavePlugin.singletonInstance().logTransmittor()
@@ -136,7 +136,7 @@ public final class Cloud {
         }
 
         IntaveLogger.logger().warning(
-          String.format("Cloud reconnect unsuccessful, retrying in %d seconds, attempt %d/20", retryingIn, attempts + 1)
+          String.format("云端重连失败，将在 %d 秒后重试，第 %d/20 次", retryingIn, attempts + 1)
         );
         if (attempts < 20) {
           reconnectAttempts.put(shard, attempts + 1);
@@ -144,8 +144,8 @@ public final class Cloud {
             BackgroundExecutors.executeWhenever(() -> openSession(shard));
           }, 20 * retryingIn);
         } else {
-          IntaveLogger.logger().warning("Unable to connect to " + shard + " after 20 attempts");
-          IntaveLogger.logger().warning("We will try to reconnect every 12 hours now");
+          IntaveLogger.logger().warning("尝试 20 次后仍无法连接到 " + shard);
+          IntaveLogger.logger().warning("之后将每 12 小时尝试重新连接一次");
           Synchronizer.synchronizeDelayed(() -> {
             BackgroundExecutors.executeWhenever(() -> openSession(shard));
           }, 20 * 60 * 60 * 12);
@@ -249,14 +249,14 @@ public final class Cloud {
           session.send(packet);
           sent = true;
           if (IntaveControl.AUTHENTICATION_DEBUG_MODE) {
-            IntaveLogger.logger().info("Sent packet " + packet.name() + " to " + session.shard());
+            IntaveLogger.logger().info("已将数据包 " + packet.name() + " 发送到 " + session.shard());
           }
           break;
         }
       }
       boolean cloudWasDeactivated = !cloudConfig.isEnabled();
       if (!sent && !cloudWasDeactivated) {
-        IntaveLogger.logger().error("Unable to send packet " + packet.name() + " to any shard");
+        IntaveLogger.logger().error("无法将数据包 " + packet.name() + " 发送到任何分片");
       }
     });
   }

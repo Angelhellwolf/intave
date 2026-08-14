@@ -23,7 +23,7 @@ public final class Synchronizer {
       Queue<Runnable> cachedProcessQueue = (Queue<Runnable>) minecraftServerClass.getField("processQueue").get(minecraftServer);
       synchronizationExecutor = cachedProcessQueue::add;
     } catch (NoSuchFieldException exception) {
-      IntavePlugin.singletonInstance().logger().error("Your version of spigot has removed support for task-queueing. We will switch to bukkit's scheduling service");
+      IntavePlugin.singletonInstance().logger().error("当前 Spigot 版本已移除任务排队支持，将切换到 Bukkit 调度服务");
       synchronizationExecutor = command -> scheduler.runTask(IntavePlugin.singletonInstance(), command);
     } catch (Exception exception) {
       throw new IllegalStateException(exception);
@@ -45,9 +45,9 @@ public final class Synchronizer {
         Timings.EXE_SERVER.start();
         runnable.run();
       } catch (UnsupportedFallbackOperationException fallbackOp) {
-        IntaveLogger.logger().info("Task " + runnable + " failed because the associated player logged off already");
+        IntaveLogger.logger().info("任务 " + runnable + " 执行失败，因为关联玩家已经离线");
       } catch (Exception | Error throwable) {
-        IntaveLogger.logger().error("Failed to execute server task " + runnable);
+        IntaveLogger.logger().error("服务器任务执行失败：" + runnable);
         throwable.printStackTrace();
       } finally {
         Timings.EXE_SERVER.stop();

@@ -66,7 +66,7 @@ public final class PacketOrder extends PlayerCheckPart<PlacementAnalysis> {
 						Violation violation = Violation.builderFor(PlacementAnalysis.class)
 							.forPlayer(player)
 							.withMessage(COMMON_FLAG_MESSAGE)
-							.withDetails("invalid packet order")
+							.withDetails("无效数据包顺序")
 							.withCustomThreshold(PlacementAnalysis.legacyConfigurationLayout() ? "thresholds" : "cloud-thresholds.on-premise")
 							.withVL(2)
 							.build();

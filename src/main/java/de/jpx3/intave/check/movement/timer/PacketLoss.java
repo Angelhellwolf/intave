@@ -55,7 +55,7 @@ public final class PacketLoss extends MetaCheckPart<Timer, PacketLoss.PacketLoss
 
         if (packetLossMeta.vl++ > 2) {
           Violation violation = Violation.builderFor(Timer.class).forPlayer(player)
-            .withMessage("irregular packet delay")
+            .withMessage("数据包延迟异常")
             .withVL(0.5)
             .build();
           ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);

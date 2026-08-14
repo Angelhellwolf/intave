@@ -19,7 +19,7 @@ public final class ReferenceExistenceTests extends IntegrationTests {
       try {
         String className = classLocation.access().getName();
       } catch (Exception exception) {
-        IntaveLogger.logger().warn("Class " + classLocation.compiledLocation() + " does not exist");
+        IntaveLogger.logger().warn("类 " + classLocation.compiledLocation() + " 不存在");
 //        exception.printStackTrace();
         throw exception;
       }
@@ -35,7 +35,7 @@ public final class ReferenceExistenceTests extends IntegrationTests {
       try {
         methodLocation.access();
       } catch (Exception exception) {
-        IntaveLogger.logger().warn("Method " + methodLocation.methodNameOfKey() + "@" + methodLocation.targetMethodName() + methodLocation.targetMethodSignature() + " in class " + methodLocation.classKey() + " does not exist");
+        IntaveLogger.logger().warn("类 " + methodLocation.classKey() + " 中的方法 " + methodLocation.methodNameOfKey() + "@" + methodLocation.targetMethodName() + methodLocation.targetMethodSignature() + " 不存在");
 //        exception.printStackTrace();
         throw exception;
       }
@@ -52,7 +52,7 @@ public final class ReferenceExistenceTests extends IntegrationTests {
       try {
         fieldLocation.access();
       } catch (Exception exception) {
-        IntaveLogger.logger().warn("Field " + fieldLocation.key() + "/" + fieldLocation.targetName() + " in class " + fieldLocation.classKey() + " does not exist");
+        IntaveLogger.logger().warn("类 " + fieldLocation.classKey() + " 中的字段 " + fieldLocation.key() + "/" + fieldLocation.targetName() + " 不存在");
         throw exception;
       }
     }

@@ -52,7 +52,7 @@ public final class IntaveDomains {
       }
     } catch (Exception e) {
       if (IntaveControl.DEBUG) {
-        System.out.println("Could not connect to " + domain + " (" + url + "): " + e.getMessage());
+        System.out.println("无法连接到 " + domain + "（" + url + "）：" + e.getMessage());
       }
       return Long.MAX_VALUE;
     }

@@ -45,7 +45,6 @@ public final class InventoryMetadata {
   public boolean forceInventoryOnClickOpen = true;
   public boolean blockNextArrow = false;
   public long lastBlockArrowRequest;
-  public long lastFoodConsumptionBlockRequest;
   public boolean releaseItemNextTick = false;
   public boolean activatedItemThisTick = false;
   public boolean deactivatedItemThisTick = false;
@@ -164,7 +163,7 @@ public final class InventoryMetadata {
       if (IntaveControl.DEBUG_ITEM_USAGE) {
         Material activeItem = this.activeItemType;
         Synchronizer.synchronize(() -> {
-          player.sendMessage("Item usage started: " + activeItem);
+          player.sendMessage("开始使用物品: " + activeItem);
         });
       }
     } finally {
@@ -198,10 +197,10 @@ public final class InventoryMetadata {
       Material activeItem = this.activeItemType;
       if (IntaveControl.DEBUG_ITEM_USAGE) {
         Synchronizer.synchronize(() -> {
-          player.sendMessage("Item usage ended: " + activeItem);
+          player.sendMessage("结束使用物品: " + activeItem);
         });
 //        Thread.dumpStack();
-        System.out.println("Item usage ended: " + activeItem);
+        System.out.println("结束使用物品: " + activeItem);
       }
       this.activeItemType = Material.AIR;
     } finally {
@@ -215,7 +214,7 @@ public final class InventoryMetadata {
 
   public void releaseItemNextTick() {
     if (IntaveControl.DEBUG_ITEM_USAGE) {
-      player.sendMessage("Forceful item release next tick");
+      player.sendMessage("下一游戏刻强制释放物品");
     }
     releaseItemNextTick = true;
     releaseItemType = heldItemType();
@@ -258,7 +257,7 @@ public final class InventoryMetadata {
     if (inventoryOpen != this.inventoryOpen) {
       releaseItemNextTick();
       if (user.receives(MessageChannel.DEBUG_ITEM_RESETS)) {
-        user.player().sendMessage(IntavePlugin.prefix() + "Requesting item usage reset as " + ChatColor.RED + " inventory was toggled ");
+        user.player().sendMessage(IntavePlugin.prefix() + "请求重置物品使用，原因: " + ChatColor.RED + " 背包被切换 ");
       }
     }
 //    deactivateHand();

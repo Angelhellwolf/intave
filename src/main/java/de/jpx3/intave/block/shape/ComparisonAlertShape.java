@@ -53,9 +53,9 @@ public final class ComparisonAlertShape implements BlockShape {
     double first = firstShape.allowedOffset(axis, entity, offset);
     double second = secondShape.allowedOffset(axis, entity, offset);
     if (Math.abs(first - second) > 0.001) {
-      System.err.println("Difference in allowed offset: " + first + " vs " + second);
-      System.err.println("First shape: " + firstShape);
-      System.err.println("Second shape: " + secondShape);
+      System.err.println("允许偏移量不同：" + first + " 对比 " + second);
+      System.err.println("第一个形状：" + firstShape);
+      System.err.println("第二个形状：" + secondShape);
     }
     return first;
   }
@@ -65,9 +65,9 @@ public final class ComparisonAlertShape implements BlockShape {
     double first = firstShape.min(axis);
     double second = secondShape.min(axis);
     if (Math.abs(first - second) > 0.001) {
-      System.err.println("Difference in min: " + first + " vs " + second);
-      System.err.println("First shape: " + firstShape);
-      System.err.println("Second shape: " + secondShape);
+      System.err.println("最小值不同：" + first + " 对比 " + second);
+      System.err.println("第一个形状：" + firstShape);
+      System.err.println("第二个形状：" + secondShape);
     }
     return first;
   }
@@ -77,9 +77,9 @@ public final class ComparisonAlertShape implements BlockShape {
     double first = firstShape.max(axis);
     double second = secondShape.max(axis);
     if (Math.abs(first - second) > 0.001) {
-      System.err.println("Difference in max: " + first + " vs " + second);
-      System.err.println("First shape: " + firstShape);
-      System.err.println("Second shape: " + secondShape);
+      System.err.println("最大值不同：" + first + " 对比 " + second);
+      System.err.println("第一个形状：" + firstShape);
+      System.err.println("第二个形状：" + secondShape);
     }
     return first;
   }
@@ -89,9 +89,9 @@ public final class ComparisonAlertShape implements BlockShape {
     boolean first = firstShape.intersectsWith(boundingBox);
     boolean second = secondShape.intersectsWith(boundingBox);
     if (first != second) {
-      System.err.println("Difference in intersectsWith: " + first + " vs " + second);
-      System.err.println("First shape: " + firstShape);
-      System.err.println("Second shape: " + secondShape);
+      System.err.println("相交判断不同：" + first + " 对比 " + second);
+      System.err.println("第一个形状：" + firstShape);
+      System.err.println("第二个形状：" + secondShape);
     }
     return first;
   }
@@ -123,10 +123,10 @@ public final class ComparisonAlertShape implements BlockShape {
     BlockRaytrace first = firstShape.raytrace(origin, target);
     BlockRaytrace second = secondShape.raytrace(origin, target);
     if (!first.equals(second)) {
-      System.err.println("Difference in raytrace: " + first
-        + " vs " + second);
-      System.err.println("First shape: " + firstShape);
-      System.err.println("Second shape: " + secondShape);
+      System.err.println("射线追踪结果不同：" + first
+        + " 对比 " + second);
+      System.err.println("第一个形状：" + firstShape);
+      System.err.println("第二个形状：" + secondShape);
     }
     return first;
   }
@@ -136,9 +136,9 @@ public final class ComparisonAlertShape implements BlockShape {
     BoundingBox first = firstShape.outline();
     BoundingBox second = secondShape.outline();
     if (!first.equals(second)) {
-      System.err.println("Difference in outline: " + first + " vs " + second);
-      System.err.println("First shape: " + firstShape);
-      System.err.println("Second shape: " + secondShape);
+      System.err.println("轮廓不同：" + first + " 对比 " + second);
+      System.err.println("第一个形状：" + firstShape);
+      System.err.println("第二个形状：" + secondShape);
     }
     return first;
   }
@@ -160,9 +160,9 @@ public final class ComparisonAlertShape implements BlockShape {
     boolean first = firstShape.isEmpty();
     boolean second = secondShape.isEmpty();
     if (first != second) {
-      System.err.println("Difference in isEmpty: " + first + " vs " + second);
-      System.err.println("First shape: " + firstShape);
-      System.err.println("Second shape: " + secondShape);
+      System.err.println("空形状判断不同：" + first + " 对比 " + second);
+      System.err.println("第一个形状：" + firstShape);
+      System.err.println("第二个形状：" + secondShape);
     }
     return first;
   }
@@ -172,9 +172,9 @@ public final class ComparisonAlertShape implements BlockShape {
     boolean first = firstShape.isCubic();
     boolean second = secondShape.isCubic();
     if (first != second) {
-      System.err.println("Difference in isCubic: " + first + " vs " + second);
-      System.err.println("First shape: " + firstShape);
-      System.err.println("Second shape: " + secondShape);
+      System.err.println("立方体判断不同：" + first + " 对比 " + second);
+      System.err.println("第一个形状：" + firstShape);
+      System.err.println("第二个形状：" + secondShape);
     }
     return first;
   }
@@ -184,9 +184,9 @@ public final class ComparisonAlertShape implements BlockShape {
     boolean first = firstShape.strictlyInside(positionX, positionY, positionZ);
     boolean second = secondShape.strictlyInside(positionX, positionY, positionZ);
     if (first != second) {
-      System.err.println("Difference in strictlyInside: " + first + " vs " + second);
-      System.err.println("First shape: " + firstShape);
-      System.err.println("Second shape: " + secondShape);
+      System.err.println("严格位于内部的判断不同：" + first + " 对比 " + second);
+      System.err.println("第一个形状：" + firstShape);
+      System.err.println("第二个形状：" + secondShape);
     }
     return first;
   }

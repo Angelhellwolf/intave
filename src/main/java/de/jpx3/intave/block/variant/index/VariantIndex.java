@@ -52,7 +52,7 @@ public class VariantIndex {
     Map<Integer, Object> reversed = reversed(index);
     if (!reversed.containsKey(0)) {
       if (IntaveControl.DEBUG_VARIANT_COMPILATION) {
-        System.out.println("[variant/debug] Block " + type + " has no zero state, using first state");
+        System.out.println("[variant/debug] 方块 " + type + " 没有零值状态，正在使用首个状态");
       }
       reversed.put(0, index.keySet().iterator().next());
     }

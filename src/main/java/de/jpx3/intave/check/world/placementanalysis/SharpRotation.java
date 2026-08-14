@@ -67,7 +67,7 @@ public final class SharpRotation extends PlayerCheckPart<PlacementAnalysis> {
 			}
 			lastBlockPlacement = System.currentTimeMillis();
 			if (sharpRotations > 4 && blockAgainstWasPlaced(user, place.getBlockAgainst())) {
-				String details = "maintains sharp 180deg rotations";
+				String details = "保持尖锐 180 度旋转";
 				Violation violation = Violation.builderFor(PlacementAnalysis.class)
 					.forPlayer(player).withMessage(COMMON_FLAG_MESSAGE).withDetails(details)
 					.appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)

@@ -27,7 +27,7 @@ public final class ConsoleOutput {
     if (CONSOLE_OUTPUT.isEmpty()) {
       return;
     }
-    IntaveLogger.logger().info("Disabled debugs for " + describeListSelection(CONSOLE_OUTPUT));
+    IntaveLogger.logger().info("已对 " + describeListSelection(CONSOLE_OUTPUT) + " 禁用调试输出");
     CONSOLE_OUTPUT.clear();
   }
 

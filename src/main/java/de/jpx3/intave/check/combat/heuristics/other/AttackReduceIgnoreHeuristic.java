@@ -72,7 +72,7 @@ public final class AttackReduceIgnoreHeuristic extends MetaCheckPart<Heuristics,
     if (movementData.lastSprinting() && movementData.sprinting && movementData.ticksPast(ATTACK_REDUCE) == 0) {
       if (movementData.ignoredAttackReduce) {
         if (heuristicMeta.vl++ > 5) {
-          String description = "did not reduce when attacking a player";
+          String description = "攻击玩家时未减速";
           // todo: is there even attack reduce on > 1.8???
           heuristicMeta.vl = 0;
         }

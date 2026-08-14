@@ -1,17 +1,17 @@
 ---
-name: Other bugs
-about: Report general non-movement bug reports
+name: 其他问题
+about: 报告与移动无关的一般问题
 title: '[Bug] '
 labels: bug
 assignees: ventolotl
 
 ---
-**Video description**
-Having a video helps us immensely.
-Please avoid streamable and enable "/intave verbose" during recording.
+**视频说明**
+有视频会极大帮助我们排查。
+请尽量避免使用 streamable，并在录制时开启 `/intave verbose`。
 
-**Description of the bug**
-Include a precise description of the bug here
+**Bug 描述**
+在此给出准确的问题描述
 
-**Environmental Information**
-Output of `/intave diagnostics environment` (click the chat message to copy)
+**环境信息**
+`/intave diagnostics environment` 的输出（点击聊天消息可复制）

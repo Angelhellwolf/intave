@@ -142,9 +142,9 @@ public class RegrDelayAnalyzer extends MetaCheckPart<InventoryClickAnalysis, Reg
         Violation violation = Violation.builderFor(InventoryClickAnalysis.class)
           .forPlayer(player)
           .withVL(1)
-          .withMessage("is taking items at constant speed")
+          .withMessage("以恒定速度取物品")
           .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
-          .withDetails("time: " + formatDouble(meanTime, 2) + " mean, " + formatDouble(varTime, 2) + " var")
+          .withDetails("时间: " + formatDouble(meanTime, 2) + " 均值, " + formatDouble(varTime, 2) + " 方差")
           .build();
         ViolationProcessor violationProcessor = Modules.violationProcessor();
         ViolationContext context = violationProcessor.processViolation(violation);
@@ -157,9 +157,9 @@ public class RegrDelayAnalyzer extends MetaCheckPart<InventoryClickAnalysis, Reg
         Violation violation = Violation.builderFor(InventoryClickAnalysis.class)
           .forPlayer(player)
           .withVL(10)
-          .withMessage("is taking items too quickly")
+          .withMessage("取物品过快")
           .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
-          .withDetails("obeys " + formatDouble(slope[0], 2) + " d/t correlation at " + formatDouble(averageSpeed, 2) + " s/s")
+          .withDetails("符合 " + formatDouble(slope[0], 2) + " d/t 相关性，" + formatDouble(averageSpeed, 2) + " 槽/秒")
           .build();
         ViolationProcessor violationProcessor = Modules.violationProcessor();
         ViolationContext context = violationProcessor.processViolation(violation);
@@ -172,9 +172,9 @@ public class RegrDelayAnalyzer extends MetaCheckPart<InventoryClickAnalysis, Reg
         Violation violation = Violation.builderFor(InventoryClickAnalysis.class)
           .forPlayer(player)
           .withVL(10)
-          .withMessage("seems indifferent to distance taking items")
+          .withMessage("取物品似乎无视距离")
           .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
-          .withDetails("variance mismatch: " + formatDouble(varDistance, 2) + " d, " + formatDouble(varTime, 2) + " t")
+          .withDetails("方差不匹配: " + formatDouble(varDistance, 2) + " d, " + formatDouble(varTime, 2) + " t")
           .build();
         ViolationProcessor violationProcessor = Modules.violationProcessor();
         ViolationContext context = violationProcessor.processViolation(violation);
@@ -183,20 +183,20 @@ public class RegrDelayAnalyzer extends MetaCheckPart<InventoryClickAnalysis, Reg
         }
       }
 
-//      player.sendMessage(ChatColor.YELLOW + "CI | "+(meta.firstClickTimestamp-meta.lastWindowOpenTimestamp)+"ms fc | " + MathHelper.formatDouble(averageSpeed, 2) + " s/s avg" + " | " + formatDouble(slope[0], 2) + " distance/time correlation");
+//      player.sendMessage(ChatColor.YELLOW + "CI | "+(meta.firstClickTimestamp-meta.lastWindowOpenTimestamp)+"ms fc | " + MathHelper.formatDouble(averageSpeed, 2) + " 槽/秒 avg" + " | " + formatDouble(slope[0], 2) + " distance/time correlation");
 //      player.sendMessage(ChatColor.YELLOW + Arrays.toString(variances));
 
       if ((slope[0] < 0.1 || pearson < 0.1) && meanDistance > 1.2) {
         Violation violation = Violation.builderFor(InventoryClickAnalysis.class)
           .forPlayer(player)
           .withVL(10)
-          .withMessage("seems indifferent to distance taking items")
+          .withMessage("取物品似乎无视距离")
           .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
-          .withDetails(formatDouble(slope[0], 2) + " d/t, " + formatDouble(pearson, 2) + " pear, " + formatDouble(meanDistance, 2) + " mean d, " + formatDouble(varDistance, 2) + " var d")
+          .withDetails(formatDouble(slope[0], 2) + " d/t, " + formatDouble(pearson, 2) + " pear, " + formatDouble(meanDistance, 2) + " mean d, " + formatDouble(varDistance, 2) + " 方差 d")
           .build();
         ViolationProcessor violationProcessor = Modules.violationProcessor();
         ViolationContext context = violationProcessor.processViolation(violation);
-//        System.out.println("seems indifferent to distance taking items" + formatDouble(slope[0], 2) + " d/t, " + formatDouble(pearson, 2) + " pear");
+//        System.out.println("取物品似乎无视距离" + formatDouble(slope[0], 2) + " d/t, " + formatDouble(pearson, 2) + " pear");
 
         if (context.violationLevelAfter() > 100) {
           user.nerf(AttackNerfStrategy.DMG_MEDIUM, "item speed");
@@ -210,8 +210,8 @@ public class RegrDelayAnalyzer extends MetaCheckPart<InventoryClickAnalysis, Reg
 ////          .withVL(MathHelper.minmax(15, averageSpeed * 0.75, 50))
 //          .withVL(10)
 //          .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
-//          .withMessage("is taking items too quickly")
-//          .withDetails("linear d/t baseline at " + formatDouble(slope[1], 2) + " slots/sec")
+//          .withMessage("取物品过快")
+//          .withDetails("linear d/t baseline 以 " + formatDouble(slope[1], 2) + " 槽/秒")
 //          .build();
 //        ViolationProcessor violationProcessor = Modules.violationProcessor();
 //        ViolationContext context = violationProcessor.processViolation(violation);
@@ -220,7 +220,7 @@ public class RegrDelayAnalyzer extends MetaCheckPart<InventoryClickAnalysis, Reg
 ////          user.nerf(AttackNerfStrategy.DMG_MEDIUM, "item speed");
 ////        }
 //
-////        System.out.println("is taking items too quickly" + "linear d/t baseline at " + formatDouble(slope[1], 2) + " slots/sec");
+////        System.out.println("取物品过快" + "linear d/t baseline 以 " + formatDouble(slope[1], 2) + " 槽/秒");
 //      }
 
 //      if (pearson > 0.5) {
@@ -243,8 +243,8 @@ public class RegrDelayAnalyzer extends MetaCheckPart<InventoryClickAnalysis, Reg
           .withVL(MathHelper.minmax(1, (averageSpeed/2) - 15, 50))
 //          .withVL(1)
           .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
-          .withMessage("is taking items too quickly")
-          .withDetails("at " + formatDouble(averageSpeed, 2) + " slots/sec")
+          .withMessage("取物品过快")
+          .withDetails("以 " + formatDouble(averageSpeed, 2) + " 槽/秒")
           .build();
         ViolationProcessor violationProcessor = Modules.violationProcessor();
         ViolationContext context = violationProcessor.processViolation(violation);
@@ -290,8 +290,7 @@ public class RegrDelayAnalyzer extends MetaCheckPart<InventoryClickAnalysis, Reg
       return new double[]{0, 0};
     }
 
-    // treat distance time as separate variables x and y
-    // find mean of x and y, calculate variance matrix
+    // 将距离和时间分别视为变量 x 与 y，并计算均值和方差矩阵。
     double sumX = 0;
     double sumY = 0;
     for (double[] entry : clickHistory) {

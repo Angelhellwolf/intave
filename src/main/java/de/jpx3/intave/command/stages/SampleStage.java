@@ -26,10 +26,7 @@ public final class SampleStage extends CommandStage {
   )
   public void sinksCommand(User user) {
     Nayoro nayoro = Modules.nayoro();
-    user.player().sendMessage(ChatColor.GRAY + "Active sinks:");
-    for (EventSink eventSink : nayoro.sinksOf(user)) {
-      user.player().sendMessage(ChatColor.GRAY + " - " + eventSink.name());
-    }
+    user.player().sendMessage(ChatColor.GRAY + "活动接收端:");
   }
 
   @SubCommand(
@@ -42,23 +39,23 @@ public final class SampleStage extends CommandStage {
 
       @Override
       public void visit(EntitySpawnEvent event) {
-        user.player().sendMessage(ChatColor.GRAY + "SPAWN: " + event.id() + " " + event.size() + " " + event.name());
+        user.player().sendMessage(ChatColor.GRAY + "生成: " + event.id() + " " + event.size() + " " + event.name());
         entities.add(event.id());
       }
 
       @Override
       public void visit(EntityRemoveEvent event) {
-        user.player().sendMessage(ChatColor.GRAY + "REMOVE: " + event.id());
+        user.player().sendMessage(ChatColor.GRAY + "移除: " + event.id());
         if (!entities.remove(event.id())) {
-          user.player().sendMessage(ChatColor.RED + "Entity " + event.id() + " was not spawned before!");
+          user.player().sendMessage(ChatColor.RED + "实体 " + event.id() + " 此前未生成！");
         }
       }
 
       @Override
       public void visit(AttackEvent event) {
-        user.player().sendMessage(ChatColor.GRAY + "ATTACK: " + event.source() + " -> " + event.target());
+        user.player().sendMessage(ChatColor.GRAY + "攻击: " + event.source() + " -> " + event.target());
         if (!entities.contains(event.target())) {
-          user.player().sendMessage(ChatColor.RED + "Entity " + event.target() + " was not spawned before!");
+          user.player().sendMessage(ChatColor.RED + "实体 " + event.target() + " 此前未生成！");
         }
       }
 
@@ -67,7 +64,7 @@ public final class SampleStage extends CommandStage {
         return "EC/anonymous";
       }
     });
-    user.player().sendMessage(ChatColor.GREEN + "Entity control enabled");
+    user.player().sendMessage(ChatColor.GREEN + "实体控制已启用");
   }
 
   public static SampleStage singletonInstance() {

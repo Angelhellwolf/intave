@@ -14,6 +14,11 @@ package de.jpx3.intave.block.store;
 import de.jpx3.intave.share.BlockState;
 import org.junit.jupiter.api.Test;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class CopyOnWriteArrayLocalBlockStoreTest {
@@ -33,6 +38,28 @@ class CopyOnWriteArrayLocalBlockStoreTest {
 			} else {
 				assertFalse(store.put(i, 0, 0, BlockState.stone()));
 			}
+		}
+	}
+
+	@Test
+	public void testSynchronizedStoreSurvivesConcurrentClearAndPut() throws Exception {
+		BlockStore store = CopyOnWriteArrayLocalBlockStore.of().withSynchronization();
+		ExecutorService executor = Executors.newFixedThreadPool(2);
+		try {
+			Future<?> clear = executor.submit(() -> {
+				for (int i = 0; i < 2000; i++) {
+					store.clear();
+				}
+			});
+			Future<?> put = executor.submit(() -> {
+				for (int i = 0; i < 2000; i++) {
+					assertTrue(store.put(i & 31, 64, 0, BlockState.stone()));
+				}
+			});
+			clear.get(10, TimeUnit.SECONDS);
+			put.get(10, TimeUnit.SECONDS);
+		} finally {
+			executor.shutdownNow();
 		}
 	}
 

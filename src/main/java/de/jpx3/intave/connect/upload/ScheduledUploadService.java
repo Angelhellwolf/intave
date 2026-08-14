@@ -60,7 +60,7 @@ public final class ScheduledUploadService {
         try {
           copyToSession(k, v);
         } catch (IOException exception) {
-          System.out.println("Failed to copy file to temp-directory: " + k);
+          System.out.println("文件复制到临时目录失败：" + k);
           exception.printStackTrace();
         }
       });

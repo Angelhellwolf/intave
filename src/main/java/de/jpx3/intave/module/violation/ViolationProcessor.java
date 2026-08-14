@@ -50,7 +50,7 @@ public final class ViolationProcessor extends Module {
     try {
       this.verboseMode = ViolationVerboseMode.valueOf(verboseMode);
     } catch (Exception exception) {
-      IntaveLogger.logger().warn("Invalid verbose mode '" + verboseMode + "' in settings. Using default value '" + this.verboseMode.name() + "'");
+      IntaveLogger.logger().warn("设置中的详细输出模式 '" + verboseMode + "' 无效，正在使用默认值 '" + this.verboseMode.name() + "'");
       this.verboseMode = ViolationVerboseMode.MITIGATED;
     }
   }
@@ -162,7 +162,7 @@ public final class ViolationProcessor extends Module {
       violationLevelData.detectionCounterReset = System.currentTimeMillis();
     }
     if (violationLevelData.detectionCounter++ > 300) {
-      user.kick("You are sending too many packets :[");
+      user.kick("你发送的数据包过多 :[");
     }
   }
 

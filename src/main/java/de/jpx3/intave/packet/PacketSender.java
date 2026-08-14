@@ -44,8 +44,8 @@ public final class PacketSender {
     try {
       RECEIVE_PACKET_METHOD.invoke(protocolManager, receiver, packet);
     } catch (UnsupportedOperationException exception) {
-      IntaveLogger.logger().error("Your version of ProtocolLib is broken, see https://github.com/dmulloy2/ProtocolLib/issues/1552 for details on the issue");
-      IntaveLogger.logger().error("We recommend you to upgrade your version");
+      IntaveLogger.logger().error("当前 ProtocolLib 版本存在故障，详情请参阅 https://github.com/dmulloy2/ProtocolLib/issues/1552");
+      IntaveLogger.logger().error("建议升级 ProtocolLib 版本");
       exception.printStackTrace();
     } catch (IllegalAccessException | InvocationTargetException exception) {
       exception.printStackTrace();

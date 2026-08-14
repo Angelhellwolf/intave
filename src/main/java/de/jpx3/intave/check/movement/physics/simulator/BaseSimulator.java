@@ -552,7 +552,7 @@ class BaseSimulator extends Simulator {
       if (block != null) {
         String name = block.name();
         Synchronizer.synchronize(() -> {
-          player.sendMessage("Block fallen upon: " + name);
+          player.sendMessage("落地方块: " + name);
         });
       }
     }

@@ -57,7 +57,7 @@ public final class DelayAnalyzer extends MetaCheckPart<InventoryClickAnalysis, D
     ClickDelayMeta meta = metaOf(user);
 
     if (user.protocolVersion() >= ProtocolMetadata.VER_1_12) {
-      // TODO: when a player shifts an item in 1.12+ he sends a "null" as itemStack which makes the check imcompatible
+      // TODO: when a player shifts an item 用时 1.12+ he sends a "null" as itemStack which makes the check imcompatible
       return;
     }
 
@@ -109,8 +109,8 @@ public final class DelayAnalyzer extends MetaCheckPart<InventoryClickAnalysis, D
     if (distance > 2 && flag && (flag2 || System.currentTimeMillis() - meta.lastFlagTimeStamp < 5000)) {
       Violation violation = Violation.builderFor(InventoryClickAnalysis.class)
         .forPlayer(player).withDefaultThreshold()
-        .withMessage("is switching too quickly between item slots")
-        .withDetails("moved from slot " + meta.lastClickedSlot + " to slot " + slot + " in " + MathHelper.formatDouble(time, 3) + " seconds")
+        .withMessage("切换物品栏过快")
+        .withDetails("从槽位 " + meta.lastClickedSlot + " 到槽位 " + slot + " 用时 " + MathHelper.formatDouble(time, 3) + " 秒")
         .withVL(5).build();
     }
 
@@ -127,7 +127,7 @@ public final class DelayAnalyzer extends MetaCheckPart<InventoryClickAnalysis, D
     if (std < 2 && Math.abs(averageMovementPacketTimestamp - 50) < 40) {
       Violation violation = Violation.builderFor(InventoryClickAnalysis.class)
         .forPlayer(player).withDefaultThreshold()
-        .withMessage("is clicking with regular deviation on items")
+        .withMessage("物品点击偏差规律异常")
         .withDetails(MathHelper.formatDouble(std, 2) + " deviation")
         .withVL(5).build();
 //

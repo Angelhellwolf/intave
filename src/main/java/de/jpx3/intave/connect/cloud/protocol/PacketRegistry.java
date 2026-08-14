@@ -92,7 +92,7 @@ public final class PacketRegistry {
       String packetName = idToName.get(id);
       return fromName(direction, packetName);
     } catch (Exception exception) {
-      System.out.println("Failed to find packet id " + id + " direction " + direction + " (avail: " + idToName+")");
+      System.out.println("找不到 ID 为 " + id + "、方向为 " + direction + " 的数据包（可用项：" + idToName + "）");
       throw new RuntimeException(exception);
     }
   }

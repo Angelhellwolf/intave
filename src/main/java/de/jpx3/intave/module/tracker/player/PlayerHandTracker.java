@@ -124,7 +124,7 @@ public class PlayerHandTracker extends Module {
         inventoryData.blockNextArrow = true;
         inventoryData.lastBlockArrowRequest = System.currentTimeMillis();
         if (user.receives(MessageChannel.DEBUG_ITEM_RESETS)) {
-          user.player().sendMessage(IntavePlugin.prefix() + " Detected item switch on active item, released hand and blocking impending arrow shot");
+          user.player().sendMessage(IntavePlugin.prefix() + " 检测到正在使用的物品发生切换，已释放手部状态并拦截即将发射的箭矢");
         }
       }
     }
@@ -237,9 +237,10 @@ public class PlayerHandTracker extends Module {
     }
 
     if (IntaveControl.DEBUG_ITEM_USAGE) {
-      player.sendMessage("Digtype: " + digType);
+      player.sendMessage("挖掘类型: " + digType);
     }
 
+    boolean wasUsingFoodItem = inventoryData.foodItem() && inventoryData.handActive();
     switch (digType) {
       case RELEASE_USE_ITEM:
       case DROP_ALL_ITEMS:
@@ -249,13 +250,12 @@ public class PlayerHandTracker extends Module {
       }
     }
 
-    boolean usedFoodItem = inventoryData.foodItem() && inventoryData.handActive();
     // Fix eating while sprinting bug: https://www.youtube.com/watch?v=5ZHMrVmtdNY
-    if (digType == EnumWrappers.PlayerDigType.DROP_ITEM && usedFoodItem) {
+    if (digType == EnumWrappers.PlayerDigType.DROP_ITEM && wasUsingFoodItem) {
       PacketContainer unblockPacket = packet.shallowClone();
       unblockPacket.getPlayerDigTypes().write(0, EnumWrappers.PlayerDigType.RELEASE_USE_ITEM);
       user.ignoreNextInboundPacket();
-      PacketSender.receiveClientPacketFrom(player, packet);
+      PacketSender.receiveClientPacketFrom(player, unblockPacket);
     }
   }
 }

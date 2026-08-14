@@ -79,7 +79,7 @@ public final class Stability extends PlayerCheckPart<PlacementAnalysis> {
 					Violation violation = Violation.builderFor(PlacementAnalysis.class)
 						.forPlayer(player).withDefaultThreshold()
 						.withMessage(COMMON_FLAG_MESSAGE)
-						.withDetails("clicking stability")
+						.withDetails("点击稳定性")
 						.appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
 						.withCustomThreshold(PlacementAnalysis.legacyConfigurationLayout() ? "thresholds" : "cloud-thresholds.on-premise")
 						.withVL(2.5).build();

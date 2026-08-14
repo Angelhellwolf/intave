@@ -74,7 +74,7 @@ public final class PacketInventoryHeuristic extends ClassicHeuristic<PacketInven
     }
 
     if (clientData.emptyFlyingPacketsAreExplicitlySent() && meta.inventoryTicks == 0 && meta.performedInventoryOpenOperation) {
-      flag(player, "closed inventory too quickly (" + meta.inventoryTicks + ")");
+      flag(player, "关闭背包过快（" + meta.inventoryTicks + ")");
       user.nerf(BURN_LONGER, nerfId);
       user.nerf(DMG_HIGH, nerfId);
     }
@@ -109,7 +109,7 @@ public final class PacketInventoryHeuristic extends ClassicHeuristic<PacketInven
 
     if (inventoryOpen && hasRotation && movementData.ticksPast(TELEPORT) > 20 && !player.isInsideVehicle()) {
       if (meta.rotationsInInventory++ > 1) {
-        flag(player, "sent rotations in inventory (" + meta.rotationsInInventory + " rotations)");
+        flag(player, "在背包中发送视角（" + meta.rotationsInInventory + " 次旋转）");
         user.nerf(AttackNerfStrategy.HT_LIGHT, nerfId);
       }
     }

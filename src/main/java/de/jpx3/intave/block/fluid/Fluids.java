@@ -77,7 +77,7 @@ public final class Fluids {
           } catch (Exception exception) {
             BlockVariant properties = BlockVariantRegister.uncachedVariantOf(value, variantIndex);
             String propertyString = "{" + properties.propertyNames().stream().map(s -> s + ": " + properties.propertyOf(s)).collect(Collectors.joining(", ")) + "}";
-            IntaveLogger.logger().error("Failed to index fluid " + value + ":" + variantIndex + " " + propertyString);
+            IntaveLogger.logger().error("流体索引失败：" + value + ":" + variantIndex + " " + propertyString);
             exception.printStackTrace();
           }
         }

@@ -34,7 +34,7 @@ public final class SentSlotTwice extends MetaCheckPart<ProtocolScanner, SentSlot
     int slot = packet.getIntegers().read(0);
     if (meta.lastSlot == slot && slot > 0) {
       Violation violation = Violation.builderFor(ProtocolScanner.class)
-        .forPlayer(player).withMessage("sent slot twice").withDetails("slot " + slot)
+        .forPlayer(player).withMessage("重复发送槽位").withDetails("槽位 " + slot)
         .withVL(meta.slotPacketsSent > 4 ? vl : 0)
         .build();
       Modules.violationProcessor().processViolation(violation);

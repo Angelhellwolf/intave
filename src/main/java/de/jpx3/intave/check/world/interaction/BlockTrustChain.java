@@ -21,7 +21,7 @@ public class BlockTrustChain {
     try {
       BlockTrust anchorTrust = pendingMap.get(anchor) == null ? null : pendingMap.get(anchor).peek();
       if (IntaveControl.DEBUG_INTERACTION_TRUST_CHAIN) {
-        System.out.println("tryAction(" + position + ", " + anchor + ")");
+        System.out.println("尝试操作（位置：" + position + "，锚点：" + anchor + "）");
       }
       if (anchorTrust != null) {
         if (IntaveControl.DEBUG_INTERACTION_TRUST_CHAIN) {
@@ -57,7 +57,7 @@ public class BlockTrustChain {
       Queue<BlockTrust> queue = pendingMap.get(position);
       BlockTrust trust = queue == null ? null : queue.peek();
       if (IntaveControl.DEBUG_INTERACTION_TRUST_CHAIN) {
-        System.out.println("collapseState(" + position + ", " + valid + ")");
+        System.out.println("折叠状态（位置：" + position + "，有效：" + valid + "）");
         System.out.println("  trust = " + trust);
       }
       if (trust == null) {

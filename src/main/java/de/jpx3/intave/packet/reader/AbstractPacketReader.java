@@ -18,7 +18,7 @@ public abstract class AbstractPacketReader implements PacketReader {
     if (this.packet != null) {
       long val = MISSING_FLUSHES_BY_TYPE.computeIfAbsent(packet.getType(), packetType -> new AtomicLong()).incrementAndGet();
       if (val < 5 && IntaveControl.NOTIFY_MISSING_PACKET_FLUSHES) {
-        System.out.println("Missing flush for packet " + packet.getType() + " (" + val + ")");
+        System.out.println("数据包 " + packet.getType() + " 缺少刷新操作（" + val + "）");
         Thread.dumpStack();
       }
     }

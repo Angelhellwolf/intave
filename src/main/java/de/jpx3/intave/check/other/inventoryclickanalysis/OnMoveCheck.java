@@ -67,7 +67,7 @@ public final class OnMoveCheck extends CheckPart<InventoryClickAnalysis> {
     double distanceMoved = Hypot.fast(movementData.offsetMotionX(), movementData.offsetMotionZ());
     double distanceRequirement = player.isSneaking() ? 0.04 : 0.1;
     if ((keyForward != 0 || keyStrafe != 0) && distanceMoved > distanceRequirement) {
-      String message = "performed inventory-click whilst walking";
+      String message = "行走时进行背包点击";
       Violation violation = Violation.builderFor(InventoryClickAnalysis.class)
         .forPlayer(player)
         .withMessage(message)

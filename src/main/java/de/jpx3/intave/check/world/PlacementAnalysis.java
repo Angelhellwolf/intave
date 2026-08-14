@@ -15,7 +15,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 public final class PlacementAnalysis extends Check {
   private final IntavePlugin plugin;
   private final CheckViolationLevelDecrementer decrementer;
-  public static final String COMMON_FLAG_MESSAGE = "suspicious block-placement";
+  public static final String COMMON_FLAG_MESSAGE = "可疑方块放置";
 
   public PlacementAnalysis(IntavePlugin plugin) {
     super("PlacementAnalysis", "placementanalysis");

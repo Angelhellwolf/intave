@@ -117,7 +117,7 @@ public final class CompletionDurationCheck extends MetaCheckPart<BreakSpeedLimit
 //        if (clientData.flyingPacketStream()) {
 //          float blockDamageDealt = BlockInnerAccess.blockDamage(player, heldItem, blockPosition);
 //          if (blockDamageDealt < 0.79 && meta.balance++ >= 2) { // ~79%
-//            String message = "broke block too quickly";
+//            String message = "破坏方块过快";
 //            String percentage = (int)(blockDamageDealt * 100d) + "%";
 //            String details = "at " + percentage;
 //
@@ -146,7 +146,7 @@ public final class CompletionDurationCheck extends MetaCheckPart<BreakSpeedLimit
         long exceeded = Math.max(0, requiredDuration - actualDuration);
 
         if (exceeded > 100 && meta.balance++ >= 2) {
-          String message = "broke block too quickly";
+          String message = "破坏方块过快";
           String details = MathHelper.formatDouble(exceeded / 50d, 2) + " ticks faster than expected";
           ViolationProcessor violationProcessor = Modules.violationProcessor();
           Violation violation = Violation.builderFor(BreakSpeedLimiter.class)

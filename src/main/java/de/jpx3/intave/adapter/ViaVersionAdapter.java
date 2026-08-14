@@ -47,7 +47,7 @@ public final class ViaVersionAdapter {
     if (access != null) {
       access.setup();
     } else {
-      IntaveLogger.logger().error("Unknown ViaVersion version, using backup linkage (ViaVersion version: " + version + ")");
+      IntaveLogger.logger().error("无法识别 ViaVersion 版本，正在使用备用连接方式（ViaVersion 版本：" + version + "）");
       access = new ViaVersion5Access();
       access.setup();
     }

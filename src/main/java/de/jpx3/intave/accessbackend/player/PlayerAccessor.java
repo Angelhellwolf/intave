@@ -55,7 +55,7 @@ public final class PlayerAccessor {
 
       @Override
       public void setProtocolVersion(int paramInt) {
-        String message = "Changed protocol-version of " + player.getName() + " to " + paramInt + " (unknown origin)";
+        String message = "已将 " + player.getName() + " 的协议版本改为 " + paramInt + "（未知来源）";
         IntaveLogger.logger().info(message);
         user.meta().protocol().setProtocolVersion(paramInt);
         user.applyNewProtocolVersion();
@@ -115,9 +115,9 @@ public final class PlayerAccessor {
           PluginInvocation pluginInvocation = Caller.pluginInfo(true);
           String message;
           if (pluginInvocation == null) {
-            message = "Changed trustfactor of " + player.getName() + " to " + factor.name() + " (unknown origin)";
+            message = "已将 " + player.getName() + " 的信任等级改为 " + factor.name() + "（来源未知）";
           } else {
-            message = "Changed trustfactor of " + player.getName() + " to " + factor.name() + " (plugin " + pluginInvocation.pluginName() + " in class " + pluginInvocation.className() + ")";
+            message = "已将 " + player.getName() + " 的信任等级改为 " + factor.name() + "（插件 " + pluginInvocation.pluginName() + "，类 " + pluginInvocation.className() + "）";
           }
           IntaveLogger.logger().info(message);
         }

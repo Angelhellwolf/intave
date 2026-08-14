@@ -122,8 +122,8 @@ public class MicroBlink extends MetaCheckPart<Timer, MicroBlink.MicroBlinkMeta> 
               .forPlayer(user.player())
               .withCustomThreshold("microblink")
               .withGranulars(granular)
-              .withMessage("seems be micro-lagging entity-aligned")
-              .withDetails("chi2-test failed for \"near-entity\" and \"lagging\"")
+              .withMessage("疑似与实体对齐的微卡顿")
+              .withDetails("卡方检验未通过（附近存在实体且发生卡顿）")
               .withVL(3)
               .build();
             Modules.violationProcessor().processViolation(violation);
@@ -168,7 +168,7 @@ public class MicroBlink extends MetaCheckPart<Timer, MicroBlink.MicroBlinkMeta> 
               .forPlayer(user.player())
               .withCustomThreshold("microblink")
               .withGranulars(granular)
-              .withMessage("seems be micro-lagging entity-aligned")
+              .withMessage("疑似与实体对齐的微卡顿")
               .withDetails(formatDouble(probability * 100, 6) + "% likelihood of " + timeDifference + "ms")
               .withVL(meta.violationLevel - 5)
               .build();
@@ -200,7 +200,7 @@ public class MicroBlink extends MetaCheckPart<Timer, MicroBlink.MicroBlinkMeta> 
             .forPlayer(user.player())
             .withCustomThreshold("microblink")
             .withGranulars(granular)
-            .withMessage("seems to be micro-lagging in combat")
+            .withMessage("疑似战斗中微卡顿")
             .withDetails(formatDouble(probability * 100, 6) + "% likelihood of " + timeDifference + "ms")
             .withVL(meta.violationLevel - 5)
             .build();

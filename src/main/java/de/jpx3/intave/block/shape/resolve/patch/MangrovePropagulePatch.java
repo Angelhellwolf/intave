@@ -30,7 +30,7 @@ final class MangrovePropagulePatch extends BlockShapePatch {
     BlockVariant variant = BlockVariantRegister.variantOf(type, variantIndex);
     Boolean hanging = variant.propertyOf("hanging");
     if (hanging == null) {
-      System.out.println("MangrovePropagule: hanging is null");
+      System.out.println("红树胎生苗：悬挂状态为空");
       return shape;
     }
     int age = hanging ? variant.propertyOf("age") : 4;

@@ -132,8 +132,8 @@ public final class FeedbackSender extends Module {
         return;
       } else if (isInInvalidThread()) {
         if (WARNINGS_LEFT-- > 0) {
-          IntaveLogger.logger().info("Async packet sent from "+Caller.pluginInfo(true)+" on thread " + Thread.currentThread().getName());
-          IntaveLogger.logger().info("It is highly recommended to only send packets on the main thread.");
+          IntaveLogger.logger().info("插件 " + Caller.pluginInfo(true) + " 在线程 " + Thread.currentThread().getName() + " 中异步发送了数据包");
+          IntaveLogger.logger().info("强烈建议仅在主线程中发送数据包");
           Thread.dumpStack();
         }
 //        Thread.dumpStack();
@@ -390,8 +390,8 @@ public final class FeedbackSender extends Module {
     }
     Modules.feedbackAnalysis().sentTransaction(user, request);
     if (IntaveControl.DEBUG_FEEDBACK_PACKETS) {
-//      System.out.println("Received " + transactionIdentifier + "/" +transactionResponse.num() + " from " + player.getName());
-      System.out.println("Sent " + id + "/"+request.num() + " to " + receiver.getName());
+//      System.out.println("Received " + transactionIdentifier + "/" +transactionResponse.num() + " 从 " + player.getName());
+      System.out.println("已将 " + id + "/" + request.num() + " 发送给 " + receiver.getName());
     }
     if (MinecraftVersions.VER1_19_4.atOrAbove() && !bundlingDisabled && toBundle != null) {
       PacketContainer bundle = new PacketContainer(BUNDLE);

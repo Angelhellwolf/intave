@@ -41,7 +41,7 @@ public final class BlockVariantRegister {
       blockCount++;
     }
     if (IntaveControl.DEBUG_VARIANT_COMPILATION) {
-      System.out.println("[variant/debug] Indexed " + count + " variations of " + blockCount + " blocks");
+      System.out.println("[variant/debug] 已索引 " + blockCount + " 种方块的 " + count + " 个变体");
     }
     // After initialization, we usually don't need most of the cache anymore
     // So we can clear it after startup to lower memory usage
@@ -60,7 +60,7 @@ public final class BlockVariantRegister {
     Map<Integer, BlockVariant> variantMap = blockVariants.computeIfAbsent(type, BlockVariantRegister::translateFromServer);
     BlockVariant variant = variantMap.get(variantIndex);
     if (variant == null) {
-      IntaveLogger.logger().error("Could not find variant for " + type + " with index " + variantIndex + " (map size: " + variantMap.size() + ")");
+      IntaveLogger.logger().error("找不到方块类型 " + type + " 的变体索引 " + variantIndex + "（映射大小：" + variantMap.size() + "）");
       return EMPTY_ERROR;
     }
     return variant;
@@ -70,7 +70,7 @@ public final class BlockVariantRegister {
     Map<Integer, BlockVariant> variantMap = translateFromServer(type);
     BlockVariant variant = variantMap.get(variantIndex);
     if (variant == null) {
-      IntaveLogger.logger().error("Could not find variant for " + type + " with index " + variantIndex + " (map size: " + variantMap.size() + ")");
+      IntaveLogger.logger().error("找不到方块类型 " + type + " 的变体索引 " + variantIndex + "（映射大小：" + variantMap.size() + "）");
       return EMPTY_ERROR;
     }
     return variant;
@@ -79,8 +79,8 @@ public final class BlockVariantRegister {
   private static Map<Integer, BlockVariant> translateFromServer(Material material) {
     Map<Integer, BlockVariant> map = BlockVariantConverter.translateVariants(material, blockDataRegister.get(material));
     if (IntaveControl.DEBUG_VARIANT_COMPILATION) {
-      System.out.println("[variant/debug] Compiled " + map.size() + " variants for " + material);
-      System.out.println("[variant/debug] Zero variant is: ");
+      System.out.println("[variant/debug] 已为 " + material + " 编译 " + map.size() + " 个变体");
+      System.out.println("[variant/debug] 零值变体：");
       map.get(0).dumpStates();
     }
     return map;
@@ -96,7 +96,7 @@ public final class BlockVariantRegister {
     try {
       return blockDataRegister.get(type).get(variantIndex);
     } catch (Exception exception) {
-      IntaveLogger.logger().printLine("[Intave] Failed to correctly emulate data structure of block type " + type + " (requested variant " + variantIndex + ")");
+      IntaveLogger.logger().printLine("[Intave] 无法正确模拟方块类型 " + type + " 的数据结构（请求的变体：" + variantIndex + "）");
       exception.printStackTrace();
       return blockDataRegister.get(type).get(0);
     }
